@@ -1,0 +1,57 @@
+{
+  "$description": "Semantic type roles. Four roles, each an explicit size/line/weight triple — no composite tokens, so the CSS output stays plain custom properties.",
+  "type": {
+    "heading-lg": {
+      "size": {
+        "$value": "{font-size.3xl}"
+      },
+      "line": {
+        "$value": "{line-height.tight}"
+      },
+      "weight": {
+        "$value": "{font-weight.bold}"
+      }
+    },
+    "heading-md": {
+      "size": {
+        "$value": "{font-size.xl}"
+      },
+      "line": {
+        "$value": "{line-height.tight}"
+      },
+      "weight": {
+        "$value": "{font-weight.semibold}"
+      }
+    },
+    "body-md": {
+      "size": {
+        "$value": "{font-size.md}"
+      },
+      "line": {
+        "$value": "{line-height.normal}"
+      },
+      "weight": {
+        "$value": "{font-weight.regular}"
+      }
+    },
+    "label-md": {
+      "size": {
+        "$value": "{font-size.sm}"
+      },
+      "line": {
+        "$value": "{line-height.tight}"
+      },
+      "weight": {
+        "$value": "{font-weight.medium}"
+      }
+    }
+  },
+  "font": {
+    "family": {
+      "$value": "{font-family.sans}"
+    },
+    "family-mono": {
+      "$value": "{font-family.mono}"
+    }
+  }
+}

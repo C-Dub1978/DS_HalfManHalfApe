@@ -1,0 +1,93 @@
+{
+  "$description": "MODE LAYER — light. Re-points semantic colour roles at primitives. This file is the ONLY place light mode is defined; it emits under \":root, [data-ds-mode='light']\" so light is the default with no attribute required.",
+  "color": {
+    "$type": "color",
+    "bg": {
+      "$value": "{color.neutral.50}"
+    },
+    "bg-subtle": {
+      "$value": "{color.neutral.100}"
+    },
+    "surface": {
+      "$value": "{color.neutral.0}"
+    },
+    "surface-raised": {
+      "$value": "{color.neutral.0}"
+    },
+    "surface-sunken": {
+      "$value": "{color.neutral.100}"
+    },
+    "text": {
+      "$value": "{color.neutral.900}"
+    },
+    "text-muted": {
+      "$value": "{color.neutral.700}"
+    },
+    "text-subtle": {
+      "$value": "{color.neutral.500}"
+    },
+    "text-on-action": {
+      "$value": "{color.neutral.0}"
+    },
+    "border": {
+      "$value": "{color.neutral.200}"
+    },
+    "border-strong": {
+      "$value": "{color.neutral.300}"
+    },
+    "action": {
+      "$value": "{color.blue.600}"
+    },
+    "action-hover": {
+      "$value": "{color.blue.700}"
+    },
+    "action-active": {
+      "$value": "{color.blue.800}"
+    },
+    "action-subtle": {
+      "$value": "{color.blue.50}"
+    },
+    "action-disabled": {
+      "$value": "{color.neutral.200}"
+    },
+    "focus": {
+      "$value": "{color.blue.600}"
+    },
+    "danger": {
+      "$value": "{color.red.500}"
+    },
+    "danger-subtle": {
+      "$value": "{color.red.100}"
+    },
+    "danger-text": {
+      "$value": "{color.red.700}"
+    },
+    "text-on-danger": {
+      "$value": "{color.neutral.0}"
+    },
+    "warning": {
+      "$value": "{color.amber.500}"
+    },
+    "warning-subtle": {
+      "$value": "{color.amber.100}"
+    },
+    "warning-text": {
+      "$value": "{color.amber.700}"
+    },
+    "text-on-warning": {
+      "$value": "{color.neutral.950}"
+    },
+    "success": {
+      "$value": "{color.green.500}"
+    },
+    "success-subtle": {
+      "$value": "{color.green.100}"
+    },
+    "success-text": {
+      "$value": "{color.green.700}"
+    },
+    "text-on-success": {
+      "$value": "{color.neutral.0}"
+    }
+  }
+}

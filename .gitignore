@@ -1,0 +1,6 @@
+node_modules/
+dist/
+libs/tokens/src/lib/*.css
+libs/tokens/src/lib/ds-tokens.ts
+.angular/
+*.log
