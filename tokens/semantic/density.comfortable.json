@@ -1,0 +1,30 @@
+{
+  "$description": "DENSITY LAYER — comfortable. Independent of mode: the two axes compose without multiplying. Emits under \":root, [data-hmha-density='comfortable']\".",
+  "control": {
+    "$type": "dimension",
+    "height": {
+      "$value": "{size.10}"
+    },
+    "height-sm": {
+      "$value": "{size.8}"
+    },
+    "height-lg": {
+      "$value": "{size.12}"
+    },
+    "padding-x": {
+      "$value": "{space.4}"
+    },
+    "padding-y": {
+      "$value": "{space.2}"
+    },
+    "gap": {
+      "$value": "{space.2}"
+    }
+  },
+  "space": {
+    "$type": "dimension",
+    "stack": {
+      "$value": "{space.4}"
+    }
+  }
+}

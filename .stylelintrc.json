@@ -1,0 +1,24 @@
+{
+  "rules": {
+    "comment-no-empty": true,
+    "declaration-property-value-no-unknown": true,
+    "color-no-hex": [true, {
+      "message": "No literal colours. Use a semantic or component token — see Fork 03."
+    }],
+    "function-disallowed-list": ["rgb", "rgba", "hsl", "hsla", "oklch"],
+    "declaration-property-unit-allowed-list": {
+      "/^(width|height|min-|max-|padding|margin|gap|top|right|bottom|left|inset|font-size|border-radius)/": ["%", "fr"]
+    },
+    "selector-disallowed-list": ["/::ng-deep/", "/:host-context/"]
+  },
+  "overrides": [
+    {
+      "files": ["libs/tokens/src/lib/*.css"],
+      "rules": {
+        "color-no-hex": null,
+        "function-disallowed-list": null,
+        "declaration-property-unit-allowed-list": null
+      }
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "@hmha/design-lib",
+  "private": true,
+  "scripts": {
+    "tokens": "node style-dictionary.config.mjs && node scripts/concat-layers.mjs",
+    "tokens:watch": "nodemon --watch tokens --ext json --exec \"npm run tokens\"",
+    "tokens:contrast": "node scripts/check-contrast.mjs",
+    "test": "ng test",
+    "lint:css": "stylelint \"libs/ui/**/*.css\"",
+    "lint:standalone": "if grep -rn '@NgModule' libs apps --include='*.ts'; then echo 'NgModule found — invariant 2' && exit 1; fi",
+    "ci": "npm run tokens && npm run tokens:contrast && npm run lint:css && npm run lint:standalone && npm run build:lib && npm test",
+    "build:lib": "ng build hmha-ui"
+  },
+  "devDependencies": {
+    "@angular/cli": "^20.0.0",
+    "@storybook/addon-vitest": "^10.6.0",
+    "@vitest/browser-playwright": "^4.1.11",
+    "culori": "^4.0.0",
+    "ng-packagr": "^20.0.0",
+    "playwright": "^1.63.0",
+    "storybook": "^10.6.0",
+    "style-dictionary": "^4.3.0",
+    "stylelint": "^16.0.0",
+    "vitest": "^4.1.11"
+  }
+}

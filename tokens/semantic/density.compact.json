@@ -1,0 +1,30 @@
+{
+  "$description": "DENSITY LAYER — compact. Same role names as comfortable. Emits under \"[data-hmha-density='compact']\".",
+  "control": {
+    "$type": "dimension",
+    "height": {
+      "$value": "{size.8}"
+    },
+    "height-sm": {
+      "$value": "{size.7}"
+    },
+    "height-lg": {
+      "$value": "{size.10}"
+    },
+    "padding-x": {
+      "$value": "{space.3}"
+    },
+    "padding-y": {
+      "$value": "{space.1}"
+    },
+    "gap": {
+      "$value": "{space.1}"
+    }
+  },
+  "space": {
+    "$type": "dimension",
+    "stack": {
+      "$value": "{space.3}"
+    }
+  }
+}

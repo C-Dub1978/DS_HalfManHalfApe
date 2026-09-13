@@ -1,0 +1,42 @@
+{
+  "$description": "Semantic dimension roles that do NOT vary by mode or density. Anything density-dependent lives in a density layer instead.",
+  "radius": {
+    "$type": "dimension",
+    "control": {
+      "$value": "{radius.md}"
+    },
+    "surface": {
+      "$value": "{radius.lg}"
+    },
+    "pill": {
+      "$value": "{radius.full}"
+    }
+  },
+  "focus": {
+    "$type": "dimension",
+    "width": {
+      "$value": "{border.2}"
+    },
+    "offset": {
+      "$value": "{space.1}"
+    }
+  },
+  "border": {
+    "$type": "dimension",
+    "width": {
+      "$value": "{border.1}"
+    }
+  },
+  "icon": {
+    "$type": "dimension",
+    "sm": {
+      "$value": "{space.4}"
+    },
+    "md": {
+      "$value": "{space.5}"
+    },
+    "lg": {
+      "$value": "{space.6}"
+    }
+  }
+}

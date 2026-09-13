@@ -1,0 +1,75 @@
+{
+  "$description": "Primitive dimension scales. space is the 4px grid; size is the control-height scale; radius, border are their own scales.",
+  "space": {
+    "0": {
+      "$value": "0"
+    },
+    "1": {
+      "$value": "4px"
+    },
+    "2": {
+      "$value": "8px"
+    },
+    "3": {
+      "$value": "12px"
+    },
+    "4": {
+      "$value": "16px"
+    },
+    "5": {
+      "$value": "20px"
+    },
+    "6": {
+      "$value": "24px"
+    },
+    "8": {
+      "$value": "32px"
+    },
+    "10": {
+      "$value": "40px"
+    },
+    "12": {
+      "$value": "48px"
+    },
+    "$type": "dimension"
+  },
+  "size": {
+    "7": {
+      "$value": "28px"
+    },
+    "8": {
+      "$value": "32px"
+    },
+    "10": {
+      "$value": "40px"
+    },
+    "12": {
+      "$value": "48px"
+    },
+    "$type": "dimension"
+  },
+  "radius": {
+    "$type": "dimension",
+    "sm": {
+      "$value": "4px"
+    },
+    "md": {
+      "$value": "8px"
+    },
+    "lg": {
+      "$value": "12px"
+    },
+    "full": {
+      "$value": "999px"
+    }
+  },
+  "border": {
+    "1": {
+      "$value": "1px"
+    },
+    "2": {
+      "$value": "2px"
+    },
+    "$type": "dimension"
+  }
+}

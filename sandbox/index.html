@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HMHA tokens — phase 1 sandbox</title>
+<link rel="stylesheet" href="../libs/tokens/src/lib/_all.css" />
+<style>
+  /* This file styles plain elements with var(--hmha-*) only — no components,
+     no literal colours or dimensions. It exists to prove the token/theming
+     architecture before a single Angular component is written. */
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: var(--hmha-color-bg);
+    color: var(--hmha-color-text);
+    font-family: var(--hmha-font-family);
+    font-size: var(--hmha-type-body-md-size);
+    line-height: var(--hmha-type-body-md-line);
+    font-weight: var(--hmha-type-body-md-weight);
+  }
+
+  h1, h2, p { margin: 0; }
+
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--hmha-space-6);
+    padding: var(--hmha-control-padding-y) var(--hmha-control-padding-x);
+    background: var(--hmha-color-surface-raised);
+    border-bottom: var(--hmha-border-width) solid var(--hmha-color-border);
+  }
+
+  .toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: var(--hmha-control-gap);
+  }
+
+  .toolbar-label {
+    font-size: var(--hmha-type-label-md-size);
+    line-height: var(--hmha-type-label-md-line);
+    font-weight: var(--hmha-type-label-md-weight);
+    color: var(--hmha-color-text-muted);
+  }
+
+  .toggle {
+    appearance: none;
+    border: var(--hmha-border-width) solid var(--hmha-color-border-strong);
+    border-radius: var(--hmha-radius-control);
+    min-height: var(--hmha-control-height-sm);
+    padding-inline: var(--hmha-control-padding-x);
+    background: var(--hmha-color-surface);
+    color: var(--hmha-color-text);
+    font: inherit;
+    font-size: var(--hmha-type-label-md-size);
+    font-weight: var(--hmha-type-label-md-weight);
+    cursor: pointer;
+  }
+
+  .toggle:hover {
+    background: var(--hmha-color-bg-subtle);
+  }
+
+  .toggle[aria-pressed="true"] {
+    background: var(--hmha-color-action);
+    border-color: var(--hmha-color-action);
+    color: var(--hmha-color-text-on-action);
+  }
+
+  .toggle:focus-visible {
+    outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+    outline-offset: var(--hmha-focus-offset);
+  }
+
+  main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hmha-space-stack);
+    max-width: 72ch;
+    margin-inline: auto;
+    padding: var(--hmha-space-8) var(--hmha-control-padding-x);
+  }
+
+  section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hmha-control-gap);
+  }
+
+  h1 {
+    font-size: var(--hmha-type-heading-lg-size);
+    line-height: var(--hmha-type-heading-lg-line);
+    font-weight: var(--hmha-type-heading-lg-weight);
+  }
+
+  h2 {
+    font-size: var(--hmha-type-heading-md-size);
+    line-height: var(--hmha-type-heading-md-line);
+    font-weight: var(--hmha-type-heading-md-weight);
+    color: var(--hmha-color-text);
+  }
+
+  p.muted {
+    color: var(--hmha-color-text-muted);
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--hmha-space-stack);
+    background: var(--hmha-color-surface);
+    border: var(--hmha-border-width) solid var(--hmha-color-border);
+    border-radius: var(--hmha-radius-surface);
+    box-shadow: var(--hmha-shadow-md);
+    padding: var(--hmha-space-6);
+  }
+
+  .swatch-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--hmha-control-gap);
+  }
+
+  .btn {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--hmha-control-gap);
+    min-height: var(--hmha-control-height);
+    padding-inline: var(--hmha-control-padding-x);
+    border-radius: var(--hmha-radius-control);
+    border: var(--hmha-border-width) solid transparent;
+    font: inherit;
+    font-size: var(--hmha-type-label-md-size);
+    font-weight: var(--hmha-type-label-md-weight);
+    cursor: pointer;
+    transition: background var(--hmha-duration-fast) var(--hmha-easing-standard);
+  }
+
+  .btn:focus-visible {
+    outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+    outline-offset: var(--hmha-focus-offset);
+  }
+
+  .btn-neutral {
+    background: var(--hmha-color-surface-raised);
+    color: var(--hmha-color-text);
+    border-color: var(--hmha-color-border-strong);
+  }
+
+  .btn-action {
+    background: var(--hmha-color-action);
+    color: var(--hmha-color-text-on-action);
+  }
+  .btn-action:hover { background: var(--hmha-color-action-hover); }
+  .btn-action:active { background: var(--hmha-color-action-active); }
+
+  .btn-danger {
+    background: var(--hmha-color-danger);
+    color: var(--hmha-color-text-on-danger);
+  }
+
+  .btn-warning {
+    background: var(--hmha-color-warning);
+    color: var(--hmha-color-text-on-warning);
+  }
+
+  .btn-success {
+    background: var(--hmha-color-success);
+    color: var(--hmha-color-text-on-success);
+  }
+
+  .btn-sm { min-height: var(--hmha-control-height-sm); }
+  .btn-lg { min-height: var(--hmha-control-height-lg); }
+
+  .density-row {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--hmha-control-gap);
+  }
+
+  .density-label {
+    font-size: var(--hmha-type-label-md-size);
+    color: var(--hmha-color-text-subtle);
+  }
+
+  .border-row {
+    display: flex;
+    gap: var(--hmha-space-4);
+  }
+
+  .border-box {
+    flex: 1;
+    min-height: var(--hmha-control-height-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--hmha-color-surface-sunken);
+    font-size: var(--hmha-type-label-md-size);
+    color: var(--hmha-color-text-muted);
+  }
+
+  .border-box.regular { border: var(--hmha-border-width) solid var(--hmha-color-border); }
+  .border-box.strong { border: var(--hmha-border-width) solid var(--hmha-color-border-strong); }
+
+  /* The nested panel: pinned to dark regardless of whatever <html> is set to.
+     No extra CSS is required for this to work — [data-hmha-mode="dark"] is
+     just a nearer ancestor than :root, so it wins for everything inside. */
+  .pinned-panel {
+    background: var(--hmha-color-surface-raised);
+    border: var(--hmha-border-width) solid var(--hmha-color-border);
+    border-radius: var(--hmha-radius-surface);
+    padding: var(--hmha-space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--hmha-control-gap);
+  }
+
+  code {
+    font-family: var(--hmha-font-family-mono);
+    background: var(--hmha-color-bg-subtle);
+    border-radius: var(--hmha-radius-sm);
+    padding-inline: var(--hmha-space-1);
+  }
+</style>
+</head>
+<body>
+  <div class="toolbar">
+    <div class="toolbar-group">
+      <span class="toolbar-label">Mode</span>
+      <button class="toggle" type="button" data-mode="system" aria-pressed="true">System</button>
+      <button class="toggle" type="button" data-mode="light" aria-pressed="false">Light</button>
+      <button class="toggle" type="button" data-mode="dark" aria-pressed="false">Dark</button>
+    </div>
+    <div class="toolbar-group">
+      <span class="toolbar-label">Density</span>
+      <button class="toggle" type="button" data-density="comfortable" aria-pressed="true">Comfortable</button>
+      <button class="toggle" type="button" data-density="compact" aria-pressed="false">Compact</button>
+    </div>
+  </div>
+
+  <main>
+    <section>
+      <h1>Phase 1 gate: no components, only tokens</h1>
+      <p class="muted">
+        Every colour and dimension on this page resolves to a
+        <code>var(--hmha-*)</code> custom property. Toggling
+        <code>data-hmha-mode</code> and <code>data-hmha-density</code> on
+        <code>&lt;html&gt;</code> re-themes the whole page with no rebuild —
+        try the buttons above.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Tones</h2>
+      <p class="muted">Each fill pairs with its <code>text-on-*</code> foreground role.</p>
+      <div class="swatch-row">
+        <button class="btn btn-neutral" type="button">Neutral</button>
+        <button class="btn btn-action" type="button">Action</button>
+        <button class="btn btn-danger" type="button">Danger</button>
+        <button class="btn btn-warning" type="button">Warning</button>
+        <button class="btn btn-success" type="button">Success</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Density</h2>
+      <p class="muted">
+        <code>--hmha-control-height</code>, <code>height-sm</code> and
+        <code>height-lg</code> all move together when density flips.
+      </p>
+      <div class="density-row">
+        <button class="btn btn-action btn-sm" type="button">Small</button>
+        <button class="btn btn-action" type="button">Medium</button>
+        <button class="btn btn-action btn-lg" type="button">Large</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Border weight</h2>
+      <div class="border-row">
+        <div class="border-box regular">border</div>
+        <div class="border-box strong">border-strong</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Nested mode</h2>
+      <p class="muted">
+        This inner panel pins <code>data-hmha-mode="dark"</code> on itself, no
+        matter what the page root is set to — the attribute is just a nearer
+        ancestor.
+      </p>
+      <div class="pinned-panel" data-hmha-mode="dark">
+        <h2>Always dark in here</h2>
+        <p class="muted">Surface, text and border roles all re-point locally.</p>
+        <button class="btn btn-action" type="button">Still themed</button>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    var html = document.documentElement;
+
+    function setPressed(selector, activeValue, attr) {
+      document.querySelectorAll(selector).forEach(function (btn) {
+        var isActive = btn.dataset[attr] === activeValue;
+        btn.setAttribute('aria-pressed', String(isActive));
+      });
+    }
+
+    document.querySelectorAll('[data-mode]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var mode = btn.dataset.mode;
+        if (mode === 'system') {
+          html.removeAttribute('data-hmha-mode');
+        } else {
+          html.setAttribute('data-hmha-mode', mode);
+        }
+        setPressed('[data-mode]', mode, 'mode');
+      });
+    });
+
+    document.querySelectorAll('[data-density]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var density = btn.dataset.density;
+        html.setAttribute('data-hmha-density', density);
+        setPressed('[data-density]', density, 'density');
+      });
+    });
+  </script>
+</body>
+</html>
