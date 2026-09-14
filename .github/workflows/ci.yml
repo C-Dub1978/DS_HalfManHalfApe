@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main, trunk]
+  pull_request:
+
+jobs:
+  ci:
+    name: npm run ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run ci
+
+  install-matrix:
+    name: install matrix (@angular/cli@${{ matrix.angular-cli }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Floor (invariant 1) and current — the newest major still inside
+        # the peer range declared in libs/ui/package.json. Widen this list
+        # only once a new major has been verified and the peer range in
+        # CLAUDE.md / libs/ui/package.json is deliberately raised to match.
+        angular-cli: ['20', '21']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: bash scripts/verify-install-matrix.sh ${{ matrix.angular-cli }}
