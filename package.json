@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "ng": "ng",
-    "start": "ng serve sandbox",
+    "start": "npm run build:lib && ng serve sandbox",
     "build": "ng build",
     "build:lib": "ng build hmha-ui",
     "watch": "ng build --watch --configuration development",
