@@ -1,5 +1,5 @@
 {
-  "$description": "MODE LAYER — dark. Same role names as color.light.json, pointed at different primitives. Emits under \"[data-ds-mode='dark']\" AFTER the light layer, so a dark root wins on source order and a nested light subtree still resolves from its nearest ancestor.",
+  "$description": "MODE LAYER — dark. Same role names as color.light.json, pointed at different primitives. Emits under \"[data-hmha-mode='dark']\" AFTER the light layer, so a dark root wins on source order and a nested light subtree still resolves from its nearest ancestor.",
   "color": {
     "$type": "color",
     "bg": {
@@ -33,7 +33,7 @@
       "$value": "{color.neutral.800}"
     },
     "border-strong": {
-      "$value": "{color.neutral.700}"
+      "$value": "{color.neutral.500}"
     },
     "action": {
       "$value": "{color.blue.400}"

@@ -1,12 +1,19 @@
 /**
  * Fails CI when a surface/foreground token pair drops below its WCAG floor,
  * in EITHER mode. This is what stops a future theme from producing an
- * illegible combination nobody catches by eye (Fork 04).
+ * illegible combination nobody catches by eye.
  *
  * Reads the built CSS, resolves var() chains, and checks declared pairs.
  */
 import { readFileSync } from 'node:fs';
 import { wcagContrast, parse } from 'culori';
+
+/** The ONE place the prefix is named. Renaming the system is this line. */
+const PREFIX = 'hmha';
+
+const VAR = `--${PREFIX}-`;
+const MODE_ATTR = `data-${PREFIX}-mode`;
+const BUILT_CSS = 'libs/tokens/src/lib/_all.css';
 
 // [ foreground role, background role, minimum ratio ]
 const PAIRS = [
@@ -25,26 +32,29 @@ const PAIRS = [
   ['focus',           'bg',              3.0],  // the focus ring must be visible
 ];
 
-const css = readFileSync('libs/tokens/src/lib/_all.css', 'utf8');
+const css = readFileSync(BUILT_CSS, 'utf8');
 
+/** Every custom property declared under one selector, keyed WITHOUT the prefix. */
 function scope(selector) {
   const body = css.split(selector + ' {')[1]?.split('}')[0] ?? '';
+  const decl = new RegExp(VAR + '([\\w-]+):\\s*([^;]+);', 'g');
   return Object.fromEntries(
-    [...body.matchAll(/--ds-([\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()])
+    [...body.matchAll(decl)].map((m) => [m[1], m[2].trim()])
   );
 }
 
 const primitives = scope(':root, :host');
 const modes = {
-  light: scope(':root, [data-ds-mode="light"]'),
-  dark:  scope('[data-ds-mode="dark"]'),
+  light: scope(`:root, [${MODE_ATTR}="light"]`),
+  dark:  scope(`[${MODE_ATTR}="dark"]`),
 };
 
-/** Resolve a var(--ds-x) chain down to a literal colour. */
+/** Resolve a var(--<prefix>-x) chain down to a literal colour. */
+const VAR_CALL = `var(${VAR}`;
 function resolve(value, mode) {
   let v = value, guard = 0;
   while (v.startsWith('var(') && guard++ < 10) {
-    const key = v.slice(6, v.indexOf(')'));
+    const key = v.slice(VAR_CALL.length, v.indexOf(')'));
     v = modes[mode][key] ?? primitives[key] ?? '';
   }
   return v;
