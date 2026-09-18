@@ -1,0 +1,14 @@
+{
+  "name": "@halfmanhalfape/hmha-tokens",
+  "version": "0.0.1",
+  "description": "DTCG-built CSS custom properties and TypeScript types for the Half Man Half Ape design system. Pure CSS, zero dependencies — no Angular required.",
+  "type": "module",
+  "style": "./src/lib/_all.css",
+  "types": "./src/lib/hmha-tokens.ts",
+  "files": [
+    "src/lib"
+  ],
+  "sideEffects": [
+    "*.css"
+  ]
+}

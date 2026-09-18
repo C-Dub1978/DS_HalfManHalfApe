@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { HmhaButton } from 'hmha-ui';
+import { HmhaButton } from '@halfmanhalfape/hmha-ui';
 
 @Component({
   selector: 'sandbox-root',

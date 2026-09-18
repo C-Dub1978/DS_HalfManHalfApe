@@ -46,7 +46,7 @@ describe('HmhaButton', () => {
     expect(button.getAttribute('data-size')).toBe('lg');
   });
 
-  it('sets aria-busy while loading, without disabling the control', async () => {
+  it('sets aria-busy and disables the control while loading', async () => {
     fixture.componentRef.setInput('loading', true);
     await fixture.whenStable();
     expect(button.getAttribute('aria-busy')).toBe('true');

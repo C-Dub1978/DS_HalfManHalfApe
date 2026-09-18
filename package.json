@@ -8,7 +8,7 @@
     "build": "ng build",
     "build:lib": "ng build hmha-ui",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test hmha-ui --watch=false --browsers=ChromeHeadless && ng test sandbox --watch=false --browsers=ChromeHeadless",
+    "test": "ng test hmha-ui --watch=false --browsers=ChromeHeadlessNoSandbox && ng test sandbox --watch=false --browsers=ChromeHeadlessNoSandbox",
     "tokens": "node style-dictionary.config.mjs && node scripts/concat-layers.mjs",
     "tokens:watch": "nodemon --watch tokens --ext json --exec \"npm run tokens\"",
     "tokens:contrast": "node scripts/check-contrast.mjs",

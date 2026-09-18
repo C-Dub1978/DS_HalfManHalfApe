@@ -99,7 +99,7 @@ preference works until an app pins a mode and then gets out of the way.
 
 ```ts
 @Component({
-  selector: 'button[hmha+Button]',
+  selector: 'button[hmhaButton]',
   template: '<ng-content />',
   styleUrl: './button.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -153,8 +153,8 @@ export class HmhaButton {
 ```
 tokens/                   DTCG JSON — the source of truth
 libs/
-  tokens/                 build output (git-ignored) → @hmha/hmha-tokens
-  ui/                     Angular components         → @hmha/hmha-ui
+  tokens/                 build output (git-ignored) → @halfmanhalfape/hmha-tokens
+  ui/                     Angular components         → @halfmanhalfape/hmha-ui
   icons/                  SVG sprite + typed registry
 apps/
   sandbox/                the dog-food app; runs zoneless

@@ -85,8 +85,6 @@ mkdirSync(BUILD_PATH, { recursive: true });
 for (const layer of LAYERS) {
   const sd = new StyleDictionary({
     source: layer.source,
-    // DTCG format: $value / $type
-    preprocessors: ['tokens-studio'],
     // Combining files under one layer's source legitimately re-collides their
     // shared root "$description" metadata; that collision is cosmetic, not a
     // token value, so it is not worth the noise.
@@ -119,7 +117,6 @@ for (const layer of LAYERS) {
 
 const typesSd = new StyleDictionary({
   source: ['tokens/primitive/color.json', 'tokens/semantic/color.light.json'],
-  preprocessors: ['tokens-studio'],
   log: { warnings: 'disabled' },
   platforms: {
     ts: {

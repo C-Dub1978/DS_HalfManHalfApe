@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Phase 2 gate: prove hmha-ui's partial-Ivy build installs and renders in a
+# Phase 2 gate: prove @halfmanhalfape/hmha-ui's partial-Ivy build installs and renders in a
 # fresh Angular app on both the version floor (20) and the current release,
 # without ever raising the workspace's own Angular version (invariant 1).
 #
@@ -16,7 +16,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
-echo "── Building and packing hmha-ui ──────────────────────────────────────"
+echo "── Building and packing @halfmanhalfape/hmha-ui ────────────────────────"
 (cd "$ROOT" && npm run build:lib)
 TARBALL_NAME="$(cd "$ROOT/dist/hmha-ui" && npm pack --silent)"
 TARBALL_PATH="$ROOT/dist/hmha-ui/$TARBALL_NAME"
@@ -37,7 +37,7 @@ npm install --legacy-peer-deps "@angular/cdk@>=20.0.0 <22.0.0"
 
 cat > src/app/app.ts <<'EOF'
 import { Component } from '@angular/core';
-import { HmhaButton } from 'hmha-ui';
+import { HmhaButton } from '@halfmanhalfape/hmha-ui';
 
 @Component({
   selector: 'app-root',
@@ -54,4 +54,4 @@ npx ng build
 echo "── Rendering the smoke app in a real headless browser ────────────────"
 node "$ROOT/scripts/render-check.mjs" "$WORKDIR/smoke/dist/smoke/browser"
 
-echo "✓ hmha-ui installs, builds and renders against @angular/cli@${VERSION}"
+echo "✓ @halfmanhalfape/hmha-ui installs, builds and renders against @angular/cli@${VERSION}"

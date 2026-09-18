@@ -164,9 +164,11 @@ maintenance overhead for one person.
 components already tree-shake correctly from a single entry point. Secondary
 entry points are real ng-packagr complexity for no measurable gain.
 
-**Still to decide:** the npm scope and package names — check availability before
-they are written into fifty files — and the license (MIT unless there is a reason
-not to). `CLAUDE.md` carries the publishing mechanics.
+**Scope and package names — decided:** `@halfmanhalfape`, confirmed available on
+npm. `libs/ui/package.json` and `libs/tokens/package.json` carry the names.
+
+**Still to decide:** the license (MIT unless there is a reason not to).
+`CLAUDE.md` carries the publishing mechanics.
 
 ---
 
