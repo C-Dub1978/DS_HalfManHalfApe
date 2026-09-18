@@ -69,7 +69,7 @@ moving and someone owns the round-trip.
 puts literal values back in the output and makes runtime theming impossible.
 Directly contradicts the no-hard-coded-values constraint.
 
-**The critical setting:** `outputReferences: true`. Without it `var(--ds-blue-600)`
+**The critical setting:** `outputReferences: true`. Without it `var(--hmha-blue-600)`
 is flattened to a hex value and runtime theming cannot work. Teams usually
 discover this the week dark mode is promised.
 
@@ -81,9 +81,9 @@ so the linter is the reviewer.
 
 ## 04 — Theming: independent attribute axes
 
-**Decided:** one token sheet. `data-ds-mode` and `data-ds-density` are separate
+**Decided:** one token sheet. `data-hmha-mode` and `data-hmha-density` are separate
 attributes that re-point semantic roles; primitives never change. A thin
-`dsTheme` directive writes the attributes and knows nothing about colour.
+`hmhaTheme` directive writes the attributes and knows nothing about colour.
 
 **Why:** the axes compose instead of multiplying (mode × density would already be
 four built stylesheets; a brand axis would make eight), they nest, and switching
@@ -135,7 +135,40 @@ one maintainer there is no reviewer to catch it.
 | One | Icon system, Button, Card | The whole pipeline at the smallest scale. Button forces variants, sizes, states, focus rings, icon slots and disabled semantics. Icon first, because Button needs it. |
 | Two | Field wrapper, Input, Checkbox, Radio, Switch | One `ControlValueAccessor` pattern and one error/hint/required model, shared by all five. Build together or they will disagree. |
 | Three | Dialog, Menu, Tooltip, Toast, Tabs, then Select / Combobox | Overlay positioning and focus management, built once on `@angular/cdk` and reused. Combobox last — hardest a11y problem in the set, and it wants Menu's foundation working. |
-| **Out** | Table / Data Grid | Post-v1. Ship a `dsTable` directive on a plain `<table>` as the stopgap — an afternoon's work. Sorting, virtualisation, selection and column resizing are a quarter. |
+| **Out** | Table / Data Grid | Post-v1. Ship a `hmhaTable` directive on a plain `<table>` as the stopgap — an afternoon's work. Sorting, virtualisation, selection and column resizing are a quarter. |
+
+---
+
+## 07 — Packaging: two packages, public on npm
+
+**Decided:** publish `@halfmanhalfape/hmha-tokens` (pure CSS + TS types, zero dependencies)
+and `@halfmanhalfape/hmha-ui` (the Angular components) as two public npm packages.
+
+**Why two:** they have different dependency sets and different cadences. Tokens
+change weekly and depend on nothing; components change slowly and depend on
+Angular and the CDK. One package would force a token fix to ship as a component
+release, and would put an Angular peer dependency on something that deliberately
+has no framework in it — which is exactly the portability fork 02 preserved.
+
+**Why `hmha-tokens` is not an Angular library:** it is CSS and types. Running it
+through `ng-packagr` would add a peer dependency it does not need and block the
+non-Angular consumers (marketing site, email templates, a native shell) that are
+the reason tokens are framework-free in the first place.
+
+**Rejected — one package:** couples the cadences and breaks the framework-free
+token story. **Rejected — three packages** (splitting out `hmha-core`): `hmha-core`
+has no independent consumers, and a package nobody installs directly is pure
+maintenance overhead for one person.
+
+**Rejected — secondary entry points** (`@halfmanhalfape/hmha-ui/button`): standalone
+components already tree-shake correctly from a single entry point. Secondary
+entry points are real ng-packagr complexity for no measurable gain.
+
+**Scope and package names — decided:** `@halfmanhalfape`, confirmed available on
+npm. `libs/ui/package.json` and `libs/tokens/package.json` carry the names.
+
+**Still to decide:** the license (MIT unless there is a reason not to).
+`CLAUDE.md` carries the publishing mechanics.
 
 ---
 

@@ -1,8 +1,10 @@
-# Working agreement — Acme Design System
+# Working agreement — Half Man Half Ape Design System
 
-You are working in a **token-driven Angular design system and component library**.
-Phase 1 (the token foundation) is complete and checked in. Read this file before
-making changes; it records decisions that are already settled.
+You are a design architect and expert, and a frontend engineer fluent in Typescript
+and Angular.You are working in a
+**token-driven Angular design system and component library**. Phase 1 (the token
+foundation) is complete and checked in. Read this file before making changes; it
+records decisions that are already settled.
 
 ## Non-negotiable invariants
 
@@ -23,7 +25,7 @@ around them.** If a task appears to require breaking one, stop and say so.
    Never drive a view update from `setTimeout`, `NgZone.onStable`, or anything
    that assumes zone patching.
 5. **No hard-coded values in `libs/ui`.** Every colour, dimension, radius,
-   duration and font value resolves to a `var(--ds-*)` custom property. Stylelint
+   duration and font value resolves to a `var(--hmha-*)` custom property. Stylelint
    enforces this and CI fails on a violation. If a component needs a value that
    no token carries, **a token is missing** — add it to `tokens/` and rebuild.
    Do not inline the literal.
@@ -36,9 +38,9 @@ Three tiers. **References point one direction only: down.**
 
 | Tier | Example | Who may reference it |
 | --- | --- | --- |
-| primitive | `--ds-blue-600`, `--ds-space-4` | semantic tier ONLY |
-| semantic | `--ds-color-action`, `--ds-control-height` | components and applications |
-| component | `--ds-button-bg` | declared by one component; consumers may set it |
+| primitive | `--hmha-blue-600`, `--hmha-space-4` | semantic tier ONLY |
+| semantic | `--hmha-color-action`, `--hmha-control-height` | components and applications |
+| component | `--hmha-button-bg` | declared by one component; consumers may set it |
 
 - Source of truth is DTCG JSON in `tokens/`. Never edit the built CSS.
 - `tokens/semantic/color.light.json` and `color.dark.json` must define the
@@ -46,8 +48,8 @@ Three tiers. **References point one direction only: down.**
 - Density owns exactly seven roles (`control.height`, `height-sm`, `height-lg`,
   `padding-x`, `padding-y`, `gap`, `space.stack`). Resist growing that set — the
   more density touches, the more it becomes a second theme to maintain.
-- Name tokens by **role, not appearance**. `--ds-color-action`, never
-  `--ds-color-blue`.
+- Name tokens by **role, not appearance**. `--hmha-color-action`, never
+  `--hmha-color-blue`.
 - Every fill role has a matching `text-on-*` foreground role, and
   `scripts/check-contrast.mjs` asserts the pair in both modes. Adding a fill
   means adding its foreground.
@@ -65,23 +67,23 @@ Three tiers. **References point one direction only: down.**
 Two independent, composable axes as attributes — never as separate stylesheets,
 and never as a theme object injected through DI:
 
-- `data-ds-mode="light|dark"` — re-points semantic colour roles.
-- `data-ds-density="comfortable|compact"` — re-points the control roles.
+- `data-hmha-mode="light|dark"` — re-points semantic colour roles.
+- `data-hmha-density="comfortable|compact"` — re-points the control roles.
 
 Both nest. A dark panel inside a light page requires no extra CSS.
-`prefers-color-scheme` applies only under `:root:not([data-ds-mode])`, so the OS
+`prefers-color-scheme` applies only under `:root:not([data-hmha-mode])`, so the OS
 preference works until an app pins a mode and then gets out of the way.
 
 ## Component conventions
 
-- **Prefer an attribute selector on a native element**: `button[dsButton]`, not
-  `<ds-button>`. You inherit real semantics, keyboard behaviour, form submission
+- **Prefer an attribute selector on a native element**: `button[hmhaButton]`, not
+  `<hmha-button>`. You inherit real semantics, keyboard behaviour, form submission
   and `type`. Use a custom element name only where no native element fits
   (Dialog, Tabs, Toast).
 - **Variants are `data-*` attributes, not classes** — set via the `host` object,
   styled with `:host([data-tone="primary"])`. A consumer's stray class cannot
   collide with an attribute selector.
-- **Class names drop the suffix**: `DsButton`, not `DsButtonComponent`.
+- **Class names drop the suffix**: `HmhaButton`, not `HmhaButtonComponent`.
 - **Component tokens are the public override API.** Declare them on `:host`, then
   consume them in the same file. Document them in the component's README.
 - `ChangeDetectionStrategy.OnPush` on every component.
@@ -97,7 +99,7 @@ preference works until an app pins a mode and then gets out of the way.
 
 ```ts
 @Component({
-  selector: 'button[dsButton]',
+  selector: 'button[hmhaButton]',
   template: '<ng-content />',
   styleUrl: './button.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -108,9 +110,9 @@ preference works until an app pins a mode and then gets out of the way.
     '[disabled]': 'disabled() || loading()',
   },
 })
-export class DsButton {
-  readonly tone = input<DsTone>('neutral');
-  readonly size = input<DsSize>('md');
+export class HmhaButton {
+  readonly tone = input<HmhaTone>('neutral');
+  readonly size = input<HmhaSize>('md');
   readonly loading  = input(false, { transform: booleanAttribute });
   readonly disabled = input(false, { transform: booleanAttribute });
 }
@@ -120,29 +122,29 @@ export class DsButton {
 /* button.css — declare the override API, then consume it.
    Not one literal value in the file. */
 :host {
-  --ds-button-bg: var(--ds-color-surface-raised);
-  --ds-button-fg: var(--ds-color-text);
+  --hmha-button-bg: var(--hmha-color-surface-raised);
+  --hmha-button-fg: var(--hmha-color-text);
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--ds-control-gap);
-  min-height: var(--ds-control-height);
-  padding-inline: var(--ds-control-padding-x);
-  background: var(--ds-button-bg);
-  color: var(--ds-button-fg);
-  border-radius: var(--ds-radius-control);
-  border: var(--ds-border-width) solid transparent;
+  gap: var(--hmha-control-gap);
+  min-height: var(--hmha-control-height);
+  padding-inline: var(--hmha-control-padding-x);
+  background: var(--hmha-button-bg);
+  color: var(--hmha-button-fg);
+  border-radius: var(--hmha-radius-control);
+  border: var(--hmha-border-width) solid transparent;
 }
 :host([data-tone="primary"]) {
-  --ds-button-bg: var(--ds-color-action);
-  --ds-button-fg: var(--ds-color-text-on-action);
+  --hmha-button-bg: var(--hmha-color-action);
+  --hmha-button-fg: var(--hmha-color-text-on-action);
 }
-:host([data-tone="primary"]:hover) { --ds-button-bg: var(--ds-color-action-hover); }
-:host([data-size="sm"]) { min-height: var(--ds-control-height-sm); }
+:host([data-tone="primary"]:hover) { --hmha-button-bg: var(--hmha-color-action-hover); }
+:host([data-size="sm"]) { min-height: var(--hmha-control-height-sm); }
 :host(:focus-visible) {
-  outline: var(--ds-focus-width) solid var(--ds-color-focus);
-  outline-offset: var(--ds-focus-offset);
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
 }
 ```
 
@@ -151,8 +153,8 @@ export class DsButton {
 ```
 tokens/                   DTCG JSON — the source of truth
 libs/
-  tokens/                 build output (git-ignored) → @acme/ds-tokens
-  ui/                     Angular components         → @acme/ds-ui
+  tokens/                 build output (git-ignored) → @halfmanhalfape/hmha-tokens
+  ui/                     Angular components         → @halfmanhalfape/hmha-ui
   icons/                  SVG sprite + typed registry
 apps/
   sandbox/                the dog-food app; runs zoneless
@@ -177,22 +179,22 @@ pipeline, and the two CI guards. `reference/tokens.css` is a checked-in copy of
 the expected output — compare against it after your first `npm run tokens`.
 
 **Phase 1's remaining gate**: a sandbox page containing *no components* — plain
-divs and buttons styled only with `var(--ds-*)` — where flipping
-`data-ds-mode` and `data-ds-density` on `<html>` re-themes everything with no
+divs and buttons styled only with `var(--hmha-*)` — where flipping
+`data-hmha-mode` and `data-hmha-density` on `<html>` re-themes everything with no
 rebuild, and a nested panel can hold the opposite mode. Build that before any
 component.
 
 ## Next task — phase 2
 
 1. Scaffold the workspace on Angular 20:
-   `npx @angular/cli@20 new ds-workspace --create-application=false --style=css`
-   then `ng generate library ds-ui` and `ng generate application sandbox`.
+   `npx @angular/cli@20 new hmha-workspace --create-application=false --style=css`
+   then `ng generate library hmha-ui` and `ng generate application sandbox`.
 2. `provideZonelessChangeDetection()` in the sandbox's app config.
-3. `ds-core`: the generated types from `libs/tokens`, plus CDK setup.
+3. `hmha-core`: the generated types from `libs/tokens`, plus CDK setup.
 4. Wire `npm run ci` into CI, including a **two-version install matrix**:
    install the packed library into an Angular 20 app and a current-version app
    and assert both render. This is the gate that ends phase 2.
-5. Build `DsButton` per the recipe above, with a documented component-token
+5. Build `HmhaButton` per the recipe above, with a documented component-token
    table and an axe-clean interaction test.
 
 Then phase 3 wave 1: Icon system, Button, Card. Waves and scope are in

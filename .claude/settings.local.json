@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(npm run *)",
+      "Bash(rm -f scratch-contrast-test.mjs)"
+    ],
+    "additionalDirectories": [
+      "/home/cdub-dell/Design/Projects/HalfManHalfApe"
+    ]
+  }
+}

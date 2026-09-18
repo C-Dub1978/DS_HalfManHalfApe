@@ -1,5 +1,5 @@
 {
-  "$description": "DENSITY LAYER — compact. Same role names as comfortable. Emits under \"[data-ds-density='compact']\".",
+  "$description": "DENSITY LAYER — compact. Same role names as comfortable. Emits under \"[data-hmha-density='compact']\".",
   "control": {
     "$type": "dimension",
     "height": {

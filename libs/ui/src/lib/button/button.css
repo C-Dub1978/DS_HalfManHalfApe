@@ -1,0 +1,76 @@
+/* button.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-button-bg: var(--hmha-color-surface-raised);
+  --hmha-button-bg-hover: var(--hmha-color-bg-subtle);
+  --hmha-button-bg-active: var(--hmha-color-bg-subtle);
+  --hmha-button-fg: var(--hmha-color-text);
+  --hmha-button-border: var(--hmha-color-border-strong);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hmha-control-gap);
+  min-height: var(--hmha-control-height);
+  padding-inline: var(--hmha-control-padding-x);
+  background: var(--hmha-button-bg);
+  color: var(--hmha-button-fg);
+  border-radius: var(--hmha-radius-control);
+  border: var(--hmha-border-width) solid var(--hmha-button-border);
+  font: inherit;
+  font-size: var(--hmha-type-label-md-size);
+  font-weight: var(--hmha-type-label-md-weight);
+  cursor: pointer;
+  transition: background var(--hmha-duration-fast) var(--hmha-easing-standard);
+}
+
+:host(:hover:not(:disabled)) { background: var(--hmha-button-bg-hover); }
+:host(:active:not(:disabled)) { background: var(--hmha-button-bg-active); }
+
+:host(:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}
+
+:host([data-tone="primary"]) {
+  --hmha-button-bg: var(--hmha-color-action);
+  --hmha-button-bg-hover: var(--hmha-color-action-hover);
+  --hmha-button-bg-active: var(--hmha-color-action-active);
+  --hmha-button-fg: var(--hmha-color-text-on-action);
+  --hmha-button-border: transparent;
+}
+
+/* danger/warning/success have no hover/active token roles of their own —
+   pin the hover/active background to the tone's base fill rather than
+   leaking the neutral :host default on hover. */
+:host([data-tone="danger"]) {
+  --hmha-button-bg: var(--hmha-color-danger);
+  --hmha-button-bg-hover: var(--hmha-color-danger);
+  --hmha-button-bg-active: var(--hmha-color-danger);
+  --hmha-button-fg: var(--hmha-color-text-on-danger);
+  --hmha-button-border: transparent;
+}
+
+:host([data-tone="warning"]) {
+  --hmha-button-bg: var(--hmha-color-warning);
+  --hmha-button-bg-hover: var(--hmha-color-warning);
+  --hmha-button-bg-active: var(--hmha-color-warning);
+  --hmha-button-fg: var(--hmha-color-text-on-warning);
+  --hmha-button-border: transparent;
+}
+
+:host([data-tone="success"]) {
+  --hmha-button-bg: var(--hmha-color-success);
+  --hmha-button-bg-hover: var(--hmha-color-success);
+  --hmha-button-bg-active: var(--hmha-color-success);
+  --hmha-button-fg: var(--hmha-color-text-on-success);
+  --hmha-button-border: transparent;
+}
+
+:host([data-size="sm"]) { min-height: var(--hmha-control-height-sm); }
+:host([data-size="lg"]) { min-height: var(--hmha-control-height-lg); }
