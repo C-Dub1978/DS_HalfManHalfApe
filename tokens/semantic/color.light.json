@@ -1,5 +1,5 @@
 {
-  "$description": "MODE LAYER — light. Re-points semantic colour roles at primitives. This file is the ONLY place light mode is defined; it emits under \":root, [data-ds-mode='light']\" so light is the default with no attribute required.",
+  "$description": "MODE LAYER — light. Re-points semantic colour roles at primitives. This file is the ONLY place light mode is defined; it emits under \":root, [data-hmha-mode='light']\" so light is the default with no attribute required.",
   "color": {
     "$type": "color",
     "bg": {
@@ -33,7 +33,7 @@
       "$value": "{color.neutral.200}"
     },
     "border-strong": {
-      "$value": "{color.neutral.300}"
+      "$value": "{color.neutral.500}"
     },
     "action": {
       "$value": "{color.blue.600}"

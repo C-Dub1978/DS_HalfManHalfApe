@@ -1,5 +1,5 @@
 {
-  "$description": "DENSITY LAYER — comfortable. Independent of mode: the two axes compose without multiplying. Emits under \":root, [data-ds-density='comfortable']\".",
+  "$description": "DENSITY LAYER — comfortable. Independent of mode: the two axes compose without multiplying. Emits under \":root, [data-hmha-density='comfortable']\".",
   "control": {
     "$type": "dimension",
     "height": {
