@@ -25,3 +25,11 @@ h1 {
   align-items: center;
   gap: var(--hmha-control-gap);
 }
+
+.cards {
+  align-items: stretch;
+}
+
+.cards > * {
+  flex: 1 1 var(--hmha-size-12);
+}

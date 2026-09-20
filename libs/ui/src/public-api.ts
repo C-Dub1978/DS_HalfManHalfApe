@@ -3,4 +3,7 @@
  */
 
 export * from './lib/button/button';
+export * from './lib/card/card';
 export * from './lib/core/types';
+export * from './lib/icon/icon';
+export * from './lib/icon/icon-registry';

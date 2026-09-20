@@ -22,4 +22,56 @@
     <button hmhaButton tone="primary" loading="true">Loading</button>
     <button hmhaButton tone="primary" disabled="true">Disabled</button>
   </section>
+
+  <section class="row">
+    <hmha-icon name="check" size="sm" />
+    <hmha-icon name="check" size="md" />
+    <hmha-icon name="check" size="lg" />
+    <hmha-icon name="close" />
+    <hmha-icon name="chevron-down" />
+    <hmha-icon name="spinner" />
+  </section>
+
+  <section class="row">
+    <button hmhaButton tone="primary" size="sm">
+      <hmha-icon name="check" size="sm" />
+      Save
+    </button>
+    <button hmhaButton tone="danger">
+      <hmha-icon name="close" />
+      Discard
+    </button>
+    <button hmhaButton tone="primary" loading="true">
+      <hmha-icon name="spinner" />
+      Saving
+    </button>
+    <button hmhaButton tone="neutral" aria-label="More options">
+      <hmha-icon name="chevron-down" />
+    </button>
+  </section>
+
+  <section class="row cards">
+    <hmha-card>
+      <span hmhaCardHeader>Flat card</span>
+      <p>Bordered, no shadow — the default surface.</p>
+    </hmha-card>
+
+    <hmha-card elevated="true">
+      <span hmhaCardHeader>Elevated card</span>
+      <p>Shadow instead of a border, via <code>data-elevated</code>.</p>
+      <span hmhaCardFooter>Updated just now</span>
+    </hmha-card>
+
+    <div data-hmha-mode="dark">
+      <hmha-card elevated="true">
+        <span hmhaCardHeader>Nested dark panel</span>
+        <p>
+          <button hmhaButton tone="primary" size="sm">
+            <hmha-icon name="check" size="sm" />
+            Confirm
+          </button>
+        </p>
+      </hmha-card>
+    </div>
+  </section>
 </main>
