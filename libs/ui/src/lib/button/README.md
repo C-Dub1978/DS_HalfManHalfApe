@@ -35,6 +35,24 @@ own yet (see `tokens/semantic/color.*.json`), so their hover/active state
 currently pins to the tone's base fill rather than shifting shade. Add
 `*-hover`/`*-active` semantic roles first if that changes.
 
+## Composing icons
+
+`HmhaIcon` drops into the default content slot — the host is already
+`inline-flex` with `gap: var(--hmha-control-gap)`, so no extra markup or CSS
+is needed:
+
+```html
+<button hmhaButton tone="primary" size="sm">
+  <hmha-icon name="check" size="sm" />
+  Save
+</button>
+```
+
+Match the icon's `size` to the button's `size` (`sm`/`sm`, `md`/`md`,
+`lg`/`lg`) for visual balance — there is no automatic coupling between them.
+For an icon-only button, set `aria-label` on the `<button>` itself; the icon
+is `aria-hidden` and carries no accessible name of its own.
+
 ## Unsupported
 
 `::ng-deep`, selectors targeting internal DOM, or overriding by specificity —

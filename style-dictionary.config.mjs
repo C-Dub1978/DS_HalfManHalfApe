@@ -24,7 +24,12 @@ const LAYERS = [
     name: 'base',
     selector: ':root, :host',
     // primitives + the semantic roles that vary by neither mode nor density
-    source: ['tokens/primitive/**/*.json', 'tokens/semantic/dimension.json', 'tokens/semantic/type.json'],
+    source: [
+      'tokens/primitive/**/*.json',
+      'tokens/semantic/dimension.json',
+      'tokens/semantic/type.json',
+      'tokens/semantic/effect.json',
+    ],
     match: () => true,
   },
   {

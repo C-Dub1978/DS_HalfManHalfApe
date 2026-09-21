@@ -1,0 +1,36 @@
+/* card.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-card-bg: var(--hmha-color-surface-raised);
+  --hmha-card-border: var(--hmha-color-border);
+  --hmha-card-fg: var(--hmha-color-text);
+  --hmha-card-shadow: none;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--hmha-control-gap);
+  background: var(--hmha-card-bg);
+  color: var(--hmha-card-fg);
+  border: var(--hmha-border-width) solid var(--hmha-card-border);
+  border-radius: var(--hmha-radius-surface);
+  box-shadow: var(--hmha-card-shadow);
+  padding: var(--hmha-control-padding-y) var(--hmha-control-padding-x);
+  font-size: var(--hmha-type-body-md-size);
+  line-height: var(--hmha-type-body-md-line);
+}
+
+:host([data-elevated]) {
+  --hmha-card-shadow: var(--hmha-elevation-raised);
+  --hmha-card-border: transparent;
+}
+
+.hmha-card-header {
+  font-size: var(--hmha-type-heading-md-size);
+  line-height: var(--hmha-type-heading-md-line);
+  font-weight: var(--hmha-type-heading-md-weight);
+}
+
+.hmha-card-header:empty,
+.hmha-card-footer:empty {
+  display: none;
+}

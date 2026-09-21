@@ -1,0 +1,9 @@
+{
+  "$description": "Semantic elevation roles. Independent of mode and density, so it lives in the base layer alongside dimension.json and type.json.",
+  "elevation": {
+    "$type": "shadow",
+    "raised": {
+      "$value": "{shadow.sm}"
+    }
+  }
+}
