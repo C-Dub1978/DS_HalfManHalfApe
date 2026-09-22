@@ -50,8 +50,28 @@ is needed:
 
 Match the icon's `size` to the button's `size` (`sm`/`sm`, `md`/`md`,
 `lg`/`lg`) for visual balance — there is no automatic coupling between them.
-For an icon-only button, set `aria-label` on the `<button>` itself; the icon
-is `aria-hidden` and carries no accessible name of its own.
+
+## HmhaIconButton — icon-only buttons
+
+```html
+<button hmhaButton hmhaIconButton label="More options" tone="neutral">
+  <hmha-icon name="more-vertical" />
+</button>
+```
+
+`hmhaIconButton` is a second attribute directive that stacks on `hmhaButton`
+on the same native `<button>` — it carries no styles of its own. It:
+
+- requires a `label` input and writes it to `aria-label`. Since `HmhaIcon` is
+  always `aria-hidden`, a plain `hmhaButton` with only an icon inside has no
+  accessible name; `hmhaIconButton` makes that structurally impossible to
+  forget rather than relying on the consumer to remember `aria-label`.
+- sets `data-icon-only`, which `button.css` uses to square the control
+  (`width` pinned to `--hmha-control-height*`, horizontal padding dropped)
+  instead of letting the icon's intrinsic width drive it.
+
+`tone`, `size`, `loading` and `disabled` all still come from `hmhaButton` —
+`hmhaIconButton` only adds the label requirement and the square sizing.
 
 ## Unsupported
 

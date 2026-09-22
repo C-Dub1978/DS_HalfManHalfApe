@@ -17,7 +17,7 @@ WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
 echo "── Building and packing @halfmanhalfape/hmha-ui ────────────────────────"
-(cd "$ROOT" && npm run build:lib)
+(cd "$ROOT" && npm run icons && npm run build:lib)
 TARBALL_NAME="$(cd "$ROOT/dist/hmha-ui" && npm pack --silent)"
 TARBALL_PATH="$ROOT/dist/hmha-ui/$TARBALL_NAME"
 echo "Packed: $TARBALL_PATH"
