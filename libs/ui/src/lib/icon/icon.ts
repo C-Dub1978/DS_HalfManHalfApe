@@ -5,7 +5,10 @@ import { HMHA_ICONS, type HmhaIconName } from './icon-registry';
 
 @Component({
   selector: 'hmha-icon',
-  template: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" [innerHTML]="markup()"></svg>',
+  template:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" ' +
+    '[innerHTML]="markup()"></svg>',
   styleUrl: './icon.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

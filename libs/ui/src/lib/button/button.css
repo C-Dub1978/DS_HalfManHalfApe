@@ -74,3 +74,12 @@
 
 :host([data-size="sm"]) { min-height: var(--hmha-control-height-sm); }
 :host([data-size="lg"]) { min-height: var(--hmha-control-height-lg); }
+
+/* set by HmhaIconButton — square the control instead of letting content
+   width drive it, and drop the horizontal padding meant for a text label. */
+:host([data-icon-only]) {
+  padding-inline: 0;
+  width: var(--hmha-control-height);
+}
+:host([data-icon-only][data-size="sm"]) { width: var(--hmha-control-height-sm); }
+:host([data-icon-only][data-size="lg"]) { width: var(--hmha-control-height-lg); }

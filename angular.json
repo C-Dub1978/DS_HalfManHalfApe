@@ -33,6 +33,22 @@
               "libs/tokens/src/lib/_all.css"
             ]
           }
+        },
+        "storybook": {
+          "builder": "@storybook/angular-vite:start-storybook",
+          "options": {
+            "configDir": "libs/ui/.storybook",
+            "browserTarget": "hmha-ui:build",
+            "port": 6006
+          }
+        },
+        "build-storybook": {
+          "builder": "@storybook/angular-vite:build-storybook",
+          "options": {
+            "configDir": "libs/ui/.storybook",
+            "browserTarget": "hmha-ui:build",
+            "outputDir": "dist/storybook/hmha-ui"
+          }
         }
       }
     },

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "ng": "ng",
-    "start": "npm run build:lib && ng serve sandbox",
+    "start": "npm run icons && npm run build:lib && ng serve sandbox",
     "build": "ng build",
     "build:lib": "ng build hmha-ui",
     "watch": "ng build --watch --configuration development",
@@ -12,9 +12,10 @@
     "tokens": "node style-dictionary.config.mjs && node scripts/concat-layers.mjs",
     "tokens:watch": "nodemon --watch tokens --ext json --exec \"npm run tokens\"",
     "tokens:contrast": "node scripts/check-contrast.mjs",
+    "icons": "node scripts/generate-icons.mjs",
     "lint:css": "stylelint \"libs/ui/**/*.css\"",
     "lint:standalone": "if grep -rn '@NgModule' libs apps --include='*.ts'; then echo 'NgModule found — invariant 2' && exit 1; fi",
-    "ci": "npm run tokens && npm run tokens:contrast && npm run lint:css && npm run lint:standalone && npm run build:lib && npm test"
+    "ci": "npm run tokens && npm run tokens:contrast && npm run icons && npm run lint:css && npm run lint:standalone && npm run build:lib && npm test"
   },
   "prettier": {
     "printWidth": 100,
@@ -54,6 +55,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "lucide-static": "^1.47.0",
     "ng-packagr": "^20.3.0",
     "nodemon": "^3.1.0",
     "playwright": "^1.63.0",
@@ -61,6 +63,19 @@
     "style-dictionary": "^5.5.4",
     "stylelint": "^16.0.0",
     "typescript": "~5.9.2",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "@storybook/angular-vite": "^10.6.0",
+    "@chromatic-com/storybook": "latest",
+    "@storybook/addon-a11y": "^10.6.0",
+    "@storybook/addon-docs": "^10.6.0",
+    "@storybook/addon-onboarding": "^10.6.0",
+    "@types/node": "^20",
+    "@angular-devkit/build-angular": "^20.3.0",
+    "@angular-devkit/architect": "^0.2003.0",
+    "@angular-devkit/core": "^20.3.0",
+    "@angular/animations": "^20.3.0",
+    "@analogjs/vite-plugin-angular": "^2.5.2",
+    "vite": "latest",
+    "@vitest/coverage-v8": "4.1.11"
   }
 }
