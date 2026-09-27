@@ -302,10 +302,26 @@ criteria) lives in `CLAUDE.md` — this section only tracks where we are.
    (`field.ts`, `field.css`, `field.spec.ts`, `README.md`). Recorded as
    fork 09. 11 new unit tests (42/42 total), `build:lib`/`lint:css`/
    `lint:standalone` clean.
-8. [ ] **3B.** Story: Field wrapper **← CURRENT STEP**
-9. [ ] **4A.** Build Input + tests
-10. [ ] **4B.** Story: Input
-11. [ ] **5A.** Build Checkbox + tests
+8. [x] **3B.** Story: Field wrapper — `field.stories.ts` (Playground,
+   WithHint, WithError, Required, FormExample). Added `exportAs: 'hmhaField'`
+   to `HmhaField` along the way, so a template reference can read the field
+   context without a custom control class — used by FormExample to wire
+   plain `<input>` stand-ins to their real `id`/`aria-*`, which is also what
+   surfaced the need (axe flagged an unlabeled input otherwise). All 22
+   stories across the library pass `test-run` (incl. a11y).
+9. [x] **4A.** Build Input + tests — `libs/ui/src/lib/input/` (`input.ts`,
+   `input.css`, `input.spec.ts`, `README.md`). `input[hmhaInput]` on the
+   native `<input>`, composes `hmhaValueAccessor` (fork 08) and optionally
+   consumes `HMHA_FIELD` (fork 09) — no new architectural decision, both
+   patterns applied as designed. 12 new unit tests (5 reactive-forms
+   integration via `[formControl]`, 7 standalone/field-DI/a11y; 54/54
+   total), `build:lib`/`lint:css`/`lint:standalone` clean.
+10. [x] **4B.** Story: Input — `input.stories.ts` (Playground, Sizes,
+    Disabled, Invalid, WithField, TypingInteraction). WithField is the
+    first story to prove the HMHA_FIELD contract end to end with a real
+    control instead of a stand-in. All 28 stories across the library pass
+    `test-run` (incl. a11y).
+11. [ ] **5A.** Build Checkbox + tests **← CURRENT STEP**
 12. [ ] **5B.** Story: Checkbox
 13. [ ] **6A.** Build Radio + tests
 14. [ ] **6B.** Story: Radio

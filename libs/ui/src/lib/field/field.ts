@@ -5,6 +5,7 @@ import {
   type Signal,
   booleanAttribute,
   computed,
+  forwardRef,
   inject,
   input,
 } from '@angular/core';
@@ -45,7 +46,8 @@ export const HMHA_FIELD = new InjectionToken<HmhaFieldContext>('HMHA_FIELD');
   `,
   styleUrl: './field.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [{ provide: HMHA_FIELD, useExisting: HmhaField }],
+  exportAs: 'hmhaField',
+  providers: [{ provide: HMHA_FIELD, useExisting: forwardRef(() => HmhaField) }],
 })
 export class HmhaField implements HmhaFieldContext {
   private readonly id = inject(_IdGenerator).getId('hmha-field-');

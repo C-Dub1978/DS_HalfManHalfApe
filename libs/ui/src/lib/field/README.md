@@ -61,6 +61,16 @@ an `HmhaField`, with `field` simply `null`. This is the same contract
 `HmhaInput`, `HmhaCheckbox`, `HmhaRadioGroup` and `HmhaSwitch` all consume;
 build a custom control the same way to integrate with `HmhaField` too.
 
+For a plain native element you don't control the class of (or in a
+template, without writing a directive), `HmhaField` also exports itself as
+`hmhaField` (`exportAs`), so a template reference works instead:
+
+```html
+<hmha-field label="Company" hint="Optional." #f="hmhaField">
+  <input [attr.id]="f.controlId()" [attr.aria-describedby]="f.describedBy()" />
+</hmha-field>
+```
+
 ## Component tokens — the override API
 
 | Token | Default | Set by |

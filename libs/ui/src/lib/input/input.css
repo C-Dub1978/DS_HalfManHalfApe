@@ -1,0 +1,45 @@
+/* input.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-input-bg: var(--hmha-color-surface);
+  --hmha-input-fg: var(--hmha-color-text);
+  --hmha-input-border: var(--hmha-color-border);
+  --hmha-input-border-focus: var(--hmha-color-focus);
+
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: var(--hmha-control-height);
+  padding-inline: var(--hmha-control-padding-x);
+  padding-block: var(--hmha-control-padding-y);
+  background: var(--hmha-input-bg);
+  color: var(--hmha-input-fg);
+  border: var(--hmha-border-width) solid var(--hmha-input-border);
+  border-radius: var(--hmha-radius-control);
+  font: inherit;
+  font-size: var(--hmha-type-body-md-size);
+  line-height: var(--hmha-type-body-md-line);
+  transition: border-color var(--hmha-duration-fast) var(--hmha-easing-standard);
+}
+
+:host::placeholder {
+  color: var(--hmha-color-text-subtle);
+}
+
+:host([data-size="sm"]) { min-height: var(--hmha-control-height-sm); }
+:host([data-size="lg"]) { min-height: var(--hmha-control-height-lg); }
+
+:host([data-invalid]) {
+  --hmha-input-border: var(--hmha-color-danger);
+}
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+  border-color: var(--hmha-input-border-focus);
+}
+
+:host(:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

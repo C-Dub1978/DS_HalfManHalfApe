@@ -184,6 +184,18 @@ The component library lives in `libs/ui`, and its Storybook config is in `libs/u
   only `preview.ts` can provide one. If a story ever renders with no colors,
   wrong font, or a white canvas, check that these imports are still there
   before assuming a component regressed.
+- **If a story fails with `Component '...' is not resolved: styleUrl: ...
+  Did you run and wait for 'resolveComponentResources()'?`**, don't assume
+  the styleUrl is actually the problem — this is Angular JIT's generic
+  failure message. In practice here it has fired for the *first* story
+  written against any brand-new component file in a given dev-server
+  session (seen for both `HmhaField`, which added a new `@angular/cdk/*`
+  import, and `HmhaInput`, which didn't) — the long-running Storybook dev
+  server seems to need a restart to pick up a component it's never loaded
+  before. A page reload alone isn't enough; restart the dev server
+  (`npm run storybook`) and clear `node_modules/.cache/storybook` first if
+  a restart alone doesn't fix it. Ask before killing it if someone has it
+  open — a restart briefly disconnects any open preview.
 - **Every component in `libs/ui` needs a colocated story file**, in the same
   folder as its component/template/stylesheet, named after the component's
   own filename — `button.ts` → `button.stories.ts`,
