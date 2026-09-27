@@ -1,0 +1,22 @@
+/* Storybook's own preview-canvas reset — mirrors apps/sandbox/src/styles.css.
+   Kept colocated and duplicated rather than importing the sandbox app's file
+   directly, so Storybook's preview stays self-contained and isn't coupled to
+   an app that exists for a different reason. */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--hmha-color-bg);
+  color: var(--hmha-color-text);
+  font-family: var(--hmha-font-family);
+  font-size: var(--hmha-type-body-md-size);
+  line-height: var(--hmha-type-body-md-line);
+  font-weight: var(--hmha-type-body-md-weight);
+}

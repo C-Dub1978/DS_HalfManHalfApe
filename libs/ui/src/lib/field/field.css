@@ -1,0 +1,38 @@
+/* field.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-field-label-fg: var(--hmha-color-text);
+  --hmha-field-hint-fg: var(--hmha-color-text-muted);
+  --hmha-field-error-fg: var(--hmha-color-danger-text);
+  --hmha-field-required-fg: var(--hmha-color-danger);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--hmha-space-stack);
+}
+
+.hmha-field-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--hmha-control-gap);
+  font-size: var(--hmha-type-label-md-size);
+  line-height: var(--hmha-type-label-md-line);
+  font-weight: var(--hmha-type-label-md-weight);
+  color: var(--hmha-field-label-fg);
+}
+
+.hmha-field-required {
+  color: var(--hmha-field-required-fg);
+}
+
+.hmha-field-hint {
+  font-size: var(--hmha-type-label-md-size);
+  line-height: var(--hmha-type-label-md-line);
+  color: var(--hmha-field-hint-fg);
+}
+
+.hmha-field-error {
+  font-size: var(--hmha-type-label-md-size);
+  line-height: var(--hmha-type-label-md-line);
+  color: var(--hmha-field-error-fg);
+}

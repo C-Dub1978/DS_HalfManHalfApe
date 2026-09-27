@@ -1,6 +1,6 @@
 # Decisions of record
 
-Eight architectural forks, decided. Each entry gives the decision, the rejected
+Nine architectural forks, decided. Each entry gives the decision, the rejected
 alternatives, and the reasoning — so a later contributor can tell a settled
 decision from an accident.
 
@@ -224,6 +224,48 @@ attribute outside a `FormGroup`.
 
 ---
 
+## 09 — Field/control contract: DI-provided context, not imperative wiring
+
+**Decided:** `HmhaField` provides `HMHA_FIELD` (`InjectionToken<HmhaFieldContext>`)
+via `providers: [{ provide: HMHA_FIELD, useExisting: HmhaField }]`. Any
+wrapped control injects it with `inject(HMHA_FIELD, { optional: true })` and
+reflects `controlId`/`invalid`/`describedBy`/`required` onto its own host
+attributes (`id`, `aria-invalid`, `aria-describedby`, `aria-required`).
+`HmhaField` itself never inspects or manipulates its projected content.
+
+**Why:** decouples `HmhaField` from knowing what it wraps — Input, Checkbox,
+`HmhaRadioGroup`, Switch, and any consumer's own custom control all
+integrate the same way, and `HmhaField` doesn't grow a case per control
+type. `optional: true` on the inject call keeps every control's standalone
+(outside-`HmhaField`) usage working unchanged — `field` is simply `null`.
+
+**Rejected — `HmhaField` reads its projected child via `contentChild()` and
+sets attributes on it imperatively:** requires `HmhaField` to know the
+concrete child type (or introspect the DOM) to know which element/attributes
+to target, breaking encapsulation and coupling the wrapper to every control
+it might ever wrap.
+
+**Unique IDs use `@angular/cdk/a11y`'s `_IdGenerator`, not a hand-rolled
+counter:** per CLAUDE.md's "use CDK for a11y, don't hand-roll it" — the CDK
+already solves exactly this (the same mechanism Angular Material uses
+internally for label/description association), and it's SSR-safe for free.
+
+**`HmhaField` renders no background of its own.** It's a layout wrapper, not
+a surface — `HmhaCard` and the page body own backgrounds. This means the
+hint/error text's contrast is only guaranteed against a page that has
+already applied `--hmha-color-bg` (or a card's `--hmha-card-bg`). This
+surfaced as a real gap while writing `field.spec.ts`'s axe check — the Karma
+test fixture has no body background, unlike `apps/sandbox/src/styles.css` —
+fixed in the test (give the fixture a realistic background before asserting
+contrast) rather than the component. Documented in the component's README so
+it isn't mistaken for a bug later.
+
+**Error takes precedence over hint, never both:** one `aria-describedby`
+target at a time, simpler mental model, and avoids a sighted user reading
+stale help text alongside an active error.
+
+---
+
 ## Wave 2 progress — the step tracker
 
 **This section is the single source of truth for Wave 2 status.** Update the
@@ -244,10 +286,23 @@ criteria) lives in `CLAUDE.md` — this section only tracks where we are.
 4. [x] **2b.** Story: `HmhaButton` — `button.stories.ts` (Playground, Tones,
    Sizes, Loading, Disabled, WithIcon, ClickInteraction). All pass
    `test-run` (incl. a11y and the click/aria-state play functions).
-5. [ ] **2c.** Story: `HmhaIconButton` **← CURRENT STEP**
-6. [ ] **2d.** Story: `HmhaCard`
-7. [ ] **3A.** Build Field wrapper + tests
-8. [ ] **3B.** Story: Field wrapper
+5. [x] **2c.** Story: `HmhaIconButton` — `icon-button.stories.ts`
+   (Playground, TonesAndSizes). All pass `test-run` (incl. a11y and the
+   aria-label/data-icon-only play function).
+6. [x] **2d.** Story: `HmhaCard` — `card.stories.ts` (Playground, Elevated,
+   BodyOnly, FlatAndElevated). Along the way, Storybook's a11y check caught a
+   real bug in `HmhaCard`'s markup: `<header>`/`<footer>` outside a
+   sectioning element become page-level `banner`/`contentinfo` landmarks, so
+   every card on a page was a duplicate, unlabeled landmark. Fixed by
+   switching to plain `<div class="hmha-card-header/footer">` — purely
+   structural, no visual or CSS change (styling was already class-based).
+   All stories pass `test-run` (incl. a11y) after the fix; full suite (all
+   17 stories across Icon/Button/IconButton/Card) re-verified clean.
+7. [x] **3A.** Build Field wrapper + tests — `libs/ui/src/lib/field/`
+   (`field.ts`, `field.css`, `field.spec.ts`, `README.md`). Recorded as
+   fork 09. 11 new unit tests (42/42 total), `build:lib`/`lint:css`/
+   `lint:standalone` clean.
+8. [ ] **3B.** Story: Field wrapper **← CURRENT STEP**
 9. [ ] **4A.** Build Input + tests
 10. [ ] **4B.** Story: Input
 11. [ ] **5A.** Build Checkbox + tests

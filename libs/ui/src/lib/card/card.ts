@@ -3,9 +3,9 @@ import { ChangeDetectionStrategy, Component, booleanAttribute, input } from '@an
 @Component({
   selector: 'hmha-card',
   template: `
-    <header class="hmha-card-header"><ng-content select="[hmhaCardHeader]" /></header>
+    <div class="hmha-card-header"><ng-content select="[hmhaCardHeader]" /></div>
     <ng-content />
-    <footer class="hmha-card-footer"><ng-content select="[hmhaCardFooter]" /></footer>
+    <div class="hmha-card-footer"><ng-content select="[hmhaCardFooter]" /></div>
   `,
   styleUrl: './card.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

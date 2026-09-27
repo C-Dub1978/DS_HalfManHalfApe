@@ -60,6 +60,26 @@ export const Sizes: Story = {
   }),
 };
 
+export const Densities: Story = {
+    render: () => ({
+        template: `
+            <strong>Compact Density: </strong>
+            <div style="display:flex; align-items:center; gap:12px;" data-hmha-density="compact">
+                <button hmhaButton tone="primary" size="sm">Small</button>
+                <button hmhaButton tone="primary" size="md">Medium</button>
+                <button hmhaButton tone="primary" size="lg">Large</button>
+            </div>
+
+            <strong>Comfortable Density: </strong>
+            <div style="display:flex; align-items:center; gap:12px;" data-hmha-density="comfortable">
+                <button hmhaButton tone="primary" size="sm">Small</button>
+                <button hmhaButton tone="primary" size="md">Medium</button>
+                <button hmhaButton tone="primary" size="lg">Large</button>
+            </div>
+        `
+    })
+};
+
 /** loading sets aria-busy and disables the control. */
 export const Loading: Story = {
   args: { loading: true, tone: 'primary' },

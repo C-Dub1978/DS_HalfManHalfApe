@@ -176,6 +176,14 @@ npm run ci                # everything, in CI order
 
 The component library lives in `libs/ui`, and its Storybook config is in `libs/ui/.storybook`.
 
+- **`libs/ui/.storybook/preview.ts` is what injects global styling** — the
+  generated token CSS (`libs/tokens/src/lib/_all.css`) and a small canvas
+  reset (`preview.css`, mirroring `apps/sandbox/src/styles.css`). The
+  `storybook`/`build-storybook` architect targets point at `hmha-ui:build`
+  (the `ng-packagr` library build), which has no global-styles concept —
+  only `preview.ts` can provide one. If a story ever renders with no colors,
+  wrong font, or a white canvas, check that these imports are still there
+  before assuming a component regressed.
 - **Every component in `libs/ui` needs a colocated story file**, in the same
   folder as its component/template/stylesheet, named after the component's
   own filename — `button.ts` → `button.stories.ts`,
