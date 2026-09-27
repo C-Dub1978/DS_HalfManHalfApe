@@ -1,4 +1,4 @@
-# Half Man Half Ape Design System
+# HMHA Design System
 
 A token-driven Angular 20+ design system and component library: DTCG token
 source, the Style Dictionary build, the two token CI guards, and (phase 2) the
