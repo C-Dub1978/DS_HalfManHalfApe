@@ -172,30 +172,53 @@ npm run lint:css          # the no-literals guard
 npm run ci                # everything, in CI order
 ```
 
+## Storybook stories
+
+The component library lives in `libs/ui`, and its Storybook config is in `libs/ui/.storybook`.
+
+- **Every component in `libs/ui` needs a colocated story file**, in the same
+  folder as its component/template/stylesheet, named after the component's
+  own filename — `button.ts` → `button.stories.ts`,
+  `icon-button.ts` → `icon-button.stories.ts`. Mirror the real filename, not a
+  generic `<component-name>` guess.
+- **Before writing or updating any story, call the
+  `get-storybook-story-instructions` tool from the `storybook` MCP server and
+  follow it exactly.** Don't write stories from memory. If that MCP server
+  doesn't respond, stop and say so rather than guessing at the story format —
+  Storybook is probably not running.
+- Each story file showcases **all** of the component's variants, sizes, and
+  states (disabled, error, loading, etc.), with Storybook controls
+  (`argTypes`) wired to its inputs — not just one default example.
+- After writing stories, use the `storybook` MCP tools to preview them and
+  confirm they render without errors.
+
+## Working through Wave 2
+
+Wave 2 is built **one step at a time**, not in a batch:
+
+- Work on exactly one step from the Wave 2 tracker (in `DECISIONS.md`) at a
+  time. When a step is complete, summarize what you did, update the
+  tracker's checklist and CURRENT STEP marker, and **stop**. Do not start the
+  next step until explicitly told to continue, even if the next step seems
+  obvious.
+- A step counts as **done** only when all four hold:
+  1. Unit tests pass.
+  2. `libs/ui` builds (`npm run build:lib`).
+  3. Lint is clean (`npm run lint:css`, `npm run lint:standalone`).
+  4. Its Storybook story renders without errors.
+- `DECISIONS.md`'s **Wave 2 progress** section is the single source of truth
+  for what step is current — read it before doing any Wave 2 work, and update
+  it as part of finishing each step. A new session picking up Wave 2 work
+  starts there.
+
 ## Current state
 
-**Phase 1 is done**: 37 primitives, 59 semantic roles, both axes, the build
-pipeline, and the two CI guards. `reference/tokens.css` is a checked-in copy of
-the expected output — compare against it after your first `npm run tokens`.
+Phases 1 and 2 are done (token foundation; workspace scaffold,
+`provideZonelessChangeDetection()`, the two-version install matrix,
+`HmhaButton`). Phase 3 wave 1 is done too: the Icon system (generated from
+Lucide via `scripts/generate-icons.mjs`), `HmhaButton`, `HmhaIconButton` and
+`HmhaCard` — all composed together in the sandbox, satisfying the wave gate.
 
-**Phase 1's remaining gate**: a sandbox page containing *no components* — plain
-divs and buttons styled only with `var(--hmha-*)` — where flipping
-`data-hmha-mode` and `data-hmha-density` on `<html>` re-themes everything with no
-rebuild, and a nested panel can hold the opposite mode. Build that before any
-component.
-
-## Next task — phase 2
-
-1. Scaffold the workspace on Angular 20:
-   `npx @angular/cli@20 new hmha-workspace --create-application=false --style=css`
-   then `ng generate library hmha-ui` and `ng generate application sandbox`.
-2. `provideZonelessChangeDetection()` in the sandbox's app config.
-3. `hmha-core`: the generated types from `libs/tokens`, plus CDK setup.
-4. Wire `npm run ci` into CI, including a **two-version install matrix**:
-   install the packed library into an Angular 20 app and a current-version app
-   and assert both render. This is the gate that ends phase 2.
-5. Build `HmhaButton` per the recipe above, with a documented component-token
-   table and an axe-clean interaction test.
-
-Then phase 3 wave 1: Icon system, Button, Card. Waves and scope are in
-`DECISIONS.md` — **Table / Data Grid is explicitly out of v1.**
+**Wave 2 is in progress.** See `DECISIONS.md`'s **Wave 2 progress** section
+for the live step tracker and current step — don't rely on this file for
+Wave 2 status, it will go stale; that section is the source of truth.

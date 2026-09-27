@@ -1,6 +1,6 @@
 # Decisions of record
 
-Six architectural forks, decided. Each entry gives the decision, the rejected
+Eight architectural forks, decided. Each entry gives the decision, the rejected
 alternatives, and the reasoning — so a later contributor can tell a settled
 decision from an accident.
 
@@ -169,6 +169,108 @@ npm. `libs/ui/package.json` and `libs/tokens/package.json` carry the names.
 
 **Still to decide:** the license (MIT unless there is a reason not to).
 `CLAUDE.md` carries the publishing mechanics.
+
+---
+
+## 08 — Form-control foundation: a composable factory, not a base class
+
+**Decided:** `hmhaValueAccessor<T>()` in `libs/ui/src/lib/core/value-accessor.ts`
+— a plain factory function, not a class to extend. It returns signal-backed
+`value`/`disabled` state plus the four `ControlValueAccessor` methods. Each
+form control (Input, Checkbox, Switch, and `HmhaRadioGroup`) composes one
+instance as a private field and delegates the four CVA methods in one line
+each. Not exported from `public-api.ts` — it's internal to `libs/ui`, not
+part of the published API surface.
+
+**Why a factory over a base class:** the `NG_VALUE_ACCESSOR` provider still
+needs `forwardRef(() => <concrete class>)` per component either way, so a
+base class doesn't fully DRY up the boilerplate — it only removes four
+delegation lines at the cost of a rigid inheritance chain. Composition avoids
+that cost and reads as a natural extension of how this codebase already
+prefers functions over class hierarchies (`hmhaColor()`, the icon registry).
+
+**Rejected — abstract base class** (`HmhaFormControl<T>` to `extends`):
+marginally less boilerplate per component, but locks every control into one
+linear hierarchy. Doesn't fit Radio (see below), where the real CVA
+integration point is the group, not the individual control.
+
+**Rejected — `hostDirectives` composition:** cleanest in theory, but more
+novel machinery than anything else in the codebase, with more subtle edges
+forwarding signal state across the host-directive boundary. Not worth it for
+a one-maintainer project when the factory gets nearly the same benefit.
+
+**The one correctness rule this centralizes:** `writeValue` (Forms →
+component) never calls `onChange`; only `setValue` (component → Forms, i.e.
+a user-driven edit) does. Getting this backwards — the most common CVA bug —
+now only has to be gotten right once, not five times.
+
+**Combining with standalone (non-Forms) usage:** a control's `disabled`
+state should combine the accessor's `setDisabledState`-driven signal with
+its own `disabled` input — `computed(() => this.disabledInput() ||
+this.accessor.disabled())` — mirroring `HmhaButton`'s existing `loading() ||
+disabled()` pattern, so a control still works with a plain `disabled`
+attribute outside a `FormGroup`.
+
+**Two things flagged for later steps, deliberately not decided here:**
+
+- **Radio doesn't fit the "one CVA per component" shape.** The real
+  form-integration point is `HmhaRadioGroup` (one selected value); individual
+  `HmhaRadio` children will inject the group via a DI token to read/select,
+  not hold their own accessor. Step 6A's concern.
+- **Field wrapper's error/hint/required model is a separate, related
+  design** — an ARIA-context problem (`aria-describedby`/`aria-invalid`
+  wiring), not a CVA problem. Deferred to step 3A, when `HmhaField`'s own
+  shape gets designed, rather than invented sight-unseen here.
+
+---
+
+## Wave 2 progress — the step tracker
+
+**This section is the single source of truth for Wave 2 status.** Update the
+checklist and the CURRENT STEP marker at the end of every step. The process
+rule itself (one step at a time, stop-and-wait between steps, the done
+criteria) lives in `CLAUDE.md` — this section only tracks where we are.
+
+1. [x] **1a.** Propose a shared form-control foundation (options +
+   recommendation) that reduces `ControlValueAccessor` boilerplate across
+   Field wrapper, Input, Checkbox, Radio and Switch. Wait for approval before
+   building anything. — Approved: Option B (composable factory).
+2. [x] **1b.** Build the approved foundation. Recorded as fork 08 above.
+   `hmhaValueAccessor<T>()` in `libs/ui/src/lib/core/value-accessor.ts`, 7
+   passing unit tests, `libs/ui` builds clean, lint clean. No story required
+   — not a UI component.
+3. [x] **2a.** Story: `HmhaIcon` — `icon.stories.ts` (Playground, Sizes,
+   Gallery). All pass `test-run` (incl. a11y).
+4. [x] **2b.** Story: `HmhaButton` — `button.stories.ts` (Playground, Tones,
+   Sizes, Loading, Disabled, WithIcon, ClickInteraction). All pass
+   `test-run` (incl. a11y and the click/aria-state play functions).
+5. [ ] **2c.** Story: `HmhaIconButton` **← CURRENT STEP**
+6. [ ] **2d.** Story: `HmhaCard`
+7. [ ] **3A.** Build Field wrapper + tests
+8. [ ] **3B.** Story: Field wrapper
+9. [ ] **4A.** Build Input + tests
+10. [ ] **4B.** Story: Input
+11. [ ] **5A.** Build Checkbox + tests
+12. [ ] **5B.** Story: Checkbox
+13. [ ] **6A.** Build Radio + tests
+14. [ ] **6B.** Story: Radio
+15. [ ] **7A.** Build Switch + tests
+16. [ ] **7B.** Story: Switch
+17. [ ] **8.** Wave 2 gate — compose Field wrapper, Input, Checkbox, Radio and
+    Switch together in `apps/sandbox`, per the wave-gate rule in fork 06.
+
+Steps 3–7 follow the component order fork 06's wave table already fixed
+(Field wrapper, Input, Checkbox, Radio, Switch) — nothing here reorders it.
+Step 8 was not itemized in the request that produced this tracker; it is here
+because fork 06 already requires every wave to land in a real screen before
+the next starts. Flag it if that's not wanted for Wave 2.
+
+### Step 1's architectural decision
+
+Not yet recorded. Once step 1a's proposal is approved and step 1b builds it,
+the decision (base class, helper, or providers — whichever is chosen, with
+the rejected alternatives and why) gets written up here as fork 08, matching
+the format of forks 01–07 above.
 
 ---
 
