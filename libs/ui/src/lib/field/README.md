@@ -36,19 +36,37 @@ optionally injects to reflect the field's state onto itself:
 ```ts
 export interface HmhaFieldContext {
   readonly controlId: Signal<string>;
+  readonly labelId: Signal<string>;
   readonly invalid: Signal<boolean>;
   readonly required: Signal<boolean>;
   readonly describedBy: Signal<string | null>;
 }
 ```
 
-A control consumes it like this:
+A control on a labelable host (input, select, textarea, button, output,
+meter, progress) consumes it like this:
 
 ```ts
 export class HmhaInput {
   private readonly field = inject(HMHA_FIELD, { optional: true });
   // host: {
   //   '[attr.id]': 'field?.controlId() ?? null',
+  //   '[attr.aria-invalid]': 'field?.invalid() ? true : null',
+  //   '[attr.aria-describedby]': 'field?.describedBy() ?? null',
+  //   '[attr.aria-required]': 'field?.required() ? true : null',
+  // }
+}
+```
+
+A control on a **non**-labelable host — `HmhaRadioGroup`'s `<fieldset>`,
+which `<label for>` cannot target at all — uses `labelId` with
+`aria-labelledby` instead of `controlId`/`for`:
+
+```ts
+export class HmhaRadioGroup {
+  private readonly field = inject(HMHA_FIELD, { optional: true });
+  // host: {
+  //   '[attr.aria-labelledby]': 'field?.labelId() ?? null',
   //   '[attr.aria-invalid]': 'field?.invalid() ? true : null',
   //   '[attr.aria-describedby]': 'field?.describedBy() ?? null',
   //   '[attr.aria-required]': 'field?.required() ? true : null',

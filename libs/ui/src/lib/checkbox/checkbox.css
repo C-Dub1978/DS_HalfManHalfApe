@@ -1,0 +1,30 @@
+/* checkbox.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-checkbox-accent: var(--hmha-color-action);
+  --hmha-checkbox-size: var(--hmha-icon-md);
+
+  display: inline-block;
+  width: var(--hmha-checkbox-size);
+  height: var(--hmha-checkbox-size);
+  margin: 0;
+  accent-color: var(--hmha-checkbox-accent);
+  cursor: pointer;
+}
+
+:host([data-size="sm"]) { --hmha-checkbox-size: var(--hmha-icon-sm); }
+:host([data-size="lg"]) { --hmha-checkbox-size: var(--hmha-icon-lg); }
+
+:host([data-invalid]) {
+  --hmha-checkbox-accent: var(--hmha-color-danger);
+}
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}
+
+:host(:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

@@ -1,8 +1,8 @@
 # Decisions of record
 
-Nine architectural forks, decided. Each entry gives the decision, the rejected
-alternatives, and the reasoning — so a later contributor can tell a settled
-decision from an accident.
+Twelve architectural forks, decided. Each entry gives the decision, the
+rejected alternatives, and the reasoning — so a later contributor can tell a
+settled decision from an accident.
 
 Team context: **one maintainer**. Several decisions are what they are because
 maintenance capacity, not capability, is the binding constraint.
@@ -266,6 +266,124 @@ stale help text alongside an active error.
 
 ---
 
+## 10 — Checkbox/Radio rendering: native `accent-color`, not a custom-drawn box
+
+**Decided:** `HmhaCheckbox` (and, when built, `HmhaRadio`) keep the browser's
+native checkbox/radio rendering and rec­olour it with the CSS `accent-color`
+property, rather than `appearance: none` plus a hand-drawn box and checkmark
+(SVG background-image or a CSS-border checkmark trick).
+
+**Why:** `accent-color` is supported in every current browser, needs zero
+drawing code, and keeps the native widget's behaviour for free —
+`indeterminate` state, forced-colors/high-contrast mode, platform focus
+handling, and screen-reader semantics. Fork 06 already lists
+Dialog/Menu/Overlay work as the hard a11y problems worth CDK's help; a
+checkbox's check mark isn't one of them, so it doesn't need bespoke
+rendering either.
+
+**Rejected — `appearance: none` + custom SVG/CSS checkmark:** the standard
+approach when a design calls for a check mark shape the OS can't render
+(a custom glyph, an animated draw-in, etc.). Nothing in this design system
+calls for that yet, and hand-rolling it now would be exactly the kind of
+premature complexity the "don't design for hypothetical requirements"
+principle warns against. Revisit if a real design ever needs it — the
+component token (`--hmha-checkbox-accent`) stays the same either way, only
+the CSS behind it changes.
+
+**The trade-off, stated plainly:** the box's shape and the check mark's
+exact style are the browser's to draw, not ours — `--hmha-checkbox-accent`
+can retint them, `--hmha-checkbox-size` can resize them, but neither can
+restyle them further. Documented in the component's README so it reads as a
+decision, not a limitation nobody noticed.
+
+---
+
+## 11 — Radio group: `fieldset` + shared `name`, required DI, no fallback
+
+**Decided:** `HmhaRadioGroup` (`fieldset[hmhaRadioGroup]`) is the real form
+control — it holds the selected value, implements `ControlValueAccessor`,
+and generates the `name` every radio in it must share (native radio
+grouping — arrow-key navigation, "only one checked" — is driven entirely by
+matching `name` attributes, not DOM nesting). `HmhaRadio`
+(`input[hmhaRadio]`) holds no state; it injects the group with
+`inject(HMHA_RADIO_GROUP)` — **required, not optional** — to read the
+shared name/value and select itself. Fulfills the shape fork 09 flagged but
+deliberately didn't design at the time.
+
+**Why `fieldset`, not a custom element:** it's the correct native element
+for "a set of related form controls with one accessible name" — `<legend>`
+is its native labeling mechanism, and native fieldset-disable cascades to
+every descendant control for free. No custom element does any of that.
+
+**Why required injection, not optional with a fallback:** a radio divorced
+from a group has no value to compare itself against and no `name` to share
+— it cannot function, the same way a native `<input type="radio">` alone
+with no siblings sharing its `name` doesn't make sense. An optional
+injection with silent fallback behavior would let a broken usage render
+without error instead of failing loudly at the point of the mistake.
+
+**`HMHA_FIELD`'s contract, extended:** `<fieldset>` isn't a labelable
+element — `<label for>` cannot target it at all. `HmhaRadioGroup` uses
+`aria-labelledby` bound to `HmhaFieldContext.labelId` (added to the
+contract for exactly this) instead of `controlId`/`for`. It also sets
+`role="radiogroup"` — required because axe correctly flagged
+`aria-required`/`aria-invalid` as disallowed on a bare `<fieldset>`'s
+implicit "group" role; "radiogroup" is the WAI-ARIA role that supports
+them, and is the role the Authoring Practices' own radio-group pattern
+uses.
+
+**`required` propagates past the fieldset to each radio's native
+`required` attribute**, not just the fieldset's `aria-required` — so the
+browser's own "you must pick one" constraint validation works per radio,
+matching how native radio groups actually validate.
+
+**A testing note, not a design decision, worth recording anyway:** native
+`<fieldset disabled>` cascades to descendants for *interaction*,
+`:disabled` CSS matching, and form submission — but a descendant's own
+`.disabled` **property getter** keeps reflecting only its own attribute,
+never the cascade. Asserting the cascade in a test means
+`radio.matches(':disabled')`, not `radio.disabled`. Cost real time to
+track down in `radio-group.spec.ts`; left as a comment there too.
+
+---
+
+## 12 — Switch: `role="switch"` on a native `<button>`, not a styled checkbox
+
+**Decided:** `HmhaSwitch` (`button[hmhaSwitch]`) is a native `<button
+type="button">` with `role="switch"` and `aria-checked`, per WAI-ARIA's own
+switch pattern — not `<input type="checkbox">` restyled to look like a
+toggle. First control in the library with no matching native form element
+at all (Input, Checkbox and Radio all wrap one; Switch can't).
+
+**Why not a styled checkbox:** a checkbox and a switch are different
+widgets to assistive tech even when they look identical — a checkbox
+communicates "checked/unchecked," a switch communicates "on/off," and
+screen readers announce the two differently. Restyling a checkbox to look
+like a switch would make the visual lie about what AT actually hears.
+`role="switch"` says what it visually claims to be.
+
+**Why `<button>`, not a `<div>` with the same role:** button gets Enter/Space
+activation, focus handling and disabled semantics for free, matching every
+other control in the library's "native element carries the keyboard/focus
+work" ethos. `<button>` is also labelable (unlike `<fieldset>`, fork 11) —
+`HmhaField`'s normal `for`/`id` association works unmodified.
+
+**`aria-checked` is always the literal string `"true"`/`"false"`, never
+omitted.** Unlike `aria-busy` (fine absent when not busy), `aria-checked`
+is a required state for the `switch` role — an absent value is different
+from `"false"` to assistive tech. `data-checked` is kept as a *separate*,
+presence-based attribute purely for styling, per the data-\* variant
+convention, even though it's always in sync with `aria-checked`.
+
+**The thumb is a real templated `<span>`, not a CSS pseudo-element** —
+unique among the form controls in this wave. `<input>` is a void element
+and cannot hold children, which is why `HmhaInput`/`HmhaCheckbox`/`HmhaRadio`
+all have empty templates; `<button>` isn't void, so `HmhaSwitch` gets an
+actual template (`<span class="hmha-switch-thumb" aria-hidden="true">`) to
+animate, avoiding a `::before`/`::after` trick for no reason.
+
+---
+
 ## Wave 2 progress — the step tracker
 
 **This section is the single source of truth for Wave 2 status.** Update the
@@ -321,12 +439,48 @@ criteria) lives in `CLAUDE.md` — this section only tracks where we are.
     first story to prove the HMHA_FIELD contract end to end with a real
     control instead of a stand-in. All 28 stories across the library pass
     `test-run` (incl. a11y).
-11. [ ] **5A.** Build Checkbox + tests **← CURRENT STEP**
-12. [ ] **5B.** Story: Checkbox
-13. [ ] **6A.** Build Radio + tests
-14. [ ] **6B.** Story: Radio
-15. [ ] **7A.** Build Switch + tests
-16. [ ] **7B.** Story: Switch
+11. [x] **5A.** Build Checkbox + tests — `libs/ui/src/lib/checkbox/`
+    (`checkbox.ts`, `checkbox.css`, `checkbox.spec.ts`, `README.md`).
+    `input[hmhaCheckbox]` on native `<input type="checkbox">` (type forced
+    by the directive), same `hmhaValueAccessor`/`HMHA_FIELD` pattern as
+    Input. Rendering uses native `accent-color`, not a custom-drawn box —
+    recorded as fork 10 (will also govern Radio). 12 new unit tests (5
+    reactive-forms integration, 7 standalone/field-DI/a11y; 66/66 total),
+    `build:lib`/`lint:css`/`lint:standalone` clean.
+12. [x] **5B.** Story: Checkbox — `checkbox.stories.ts` (Playground, Sizes,
+    Disabled, Invalid, WithField, ToggleInteraction). Hit two environment
+    issues along the way, both now documented in CLAUDE.md: a duplicate
+    `npm run storybook` process bound nothing and made every MCP call time
+    out (killed both, started one), and a `.stories.ts` file with no real
+    CSF export (a stray planning note) broke Storybook's entire index, not
+    just its own stories (renamed to `.md`, out of the stories glob). All
+    34 stories across the library pass `test-run` (incl. a11y).
+13. [x] **6A.** Build Radio + tests — `libs/ui/src/lib/radio/`
+    (`radio-group.ts`/`.css`, `radio.ts`/`.css`, two spec files, `README.md`).
+    `fieldset[hmhaRadioGroup]` holds the CVA state and generates the shared
+    `name`; `input[hmhaRadio]` holds none, requiring (not optionally)
+    injecting the group. Extended `HmhaFieldContext` with `labelId` (fields
+    can't `label[for]` a fieldset) and added `role="radiogroup"` (axe
+    caught `aria-required` as disallowed on the implicit "group" role
+    otherwise). Recorded as fork 11. 20 new unit tests (5 extending
+    `field.spec.ts`, 9 for the group, 6 for the radio; 86/86 total),
+    `build:lib`/`lint:css`/`lint:standalone` clean.
+14. [x] **6B.** Story: Radio — `radio-group.stories.ts` (Playground, Disabled,
+    Invalid, WithField, SelectionInteraction) and `radio.stories.ts`
+    (Playground, Sizes, IndividuallyDisabled) — split per CLAUDE.md's
+    one-file-per-component rule, group-level vs individual-radio concerns
+    kept apart to avoid redundancy. No dev-server restart needed this time.
+    All 42 stories across the library pass `test-run` (incl. a11y).
+15. [x] **7A.** Build Switch + tests — `libs/ui/src/lib/switch/`
+    (`switch.ts`, `switch.css`, `switch.spec.ts`, `README.md`).
+    `button[hmhaSwitch]` with `role="switch"`/`aria-checked` (WAI-ARIA's own
+    pattern — no native `<input type="switch">` exists), same
+    `hmhaValueAccessor`/`HMHA_FIELD` pattern as the others. Templated thumb
+    `<span>` instead of a CSS pseudo-element, since `<button>` (unlike
+    `<input>`) isn't a void element. Recorded as fork 12. 13 new unit tests
+    (5 reactive-forms integration, 8 standalone/field-DI/a11y; 99/99 total),
+    `build:lib`/`lint:css`/`lint:standalone` clean — all passed first try.
+16. [ ] **7B.** Story: Switch **← CURRENT STEP**
 17. [ ] **8.** Wave 2 gate — compose Field wrapper, Input, Checkbox, Radio and
     Switch together in `apps/sandbox`, per the wave-gate rule in fork 06.
 

@@ -18,9 +18,16 @@ import { _IdGenerator } from '@angular/cdk/a11y';
  * decoupled from knowing what control it wraps — Input, Checkbox,
  * RadioGroup, Switch, or a consumer's own custom control all consume the
  * same contract.
+ *
+ * `labelId` exists because `<label for>` only associates with labelable
+ * elements (input, select, textarea, button, output, meter, progress) — a
+ * `<fieldset>` (what HmhaRadioGroup wraps) isn't one of them. A control
+ * built on a non-labelable host binds `[attr.aria-labelledby]="labelId()"`
+ * instead of relying on `controlId`/`for`.
  */
 export interface HmhaFieldContext {
   readonly controlId: Signal<string>;
+  readonly labelId: Signal<string>;
   readonly invalid: Signal<boolean>;
   readonly required: Signal<boolean>;
   readonly describedBy: Signal<string | null>;
@@ -31,7 +38,7 @@ export const HMHA_FIELD = new InjectionToken<HmhaFieldContext>('HMHA_FIELD');
 @Component({
   selector: 'hmha-field',
   template: `
-    <label [attr.for]="controlId()" class="hmha-field-label">
+    <label [attr.for]="controlId()" [id]="labelElId" class="hmha-field-label">
       <span>{{ label() }}</span>
       @if (required()) {
         <span class="hmha-field-required" aria-hidden="true">*</span>
@@ -53,6 +60,7 @@ export class HmhaField implements HmhaFieldContext {
   private readonly id = inject(_IdGenerator).getId('hmha-field-');
   protected readonly hintId = `${this.id}-hint`;
   protected readonly errorId = `${this.id}-error`;
+  protected readonly labelElId = `${this.id}-label`;
 
   readonly label = input.required<string>();
   readonly hint = input<string>();
@@ -60,6 +68,7 @@ export class HmhaField implements HmhaFieldContext {
   readonly required = input(false, { transform: booleanAttribute });
 
   readonly controlId = computed(() => this.id);
+  readonly labelId = computed(() => this.labelElId);
   readonly invalid = computed(() => !!this.error());
   readonly describedBy = computed<string | null>(() => {
     if (this.error()) return this.errorId;

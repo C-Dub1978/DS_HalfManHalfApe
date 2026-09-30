@@ -94,6 +94,13 @@ describe('HmhaField', () => {
     expect(label.getAttribute('for')).toBe(controlId ?? null);
   });
 
+  it('exposes the label element\'s own id as labelId, for hosts that cannot use for/id (e.g. a fieldset)', () => {
+    const { label, consumer } = create();
+    const labelId = consumer.field?.labelId();
+    expect(labelId).toBeTruthy();
+    expect(label.id).toBe(labelId ?? '');
+  });
+
   it('gives each field instance a distinct id', () => {
     const a = create();
     const b = create();

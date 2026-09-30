@@ -196,6 +196,21 @@ The component library lives in `libs/ui`, and its Storybook config is in `libs/u
   (`npm run storybook`) and clear `node_modules/.cache/storybook` first if
   a restart alone doesn't fix it. Ask before killing it if someone has it
   open — a restart briefly disconnects any open preview.
+- **If every Storybook MCP call times out (not the styleUrl error above)**,
+  check for a *second* `npm run storybook` process before assuming the
+  server is just slow: `ps aux | grep storybook` and `lsof -i :6006`. Only
+  one process can actually bind the port; a second one started on top of it
+  (yours or someone else's) stays running but unreachable, and MCP calls
+  hang instead of erroring cleanly. Kill every matching process (`ng run
+  hmha-ui:storybook`, `addon-vitest/dist/node/vitest.js`, the wrapping `npm
+  run storybook`), clear `node_modules/.cache/storybook`, then start exactly
+  one instance.
+- **A `*.stories.ts` file Storybook's glob matches but that has no real CSF
+  export (no `export default meta`) breaks the entire index** — every
+  Storybook MCP call fails with `Unable to index <path>`, not just that
+  file's own stories. If a placeholder/notes file needs to exist before its
+  real stories are written, keep it out of the `../src/**/*.stories.@(js|…)`
+  glob (e.g. a `.md` file) rather than `.stories.ts` with no exports.
 - **Every component in `libs/ui` needs a colocated story file**, in the same
   folder as its component/template/stylesheet, named after the component's
   own filename — `button.ts` → `button.stories.ts`,
