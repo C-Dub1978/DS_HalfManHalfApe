@@ -480,9 +480,31 @@ criteria) lives in `CLAUDE.md` — this section only tracks where we are.
     `<input>`) isn't a void element. Recorded as fork 12. 13 new unit tests
     (5 reactive-forms integration, 8 standalone/field-DI/a11y; 99/99 total),
     `build:lib`/`lint:css`/`lint:standalone` clean — all passed first try.
-16. [ ] **7B.** Story: Switch **← CURRENT STEP**
-17. [ ] **8.** Wave 2 gate — compose Field wrapper, Input, Checkbox, Radio and
-    Switch together in `apps/sandbox`, per the wave-gate rule in fork 06.
+16. [x] **7B.** Story: Switch — `switch.stories.ts` (Playground, Sizes,
+    Disabled, Invalid, WithField, ToggleInteraction). Dev server had
+    stopped entirely since the last step (nothing running, no active
+    viewer) — started it fresh, no restart-mid-session needed this time.
+    Visually confirmed the track/thumb toggle (off: gray track, thumb
+    left; on: blue track, thumb right) via a real browser check. All 48
+    stories across the library pass `test-run` (incl. a11y).
+17. [x] **8.** Wave 2 gate — a real "Create account" form in `apps/sandbox`
+    (`app.ts`/`app.html`/`app.css`), backed by an actual Angular
+    `ReactiveFormsModule` `FormGroup` with real validators — not static
+    markup. Composes all five: `HmhaField` wraps `HmhaInput` (name, email
+    with `Validators.email`), `HmhaRadioGroup`/`HmhaRadio` (plan, required),
+    `HmhaSwitch` (notifications), `HmhaCheckbox` (terms,
+    `Validators.requiredTrue`), submitting via `(ngSubmit)`. Driven live in
+    a real browser (Playwright): submitting empty shows all four expected
+    error messages with red-bordered invalid fields; filling every field
+    and resubmitting clears every error and shows a success banner — zero
+    console errors either path. 2 new sandbox tests (DOM-only assertions,
+    matching this wave's black-box testing style) exercise both paths;
+    103/103 total across the whole workspace.
+
+**Wave 2 is complete.** All five components (Field, Input, Checkbox,
+RadioGroup/Radio, Switch) are built, unit-tested, documented in Storybook,
+and proven together in a real screen — the gate fork 06 requires before
+Wave 3 can start.
 
 Steps 3–7 follow the component order fork 06's wave table already fixed
 (Field wrapper, Input, Checkbox, Radio, Switch) — nothing here reorders it.

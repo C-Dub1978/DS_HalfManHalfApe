@@ -93,4 +93,46 @@
       </hmha-card>
     </div>
   </section>
+
+  <h2>Create account — Wave 2, one real form</h2>
+  <p class="muted">
+    Field, Input, Checkbox, RadioGroup/Radio and Switch, wired to a real
+    Angular <code>FormGroup</code> — not just static markup. This is the
+    Wave 2 gate: every new component composed together in a real screen.
+  </p>
+
+  @if (submitted() && signupForm.valid) {
+    <p class="success">
+      <hmha-icon name="circle-check" />
+      Account created — the form validated end to end.
+    </p>
+  }
+
+  <form [formGroup]="signupForm" (ngSubmit)="onSubmit()" class="signup-form">
+    <hmha-field label="Full name" required="true" [error]="nameError">
+      <input hmhaInput formControlName="name" placeholder="Jane Doe" />
+    </hmha-field>
+
+    <hmha-field label="Email" required="true" [error]="emailError">
+      <input hmhaInput type="email" formControlName="email" placeholder="you@example.com" />
+    </hmha-field>
+
+    <hmha-field label="Plan size" required="true" [error]="planError">
+      <fieldset hmhaRadioGroup formControlName="plan">
+        <label><input type="radio" hmhaRadio value="small" /> Small</label>
+        <label><input type="radio" hmhaRadio value="medium" /> Medium</label>
+        <label><input type="radio" hmhaRadio value="large" /> Large</label>
+      </fieldset>
+    </hmha-field>
+
+    <hmha-field label="Email notifications" hint="You can change this anytime in settings.">
+      <button hmhaSwitch formControlName="notifications"></button>
+    </hmha-field>
+
+    <hmha-field label="I agree to the terms of service" required="true" [error]="termsError">
+      <input type="checkbox" hmhaCheckbox formControlName="terms" />
+    </hmha-field>
+
+    <button hmhaButton tone="primary" type="submit">Create account</button>
+  </form>
 </main>

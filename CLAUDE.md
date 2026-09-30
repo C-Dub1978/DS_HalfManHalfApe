@@ -227,11 +227,12 @@ The component library lives in `libs/ui`, and its Storybook config is in `libs/u
 - After writing stories, use the `storybook` MCP tools to preview them and
   confirm they render without errors.
 
-## Working through Wave 2
+## Working through a wave
 
-Wave 2 is built **one step at a time**, not in a batch:
+Every wave (this started as a Wave 2 rule; it applies to Wave 3 and beyond
+too) is built **one step at a time**, not in a batch:
 
-- Work on exactly one step from the Wave 2 tracker (in `DECISIONS.md`) at a
+- Work on exactly one step from that wave's tracker (in `DECISIONS.md`) at a
   time. When a step is complete, summarize what you did, update the
   tracker's checklist and CURRENT STEP marker, and **stop**. Do not start the
   next step until explicitly told to continue, even if the next step seems
@@ -241,10 +242,12 @@ Wave 2 is built **one step at a time**, not in a batch:
   2. `libs/ui` builds (`npm run build:lib`).
   3. Lint is clean (`npm run lint:css`, `npm run lint:standalone`).
   4. Its Storybook story renders without errors.
-- `DECISIONS.md`'s **Wave 2 progress** section is the single source of truth
-  for what step is current — read it before doing any Wave 2 work, and update
-  it as part of finishing each step. A new session picking up Wave 2 work
-  starts there.
+- `DECISIONS.md`'s progress-tracker section for the current wave is the
+  single source of truth for what step is current — read it before doing any
+  work on that wave, and update it as part of finishing each step. A new
+  session picking up wave work starts there. If a wave has no tracker
+  section yet, write one (mirroring Wave 2 progress's format) before
+  starting its first step.
 
 ## Current state
 
@@ -254,6 +257,20 @@ Phases 1 and 2 are done (token foundation; workspace scaffold,
 Lucide via `scripts/generate-icons.mjs`), `HmhaButton`, `HmhaIconButton` and
 `HmhaCard` — all composed together in the sandbox, satisfying the wave gate.
 
-**Wave 2 is in progress.** See `DECISIONS.md`'s **Wave 2 progress** section
-for the live step tracker and current step — don't rely on this file for
-Wave 2 status, it will go stale; that section is the source of truth.
+**Wave 2 is done.** `HmhaField`, `HmhaInput`, `HmhaCheckbox`,
+`HmhaRadioGroup`/`HmhaRadio` and `HmhaSwitch` all share one
+`ControlValueAccessor` composable (`hmhaValueAccessor`, fork 08) and one
+`HMHA_FIELD` DI contract for hint/error/required wiring (fork 09) — every
+control also still works standalone, outside a field. The wave gate is a
+real "Create account" form in `apps/sandbox` backed by an actual
+`FormGroup`, not static markup — see `DECISIONS.md` step 17. Forks 08–12
+cover the wave's real architectural decisions; read those before touching
+any of these components, especially fork 11 (Radio's asymmetric
+group/individual-radio split) and fork 12 (Switch has no native element to
+build on).
+
+**Wave 3 hasn't started.** See `DECISIONS.md` fork 06 for its scope (Dialog,
+Menu, Tooltip, Toast, Tabs, then Select/Combobox) — no tracker exists for it
+yet; write one the same way `DECISIONS.md`'s Wave 2 progress section works
+before starting, per the "Working through Wave 2" process above (which
+applies to every wave, not just the one it's named after).
