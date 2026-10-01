@@ -6,8 +6,10 @@
 /out-tsc
 /bazel-out
 
-# Node
-/node_modules
+# Node — no leading slash: matches at any depth, not just the root. A
+# bare node_modules can also appear nested (e.g. libs/ui/node_modules, from
+# Storybook/Vitest's own dependency resolution) — /node_modules would miss it.
+node_modules
 npm-debug.log
 yarn-error.log
 
