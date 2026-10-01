@@ -1,0 +1,12 @@
+/* radio-group.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-radio-group-gap: var(--hmha-space-stack);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--hmha-radio-group-gap);
+  margin: 0;
+  padding: 0;
+  border: none;
+}

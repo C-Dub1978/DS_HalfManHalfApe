@@ -34,13 +34,13 @@ describe('HmhaIcon', () => {
   });
 
   it('renders the requested icon markup', () => {
-    expect(host.querySelector('svg')?.innerHTML).toContain('M5 13l4 4L19 7');
+    expect(host.querySelector('svg')?.innerHTML).toContain('M20 6 9 17l-5-5');
   });
 
   it('swaps markup when the name changes', async () => {
     fixture.componentRef.setInput('name', 'close');
     await fixture.whenStable();
-    expect(host.querySelector('svg')?.innerHTML).toContain('M6 6l12 12');
+    expect(host.querySelector('svg')?.innerHTML).toContain('M18 6 6 18');
   });
 
   it('reflects size as a data attribute', async () => {

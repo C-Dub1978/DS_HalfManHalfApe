@@ -1,0 +1,55 @@
+/* switch.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-switch-track-bg: var(--hmha-color-border-strong);
+  --hmha-switch-track-bg-checked: var(--hmha-color-action);
+  --hmha-switch-thumb-bg: var(--hmha-color-surface);
+  --hmha-switch-size: var(--hmha-icon-md);
+
+  display: inline-flex;
+  align-items: center;
+  box-sizing: content-box;
+  width: calc(var(--hmha-switch-size) * 2);
+  height: var(--hmha-switch-size);
+  padding: 0;
+  border: none;
+  border-radius: var(--hmha-radius-pill);
+  background: var(--hmha-switch-track-bg);
+  cursor: pointer;
+  transition: background var(--hmha-duration-fast) var(--hmha-easing-standard);
+}
+
+.hmha-switch-thumb {
+  display: block;
+  width: var(--hmha-switch-size);
+  height: var(--hmha-switch-size);
+  margin-inline-start: 0;
+  border-radius: var(--hmha-radius-pill);
+  background: var(--hmha-switch-thumb-bg);
+  transition: margin-inline-start var(--hmha-duration-fast) var(--hmha-easing-standard);
+}
+
+:host([data-checked]) {
+  background: var(--hmha-switch-track-bg-checked);
+}
+
+:host([data-checked]) .hmha-switch-thumb {
+  margin-inline-start: var(--hmha-switch-size);
+}
+
+:host([data-size="sm"]) { --hmha-switch-size: var(--hmha-icon-sm); }
+:host([data-size="lg"]) { --hmha-switch-size: var(--hmha-icon-lg); }
+
+:host([data-invalid]) {
+  --hmha-switch-track-bg: var(--hmha-color-danger);
+}
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}
+
+:host(:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

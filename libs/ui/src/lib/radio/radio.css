@@ -1,0 +1,26 @@
+/* radio.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-radio-accent: var(--hmha-color-action);
+  --hmha-radio-size: var(--hmha-icon-md);
+
+  display: inline-block;
+  width: var(--hmha-radio-size);
+  height: var(--hmha-radio-size);
+  margin: 0;
+  accent-color: var(--hmha-radio-accent);
+  cursor: pointer;
+}
+
+:host([data-size="sm"]) { --hmha-radio-size: var(--hmha-icon-sm); }
+:host([data-size="lg"]) { --hmha-radio-size: var(--hmha-icon-lg); }
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}
+
+:host(:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

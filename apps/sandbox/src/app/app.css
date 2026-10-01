@@ -33,3 +33,27 @@ h1 {
 .cards > * {
   flex: 1 1 var(--hmha-size-12);
 }
+
+h2 {
+  font-size: var(--hmha-type-heading-md-size);
+  line-height: var(--hmha-type-heading-md-line);
+  font-weight: var(--hmha-type-heading-md-weight);
+  margin: 0;
+}
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hmha-space-stack);
+  max-width: 40ch;
+}
+
+.success {
+  display: flex;
+  align-items: center;
+  gap: var(--hmha-control-gap);
+  padding: var(--hmha-control-padding-y) var(--hmha-control-padding-x);
+  border-radius: var(--hmha-radius-control);
+  background: var(--hmha-color-success-subtle);
+  color: var(--hmha-color-success-text);
+}
