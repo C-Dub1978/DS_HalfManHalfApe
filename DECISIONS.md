@@ -1,6 +1,6 @@
 # Decisions of record
 
-Twelve architectural forks, decided. Each entry gives the decision, the
+Fourteen architectural forks, decided. Each entry gives the decision, the
 rejected alternatives, and the reasoning — so a later contributor can tell a
 settled decision from an accident.
 
@@ -506,18 +506,270 @@ RadioGroup/Radio, Switch) are built, unit-tested, documented in Storybook,
 and proven together in a real screen — the gate fork 06 requires before
 Wave 3 can start.
 
-Steps 3–7 follow the component order fork 06's wave table already fixed
-(Field wrapper, Input, Checkbox, Radio, Switch) — nothing here reorders it.
-Step 8 was not itemized in the request that produced this tracker; it is here
-because fork 06 already requires every wave to land in a real screen before
-the next starts. Flag it if that's not wanted for Wave 2.
+---
 
-### Step 1's architectural decision
+## 13 — Overlay foundation: positioning + dismissal only, never focus
 
-Not yet recorded. Once step 1a's proposal is approved and step 1b builds it,
-the decision (base class, helper, or providers — whichever is chosen, with
-the rejected alternatives and why) gets written up here as fork 08, matching
-the format of forks 01–07 above.
+**Decided:** `hmhaOverlay(options)` in `libs/ui/src/lib/core/overlay.ts` —
+a plain factory function (same shape as fork 08's `hmhaValueAccessor`),
+wrapping `@angular/cdk/overlay`'s `Overlay` service. It handles overlay
+creation, one of three position strategies (`'connected'` — anchored to a
+trigger via CDK's own `STANDARD_DROPDOWN_BELOW_POSITIONS` preset, not
+hand-rolled offsets; `'global-center'`; `'global-fixed-corner'`), scroll
+strategy per position, and dismissal (Escape, outside click, backdrop
+click when `hasBackdrop` is set). Exposes `isOpen: Signal<boolean>` and
+`open()`/`close()`. Not exported from `public-api.ts` — internal to
+`libs/ui`, like `hmhaValueAccessor`.
+
+**Why it stops exactly there:** Menu/Tooltip/Toast/Select/Combobox (Dialog
+turned out not to use this foundation at all — see fork 14) all need the
+same creation-and-dismissal mechanics, but their focus behaviour genuinely
+diverges — Menu/Select/Combobox move focus in with arrow-key navigation and
+no trap, Tooltip/Toast touch focus not at all. A shared foundation that
+also owned focus would have to grow an escape hatch for most of its own API
+on any given consumer — the same shape of mistake fork 08 avoided by not
+making `hmhaValueAccessor` a base class. Each component builds its own key
+manager (Menu/Select/Combobox) directly; this foundation doesn't know one
+exists.
+
+**Written when Dialog was still assumed to be a consumer — it isn't.**
+This fork's reasoning (and the three options below) still holds for the
+five components that do use `hmhaOverlay`; only the consumer list changed,
+not the decision.
+
+**`global-fixed-corner` pins to the corner at zero offset, not a spacing
+value.** The composable has no CSS layer to draw from — the token-driven
+spacing a real corner-anchored toast needs is the *consuming component's*
+to own, via its own component token on its own root, the same as every
+other component in this library owns its own spacing. Baking a number in
+here would have meant guessing at Toast's design before Toast exists.
+
+**`'connected'`'s small gap between trigger and overlay is a literal
+number, not a token** — the one deliberate exception to "no hard-coded
+values," because `ConnectedPosition.offsetY` is a plain `number` in CDK's
+own API, not a CSS property; there is nothing for a `var()` reference to
+resolve against at that layer. Using CDK's own `STANDARD_DROPDOWN_BELOW_POSITIONS`
+preset instead of inventing one avoided needing to pick that number at
+all.
+
+**Rejected — an abstract base class each overlay component extends:**
+same reasoning as fork 08's rejection of Option A for CVA — Toast's shape
+(no trigger, fixed position, timer-driven) and Menu's shape (anchored,
+arrow-key nav) differ enough that a shared base would need unused surface
+on every subclass.
+
+**Rejected — no shared foundation, each component calls CDK Overlay
+directly:** tempting under "don't design for hypothetical requirements,"
+but the overlay-creation-plus-three-dismiss-subscriptions boilerplate is
+identical across six *named, real* consumers in fork 06 — not a guess at
+the future the way a premature abstraction would be.
+
+---
+
+## 14 — Dialog: the native `<dialog>` element, not `hmhaOverlay`
+
+**Decided:** `HmhaDialog` (`dialog[hmhaDialog]`) is an attribute directive
+on the native `<dialog>` element, opened via `.showModal()` — not
+`hmhaOverlay`/CDK Overlay like the rest of Wave 3 (fork 13). This was
+decided *during* step 2A, not step 1a, because the native-element option
+only became obvious once Dialog's actual requirements were in front of us
+— fork 13 was written assuming Dialog would be a sixth `hmhaOverlay`
+consumer, and that assumption turned out wrong.
+
+**Why:** `<dialog>` + `showModal()` already gives, for free, everything a
+modal needs and fork 13 deliberately left out: a real focus trap, native
+Escape-to-close, focus restored to the trigger on close, rendering in the
+top layer (no z-index stacking to manage), and an implicit
+`role="dialog"` with `aria-modal="true"` exposed automatically — zero ARIA
+wiring required. This is the exact pattern CLAUDE.md's component
+conventions already establish ("prefer an attribute selector on a native
+element") and fork 10/12 already applied to Checkbox/Radio/Switch; Dialog
+is simply the case where the native element happens to solve the *overlay*
+problem too, not just the *control* problem.
+
+**Rejected — `hmhaOverlay` with `global-center` positioning plus
+`ConfigurableFocusTrapFactory` layered on top:** this was the original
+plan (fork 13 names it explicitly). It would have meant hand-building
+focus trapping, Escape handling, backdrop-click handling, and
+`role="dialog"`/`aria-modal` wiring — all things `<dialog>` already does,
+tested across every browser engine instead of by us. Routing Dialog
+through CDK Overlay anyway, when a correct native element exists, would
+have been exactly the kind of hand-rolling CLAUDE.md's "use CDK, don't
+hand-roll" guidance exists to prevent in the *other* direction — CDK is
+there for what native doesn't solve, not as a default reached for out of
+habit.
+
+**New token: `--hmha-color-backdrop`.** Added to `tokens/semantic/effect.json`
+(mode-independent, next to `elevation` — it dims whatever page is behind
+it, light or dark) and `tokens/primitive/effect.json` (a new `scrim`
+primitive: `oklch(0.176 0.011 260 / 0.5)`, the same hue shadow primitives
+already use, just at backdrop-strength alpha). Styled via `::backdrop` in
+`dialog.css`. Semantic, not a component token — every future overlay-ish
+surface wanting a scrim should reuse this role, not invent its own.
+
+**A testing note, not a design decision, worth recording anyway:** Karma's
+`ChromeHeadlessNoSandbox` launcher doesn't fire `<dialog>`'s `close` event
+when `.close()` is called, though the `.open` property still updates
+correctly and a real Chromium (confirmed via Playwright) fires it fine —
+see CLAUDE.md's component-conventions section for how `dialog.spec.ts`
+works around it.
+
+---
+
+## 15 — Menu: `hmhaOverlay`'s first real consumer, and two foundation fixes it forced
+
+**Decided:** `HmhaMenu` is three pieces —`HmhaMenuTrigger` (`button[hmhaMenuTrigger]`,
+owns the `hmhaOverlay()` handle), `HmhaMenu` (`div[hmhaMenu]`, owns a CDK
+`FocusKeyManager`), `HmhaMenuItem` (`button[hmhaMenuItem]`, implements
+`FocusableOption`) — mirroring the Radio/RadioGroup trigger/panel/item split,
+with a dedicated `menu-context.ts` for `HMHA_MENU` to avoid a circular import
+between `menu.ts` (needs the concrete `HmhaMenuItem` class for
+`contentChildren`) and `menu-item.ts` (needs `HMHA_MENU`'s token value).
+
+Being `hmhaOverlay`'s first actual consumer (Dialog took the native-element
+path instead — fork 14) surfaced two bugs in the foundation itself that no
+amount of reviewing fork 13 in the abstract had caught:
+
+**Fix 1 — `open()` now takes an optional `injector`.** A `TemplatePortal`'s
+embedded view is injected, by default, from wherever the `<ng-template>` is
+*lexically declared* — in the consumer's own template, a sibling of the
+trigger, not a descendant of it. `HmhaMenu` injecting `HMHA_MENU_TRIGGER`
+threw NG0201 at runtime because the trigger directive was never an ancestor
+of the template in the DOM tree DI actually walks. Fixed by having
+`HmhaMenuTrigger` build a child `Injector` (providing itself as
+`HMHA_MENU_TRIGGER`) and pass it through `hmhaOverlay().open(origin,
+content, injector)` into the `TemplatePortal`/`ComponentPortal` constructor's
+own `injector` parameter. Any future connected-overlay trigger whose panel
+needs to inject the trigger (Select, Combobox) will need this same handle.
+
+**Fix 2 — outside-interaction dismissal now excludes the origin element.**
+CDK's `OverlayOutsideClickDispatcher` listens on `document.body` in the
+*capture* phase. For a connected overlay, clicking the trigger again (to
+toggle-close it) is indistinguishable from clicking anywhere else outside
+the panel — the dispatcher's capture-phase handler fires and closes the
+overlay *before* the trigger's own bubble-phase `(click)` listener ever
+runs. Unguarded, the trigger's click handler then reads `isOpen()` as
+already `false` and reopens what was just closed — a menu that visually
+never closes on a second trigger click. Fixed in `hmhaOverlay` itself (not
+just worked around in Menu) by checking `origin.contains(event.target)` in
+the `outsidePointerEvents()` subscription and skipping the auto-close when
+true — the origin element now owns dismissal of clicks on itself. This
+applies to every future connected consumer, not only Menu.
+
+Also added: `getLabel()` on `HmhaMenuItem` (returns trimmed `textContent`),
+without which `FocusKeyManager`'s `.withTypeAhead()` would silently match
+nothing — it skips items missing `getLabel` rather than throwing once any
+item is present, so the gap would have shipped invisibly instead of failing
+loudly.
+
+**Rejected — fixing the toggle-close bug only inside `HmhaMenuTrigger`**
+(e.g. a local flag ignoring the next click after a dismiss): would have
+left the same bug for Select and Combobox to rediscover independently.
+Fixing it in `hmhaOverlay` means every future connected-position trigger
+gets correct toggle behavior for free.
+
+A test-writing note: CDK's `ListKeyManager.onKeydown` switches on the
+legacy numeric `event.keyCode`, which a synthetic `KeyboardEvent(...,  {key:
+'ArrowDown'})` never populates in Chrome — `keyCode` has to be forced on
+with `Object.defineProperty` for dispatched test events. And because
+zoneless signal writes triggered from inside an RxJS subscription (the key
+manager's `change` emitter) don't synchronously patch bound DOM attributes,
+`fixture.detectChanges()` is needed after dispatching a keyboard event
+before asserting on `data-active`/`tabindex` — `document.activeElement`
+itself updates synchronously (a direct side effect of `.focus()`), so only
+the attribute-reflecting assertions needed it. The same `keyCode` gap hit
+the Storybook interaction tests too (step 3B): `@testing-library/user-event`
+v14 (what `storybook/test`'s `userEvent` wraps) deliberately never sets
+`keyCode` either, so `userEvent.keyboard('{ArrowDown}')` needed the same
+manual-dispatch-with-keyCode workaround there. Letter keys for typeahead
+were unaffected (CDK's `Typeahead` reads `event.key`, not `keyCode`) but
+needed `waitFor` instead, since `Typeahead` debounces keystrokes (200ms
+default) before acting — a real end user is unaffected either way, since a
+genuine hardware key press always populates `keyCode` correctly.
+
+21 new unit tests across `menu-trigger.spec.ts`/`menu.spec.ts`/
+`menu-item.spec.ts` (139/139 total), `build:lib`/`lint:css`/
+`lint:standalone` clean.
+
+---
+
+## Wave 3 progress — the step tracker
+
+**This section is the single source of truth for Wave 3 status**, the same
+way Wave 2 progress (above) was for Wave 2. Update the checklist and the
+CURRENT STEP marker at the end of every step. The process rule itself (one
+step at a time, stop-and-wait between steps, the done criteria) lives in
+`CLAUDE.md`'s "Working through a wave" section — this section only tracks
+where we are.
+
+Component order follows fork 06's wave table: Dialog, Menu, Tooltip, Toast,
+Tabs, then Select, then Combobox — Combobox explicitly last, since it wants
+Menu's foundation already working and is "the hardest a11y problem in the
+set." Whether Select and Combobox end up as two components or one with a
+mode is a question for when step 8 arrives, not now.
+
+1. [x] **1a.** Propose a shared CDK-overlay foundation (options +
+   recommendation) — positioning and dismissal, built once on
+   `@angular/cdk/overlay`, reused by Dialog/Menu/Tooltip/Toast/Select/
+   Combobox. Focus-trapping deliberately excluded (diverges too much per
+   component). — Approved: Option A (composable factory), scoped to
+   positioning + dismissal only.
+2. [x] **1b.** Build the approved foundation. `hmhaOverlay()` in
+   `libs/ui/src/lib/core/overlay.ts`. Recorded as fork 13 above. 10 new
+   unit tests covering all three position modes (connected/global-center/
+   global-fixed-corner), Escape, outside-click, backdrop-click, and
+   `dismissOnOutsideInteraction: false` (109/109 total), `build:lib`/
+   `lint:css`/`lint:standalone` clean — all passed first try.
+3. [x] **2A.** Build Dialog + tests — `libs/ui/src/lib/dialog/` (`dialog.ts`,
+   `dialog.css`, `dialog.spec.ts`, `README.md`). Uses the native `<dialog>`
+   element + `showModal()`, not `hmhaOverlay` — a real mid-step
+   reconsideration, recorded as fork 14 (and fork 13 amended to match: Menu
+   is `hmhaOverlay`'s actual first consumer now, not Dialog). Added
+   `--hmha-color-backdrop` (new semantic token) for the `::backdrop` scrim.
+   Found and documented a Karma-launcher-specific quirk (`<dialog>`'s
+   `close` event doesn't fire there, confirmed fine in real Chromium) —
+   now in CLAUDE.md. 10 new unit tests (118/118 total), `build:lib`/
+   `lint:css`/`lint:standalone` clean.
+4. [x] **2B.** Story: Dialog — `dialog.stories.ts` (Playground,
+   OpenInteraction, CloseViaContentInteraction, BackdropDismissInteraction,
+   NonDismissible). These interaction tests run in a real browser context
+   (Storybook's own test runner, not Karma), so their passing is additional
+   independent confirmation the native `showModal()`/`close()` mechanics
+   work correctly — consistent with the earlier Playwright check, not just
+   the Karma-adjusted unit tests. Visually confirmed the `::backdrop` scrim
+   and centered modal render correctly. All 53 stories across the library
+   pass `test-run` (incl. a11y).
+5. [x] **3A.** Build Menu + tests — `libs/ui/src/lib/menu/` (`menu-trigger.ts`,
+   `menu-context.ts`, `menu-item.ts`, `menu.ts`, two CSS files, three spec
+   files, `README.md`). First real `hmhaOverlay` consumer — surfaced and
+   fixed two bugs in the foundation itself, recorded as fork 15: a missing
+   `injector` passthrough for `TemplatePortal`/`ComponentPortal` (NG0201 on
+   `HMHA_MENU_TRIGGER` otherwise), and an outside-click dismissal that
+   closed-then-reopened on a second trigger click because CDK's dispatcher
+   runs in the capture phase. 21 new unit tests (139/139 total), `build:lib`/
+   `lint:css`/`lint:standalone` clean.
+6. [x] **3B.** Story: Menu — three colocated files (`menu-trigger.stories.ts`,
+   `menu.stories.ts`, `menu-item.stories.ts`), matching the one-file-per-
+   component-filename convention. Covers open/close, the fork-15
+   toggle-close regression, keyboard navigation (with a disabled item
+   skipped), typeahead, selection, Escape, and outside-click dismissal.
+   Surfaced a second, Storybook-only instance of the `keyCode` test gap
+   (see fork 15's note above) plus a typeahead-debounce timing gap, both
+   fixed in the story files. All 12 Menu stories plus the full existing
+   suite (65 stories) pass `test-run` (incl. a11y).
+7. [ ] **4A.** Build Tooltip + tests **← CURRENT STEP**
+8. [ ] **4B.** Story: Tooltip
+9. [ ] **5A.** Build Toast + tests
+10. [ ] **5B.** Story: Toast
+11. [ ] **6A.** Build Tabs + tests
+12. [ ] **6B.** Story: Tabs
+13. [ ] **7A.** Build Select + tests
+14. [ ] **7B.** Story: Select
+15. [ ] **8A.** Build Combobox + tests
+16. [ ] **8B.** Story: Combobox
+17. [ ] **9.** Wave 3 gate — compose Dialog, Menu, Tooltip, Toast, Tabs,
+    Select and Combobox together in `apps/sandbox`, per the wave-gate rule
+    in fork 06 (mirrors Wave 2's step 8 — a real screen, not just stories).
 
 ---
 

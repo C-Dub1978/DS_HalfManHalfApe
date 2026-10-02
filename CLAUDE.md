@@ -94,6 +94,16 @@ preference works until an app pins a mode and then gets out of the way.
 - Forms: `ControlValueAccessor` is still the integration point in Angular 20 —
   signals have not replaced it. Hold the value in a signal internally and let the
   CVA methods write to it.
+- **Karma's `ChromeHeadlessNoSandbox` launcher doesn't fire a native
+  `<dialog>`'s `close` event when `.close()` is called** — confirmed via a
+  direct Playwright/Chromium check that real browsers do fire it; this is a
+  launcher-specific gap, not a bug in whatever component you're testing. The
+  `dialog.open` *property* still updates correctly either way. Test your own
+  reaction to the event by dispatching it directly
+  (`element.dispatchEvent(new Event('close'))`) rather than relying on
+  `.close()`'s own internal firing; save the real end-to-end proof (does a
+  genuine user interaction actually close it) for a real-browser check —
+  Storybook's `test-run`, or driving the sandbox — not the Karma unit suite.
 
 ### The canonical component
 
@@ -269,8 +279,7 @@ any of these components, especially fork 11 (Radio's asymmetric
 group/individual-radio split) and fork 12 (Switch has no native element to
 build on).
 
-**Wave 3 hasn't started.** See `DECISIONS.md` fork 06 for its scope (Dialog,
-Menu, Tooltip, Toast, Tabs, then Select/Combobox) — no tracker exists for it
-yet; write one the same way `DECISIONS.md`'s Wave 2 progress section works
-before starting, per the "Working through Wave 2" process above (which
-applies to every wave, not just the one it's named after).
+**Wave 3 is starting.** See `DECISIONS.md`'s **Wave 3 progress** section for
+the live step tracker and current step — same rule as Wave 2: don't rely on
+this file for Wave 3 status, that section is the source of truth. Scope is
+fork 06: Dialog, Menu, Tooltip, Toast, Tabs, then Select, then Combobox.

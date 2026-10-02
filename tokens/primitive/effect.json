@@ -26,5 +26,9 @@
     "standard": {
       "$value": "cubic-bezier(0.2, 0, 0, 1)"
     }
+  },
+  "scrim": {
+    "$type": "color",
+    "$value": "oklch(0.176 0.011 260 / 0.5)"
   }
 }
