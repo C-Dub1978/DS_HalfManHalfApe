@@ -1,4 +1,13 @@
-import { TemplateRef, ViewContainerRef, type Injector, type Signal, type Type, inject, signal } from '@angular/core';
+import {
+  DestroyRef,
+  TemplateRef,
+  ViewContainerRef,
+  type Injector,
+  type Signal,
+  type Type,
+  inject,
+  signal,
+} from '@angular/core';
 import {
   Overlay,
   STANDARD_DROPDOWN_BELOW_POSITIONS,
@@ -55,6 +64,12 @@ export function hmhaOverlay(options: HmhaOverlayOptions): HmhaOverlayHandle {
   const isOpen = signal(false);
   const dismissOnOutsideInteraction = options.dismissOnOutsideInteraction ?? true;
   let overlayRef: OverlayRef | null = null;
+
+  // Without this, a host destroyed while its overlay is still open (a real
+  // path for a hover-driven Tooltip — nothing guarantees a mouseleave fires
+  // before the element it's attached to is removed) leaks the CDK overlay
+  // DOM node and its dismissal subscriptions indefinitely.
+  inject(DestroyRef).onDestroy(() => close());
 
   function positionStrategy(origin: HTMLElement | null): PositionStrategy {
     switch (options.position) {

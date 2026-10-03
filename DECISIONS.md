@@ -693,6 +693,57 @@ genuine hardware key press always populates `keyCode` correctly.
 
 ---
 
+## 16 — Tooltip: `AriaDescriber`, not `aria-describedby` on the bubble itself
+
+**Decided:** `HmhaTooltip` (`[hmhaTooltip]`, an attribute directive with no
+element-name requirement — it applies to anything) shows a small
+`hmhaOverlay`-positioned bubble on `mouseenter`/`focus`, hidden on
+`mouseleave`/`blur`/Escape. The bubble (`HmhaTooltipPanel`, an internal,
+unexported component in the same file) gets the message via the same
+child-injector pattern Menu's trigger uses to hand `HmhaMenu` the
+`HMHA_MENU_TRIGGER` token (fork 15) — the only way a `ComponentPortal` can
+receive data from whatever opened it.
+
+The accessible description is **not** `aria-describedby` pointed at that
+bubble. It's `@angular/cdk/a11y`'s `AriaDescriber`, which maintains its own
+hidden, always-present text node per message and wires the host's
+`aria-describedby` to it — independent of whether the visible bubble is
+currently mounted. `AriaDescriber` is reference-counted across hosts
+describing identical text, so `HmhaTooltip` must call `removeDescription()`
+with the exact previous message on every change and on destroy, not just
+`describe()` with the new one.
+
+**Why:** a `ComponentPortal` mounts and unmounts on every hover — pointing a
+persistent ARIA reference at something that comes and goes that often is
+unreliable, and some assistive tech doesn't reliably announce content
+rendered through a portal at all. This is the same approach Angular
+Material's own tooltip takes, for the same documented reason — CLAUDE.md's
+"use CDK, don't hand-roll" pointed straight at reusing the exact service
+built for this, rather than re-deriving the ARIA mechanics ourselves.
+
+**Rejected — pointing `aria-describedby` directly at the floating bubble's
+own generated id:** simpler to write, but ties the accessible description's
+presence to the bubble's mount lifecycle and to portal-content screen-reader
+support that isn't guaranteed. `AriaDescriber` sidesteps both.
+
+**A foundation fix this component needed, found before it could hide
+again:** `hmhaOverlay()` never disposed an open overlay when its host was
+destroyed — each consumer was expected to remember to call `close()` itself
+in `ngOnDestroy`, which neither `HmhaMenuTrigger` nor `HmhaDialog` actually
+needed to care about in practice (both are click-driven, closed by explicit
+user action long before anything would destroy them mid-open). A
+hover-driven Tooltip has no such guarantee — nothing stops the host element
+from being removed from the DOM (an `*ngFor` update, a route change) while
+the mouse is still over it, with no `mouseleave` ever firing. Fixed with one
+`inject(DestroyRef).onDestroy(() => close())` inside `hmhaOverlay()` itself,
+covering every current and future consumer, not just this one — the same
+"fix it once in the foundation" reasoning as fork 15's two overlay fixes.
+One new regression test in `overlay.spec.ts` (destroying the host disposes
+an open overlay); 8 new tests in `tooltip.spec.ts` (148/148 total overall).
+`build:lib`/`lint:css`/`lint:standalone` clean.
+
+---
+
 ## Wave 3 progress — the step tracker
 
 **This section is the single source of truth for Wave 3 status**, the same
@@ -757,9 +808,23 @@ mode is a question for when step 8 arrives, not now.
    (see fork 15's note above) plus a typeahead-debounce timing gap, both
    fixed in the story files. All 12 Menu stories plus the full existing
    suite (65 stories) pass `test-run` (incl. a11y).
-7. [ ] **4A.** Build Tooltip + tests **← CURRENT STEP**
-8. [ ] **4B.** Story: Tooltip
-9. [ ] **5A.** Build Toast + tests
+7. [x] **4A.** Build Tooltip + tests — `libs/ui/src/lib/tooltip/` (`tooltip.ts`,
+   `tooltip.css`, `tooltip.spec.ts`, `README.md`). Uses `@angular/cdk/a11y`'s
+   `AriaDescriber` for the real accessible description (independent of the
+   bubble's mount/unmount) rather than pointing `aria-describedby` at the
+   floating bubble itself — recorded as fork 16, along with a foundation fix
+   `hmhaOverlay` needed for a hover-driven trigger specifically: it never
+   disposed an open overlay on host destroy, a real gap for Tooltip (no
+   guaranteed `mouseleave` before removal) even though Menu/Dialog never hit
+   it. 9 new unit tests (1 in `overlay.spec.ts`, 8 in `tooltip.spec.ts`;
+   148/148 total), `build:lib`/`lint:css`/`lint:standalone` clean.
+8. [x] **4B.** Story: Tooltip — `tooltip.stories.ts` (Playground,
+   HoverInteraction, FocusInteraction, EscapeDismissInteraction). Escape
+   needed no `keyCode` workaround here (unlike Menu's arrow-key stories) —
+   `hmhaOverlay`'s own Escape handling reads `event.key`, not the legacy
+   `keyCode` CDK's `ListKeyManager` still switches on. All 4 Tooltip stories
+   plus the full existing suite (69 stories) pass `test-run` (incl. a11y).
+9. [ ] **5A.** Build Toast + tests **← CURRENT STEP**
 10. [ ] **5B.** Story: Toast
 11. [ ] **6A.** Build Tabs + tests
 12. [ ] **6B.** Story: Tabs

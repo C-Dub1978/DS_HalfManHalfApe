@@ -19,3 +19,4 @@ export * from './lib/menu/menu-trigger';
 export * from './lib/radio/radio';
 export * from './lib/radio/radio-group';
 export * from './lib/switch/switch';
+export * from './lib/tooltip/tooltip';

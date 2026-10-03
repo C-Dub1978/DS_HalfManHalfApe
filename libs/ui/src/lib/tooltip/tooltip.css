@@ -1,0 +1,15 @@
+/* tooltip.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-tooltip-bg: var(--hmha-color-surface-raised);
+  --hmha-tooltip-fg: var(--hmha-color-text);
+
+  display: block;
+  background: var(--hmha-tooltip-bg);
+  color: var(--hmha-tooltip-fg);
+  border: var(--hmha-border-width) solid var(--hmha-color-border);
+  border-radius: var(--hmha-radius-surface);
+  box-shadow: var(--hmha-elevation-raised);
+  padding: var(--hmha-control-padding-y) var(--hmha-control-padding-x);
+  font-size: var(--hmha-type-body-md-size);
+}

@@ -114,6 +114,19 @@ describe('hmhaOverlay — connected position', () => {
     overlay.open(trigger().nativeElement, content());
     expect(document.querySelectorAll('.overlay-content').length).toBe(1);
   });
+
+  // Nothing guarantees a host destroyed while its overlay is open got a
+  // chance to call close() first — a hover-driven Tooltip removed from the
+  // DOM mid-hover is a real example, not a hypothetical one. Without this,
+  // the overlay's DOM node and its dismissal subscriptions leak forever.
+  it('disposes the open overlay automatically when the host is destroyed', () => {
+    const { overlay, trigger, content } = fixture.componentInstance;
+    overlay.open(trigger().nativeElement, content());
+    expect(document.querySelector('.overlay-content')).toBeTruthy();
+
+    fixture.destroy();
+    expect(document.querySelector('.overlay-content')).toBeNull();
+  });
 });
 
 describe('hmhaOverlay — dismissOnOutsideInteraction: false', () => {
