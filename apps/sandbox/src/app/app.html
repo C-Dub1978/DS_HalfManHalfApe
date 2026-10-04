@@ -135,4 +135,111 @@
 
     <button hmhaButton tone="primary" type="submit">Create account</button>
   </form>
+
+  <h2>Team — Wave 3, every new component composed together</h2>
+  <p class="muted">
+    Dialog, Menu, Tooltip, Toast, Tabs, Select and Combobox, wired to real
+    state — not just shown in isolation. This is the Wave 3 gate: Tabs hold
+    the screen together, each member's role is a Select, the kebab Menu's
+    "Remove" action opens a Dialog, confirming it fires a Toast, an info
+    Tooltip explains what the roles mean, and the Invite tab's Combobox
+    searches teammates by name.
+  </p>
+
+  <div hmhaTabs [(value)]="activeTab" class="team-tabs">
+    <div hmhaTabList>
+      <button hmhaTab value="members">Members</button>
+      <button hmhaTab value="invite">Invite</button>
+      <button hmhaTab value="danger">Danger zone</button>
+    </div>
+
+    <div hmhaTabPanel value="members">
+      <div class="members-header">
+        <span class="muted">Role</span>
+        <button
+          hmhaButton
+          hmhaIconButton
+          label="What do roles mean?"
+          tone="neutral"
+          size="sm"
+          [hmhaTooltip]="'Owners manage billing and can remove anyone. Admins manage members. Members have read-only access.'"
+        >
+          <hmha-icon name="info" size="sm" />
+        </button>
+      </div>
+
+      @for (member of members(); track member.id) {
+        <div class="member-row">
+          <div class="member-identity">
+            <strong>{{ member.name }}</strong>
+            <span class="muted">{{ member.email }}</span>
+          </div>
+
+          <button [hmhaSelectTrigger]="roleListbox" [formControl]="member.role" class="role-trigger">
+            {{ member.role.value }}
+            <hmha-icon name="chevron-down" size="sm" />
+          </button>
+          <ng-template #roleListbox>
+            <div hmhaSelectListbox cdkListbox>
+              <div hmhaSelectOption cdkOption="Owner">Owner</div>
+              <div hmhaSelectOption cdkOption="Admin">Admin</div>
+              <div hmhaSelectOption cdkOption="Member">Member</div>
+            </div>
+          </ng-template>
+
+          <button hmhaButton hmhaIconButton label="Actions for {{ member.name }}" tone="neutral" size="sm" [hmhaMenuTrigger]="memberMenu">
+            <hmha-icon name="more-vertical" size="sm" />
+          </button>
+          <ng-template #memberMenu>
+            <div hmhaMenu>
+              <button hmhaMenuItem (click)="requestRemoval(member)">Remove from team</button>
+            </div>
+          </ng-template>
+        </div>
+      }
+    </div>
+
+    <div hmhaTabPanel value="invite">
+      <hmha-field label="Invite by name">
+        <input [hmhaCombobox]="inviteListbox" [formControl]="inviteName" placeholder="Search teammates…" />
+      </hmha-field>
+      <ng-template #inviteListbox>
+        <div hmhaComboboxListbox cdkListbox cdkListboxUseActiveDescendant="true">
+          @for (person of availablePeople; track person) {
+            <div hmhaComboboxOption [cdkOption]="person">{{ person }}</div>
+          }
+        </div>
+      </ng-template>
+      <button hmhaButton tone="primary" [disabled]="!inviteName.value" (click)="sendInvite()">
+        <hmha-icon name="send" size="sm" />
+        Send invite
+      </button>
+    </div>
+
+    <div hmhaTabPanel value="danger">
+      <p class="muted">Deleting the workspace removes every project and can't be undone.</p>
+      <button hmhaButton tone="danger" (click)="deleteWorkspaceOpen.set(true)">
+        <hmha-icon name="triangle-alert" size="sm" />
+        Delete workspace
+      </button>
+    </div>
+  </div>
+
+  <dialog hmhaDialog [open]="pendingRemoval() !== null" (openChange)="onRemovalDialogOpenChange($event)" aria-labelledby="remove-title">
+    <h2 id="remove-title">Remove {{ pendingRemoval()?.name }}?</h2>
+    <p>They'll lose access to this workspace immediately.</p>
+    <div class="row">
+      <button hmhaButton tone="neutral" (click)="pendingRemoval.set(null)">Cancel</button>
+      <button hmhaButton tone="danger" (click)="confirmRemoval()">Remove</button>
+    </div>
+  </dialog>
+
+  <dialog hmhaDialog [open]="deleteWorkspaceOpen()" (openChange)="deleteWorkspaceOpen.set($event)" aria-labelledby="delete-workspace-title">
+    <h2 id="delete-workspace-title">Delete this workspace?</h2>
+    <p>This can't be undone.</p>
+    <div class="row">
+      <button hmhaButton tone="neutral" (click)="deleteWorkspaceOpen.set(false)">Cancel</button>
+      <button hmhaButton tone="danger" (click)="confirmDeleteWorkspace()">Delete</button>
+    </div>
+  </dialog>
 </main>

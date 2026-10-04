@@ -57,3 +57,34 @@ h2 {
   background: var(--hmha-color-success-subtle);
   color: var(--hmha-color-success-text);
 }
+
+.team-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hmha-space-stack);
+}
+
+.members-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--hmha-control-gap);
+}
+
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: var(--hmha-control-gap);
+  padding-block: var(--hmha-control-padding-y);
+  border-bottom: var(--hmha-border-width) solid var(--hmha-color-border);
+}
+
+.member-identity {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+}
+
+.role-trigger {
+  flex: 0 0 auto;
+}

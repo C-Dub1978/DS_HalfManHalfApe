@@ -1,0 +1,12 @@
+/* tab-panel.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  display: block;
+  color: var(--hmha-color-text);
+  padding-block: var(--hmha-control-padding-y);
+}
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}

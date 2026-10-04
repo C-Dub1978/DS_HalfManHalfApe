@@ -59,7 +59,12 @@ export interface HmhaOverlayHandle {
 
 export function hmhaOverlay(options: HmhaOverlayOptions): HmhaOverlayHandle {
   const overlay = inject(Overlay);
-  const viewContainerRef = inject(ViewContainerRef);
+  // Optional: a root-provided service (Toast, fork 17) has no element and
+  // so no ViewContainerRef to inject — CDK's ComponentPortal already
+  // supports that case (it falls back to ApplicationRef.attachView() when
+  // none is given), so this only forbids TemplateRef content without one,
+  // below. A directive/component consumer (Menu, Tooltip) always has one.
+  const viewContainerRef = inject(ViewContainerRef, { optional: true }) ?? undefined;
 
   const isOpen = signal(false);
   const dismissOnOutsideInteraction = options.dismissOnOutsideInteraction ?? true;
@@ -119,10 +124,15 @@ export function hmhaOverlay(options: HmhaOverlayOptions): HmhaOverlayHandle {
       hasBackdrop: options.hasBackdrop ?? false,
     });
 
-    const portal =
-      content instanceof TemplateRef
-        ? new TemplatePortal(content, viewContainerRef, undefined, injector)
-        : new ComponentPortal(content, viewContainerRef, injector);
+    let portal: TemplatePortal<unknown> | ComponentPortal<unknown>;
+    if (content instanceof TemplateRef) {
+      if (!viewContainerRef) {
+        throw new Error('hmhaOverlay: TemplateRef content requires a ViewContainerRef — use a component instead.');
+      }
+      portal = new TemplatePortal(content, viewContainerRef, undefined, injector);
+    } else {
+      portal = new ComponentPortal(content, viewContainerRef, injector);
+    }
     overlayRef.attach(portal);
     isOpen.set(true);
 

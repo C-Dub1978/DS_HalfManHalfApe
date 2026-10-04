@@ -744,6 +744,326 @@ an open overlay); 8 new tests in `tooltip.spec.ts` (148/148 total overall).
 
 ---
 
+## 17 — Toast: a root-provided service, not a directive — and `hmhaOverlay` without a `ViewContainerRef`
+
+**Decided:** `HmhaToast` is a plain `@Injectable({ providedIn: 'root' })`
+with one method, `show(text, durationMs = 4000)` — not a directive or
+component with a selector, the shape every other Wave 3 piece has taken so
+far. It's triggered imperatively from anywhere (`inject(HmhaToast).show
+(...)`), which is exactly CLAUDE.md's own stated reason for the two named
+exceptions to "prefer an attribute selector on a native element": nothing
+native fits a page-level, trigger-less notification, the same way nothing
+native fit Dialog *before* fork 14 found one. Toast never found one either
+— there genuinely isn't a host element for this component, so the service
+shape is the honest one, not a workaround.
+
+One visible toast at a time, queued (not stacked) when `show()` is called
+again before the current one's duration elapses — the simplest behavior
+that never silently drops a message. Real stacking can follow later if
+it's actually needed; nothing here forecloses it.
+
+**A foundation fix only a trigger-less consumer could surface:**
+`hmhaOverlay()` unconditionally called `inject(ViewContainerRef)` — fine
+for Menu and Tooltip, both real directives with a real host element, but a
+root-provided service has no element and therefore no `ViewContainerRef` to
+give it; injecting one there throws. CDK's own `ComponentPortal` already
+anticipates this exact case — `attachComponentPortal` branches on whether
+`portal.viewContainerRef` is set, falling back to `ApplicationRef.
+attachView()` when it isn't. Fixed by injecting it as `{ optional: true }`
+and threading `undefined` through; `TemplatePortal` has no such fallback
+(an embedded view *requires* a container), so `open()` now throws clearly
+if `TemplateRef` content is ever passed without one. `HmhaToast` only
+opens a component (`HmhaToastPanel`, internal, unexported — the same
+message-via-child-injector pattern as `HmhaTooltipPanel`), so this never
+applies to it in practice; it exists so a `TemplateRef` misuse fails loudly
+instead of silently.
+
+**A testing note:** a `ComponentPortal` attached via `ApplicationRef.
+attachView()` (the no-`ViewContainerRef` path) has no `fixture.
+detectChanges()` to give it a first render — there's no fixture at all,
+`HmhaToast` is tested as a plain injected service via `TestBed.inject()`.
+`TestBed.inject(ApplicationRef).tick()` stands in for it. Also: the first
+attempt at the queue/FIFO tests used overlapping wait windows (two 20ms
+messages checked 60ms apart had both already cycled through and dismissed
+by the time the assertion ran) — not a product bug, a test-timing bug;
+fixed by spacing each check to land inside its message's own visible
+window without overrunning into the next dismiss cycle.
+
+**Rejected — giving `HmhaToast` its own injected `ViewContainerRef` by
+requiring callers to provide one:** would have made `show()` take an
+extra parameter every caller has to supply correctly, for a service whose
+entire appeal is being callable from anywhere without any setup. Fixing
+`hmhaOverlay` itself keeps the public API to one argument.
+
+9 new unit tests in `toast.spec.ts` (153/153 total overall), `build:lib`/
+`lint:css`/`lint:standalone` clean.
+
+---
+
+## 18 — Tabs: reading "needs a custom element name" as per-piece, not per-component
+
+**Decided:** `HmhaTabs` is four pieces, every one an attribute selector on
+a native element — `div[hmhaTabs]` (root, owns the selected `value` as a
+required two-way `model<string>()`), `div[hmhaTabList]` (`role="tablist"`,
+a CDK `FocusKeyManager` for Left/Right + Home/End with **automatic
+activation** — arrow-key focus also selects), `button[hmhaTab]`
+(`role="tab"`, real native click/Enter/Space for free), `div[hmhaTabPanel]`
+(`role="tabpanel"`, hidden via the native `hidden` attribute). A tab and
+its panel are matched by a shared string `value`, not DOM position, so
+panels don't need to be interleaved with their tabs — both independently
+inject the one `HMHA_TABS` context `HmhaTabs` provides, with ids generated
+deterministically from `value` and namespaced per root instance (reusing
+`_IdGenerator`, the same device fork 11's `HmhaRadioGroup` uses for its
+`name`) rather than needing a lookup registry.
+
+**Why no custom tag name, despite CLAUDE.md naming Tabs as needing one:**
+applying the same per-piece reasoning already used throughout — a `<div>`
+for a non-interactive container with no native analog (Menu's panel,
+`div[hmhaMenu]`), a real `<button>` for anything actually clickable
+(Switch, `button[hmhaSwitch]`) — leads here, and avoids hand-rolling
+Enter/Space activation that a real `<button>` gives for free. Worth
+noting: neither of CLAUDE.md's two named exceptions (Dialog, Toast) ended
+up needing a custom tag either in practice — Dialog found the native
+`<dialog>` element fit after all (fork 14), and Toast has no element at
+all (fork 17). This reads that guidance as "no single native element
+covers the composite Tabs *widget*" (true, and why the exception exists)
+rather than "invent a tag for each of its parts" — not a departure from it.
+
+**Rejected — nesting `HmhaTabPanel`s inside `HmhaTabList`** so DI could
+resolve the normal way: would tangle two separable concerns (the trigger
+strip and the content panels) into one container for a DI technicality,
+and break the natural visual/DOM separation most ARIA Tabs examples show.
+Providing the shared context on the outer `HmhaTabs` root instead — which
+both `HmhaTabList`/`HmhaTab` and `HmhaTabPanel` are genuine descendants
+of — needed no portal/injector-passthrough trick at all, unlike Menu.
+
+**A test-writing note, not a design decision:** the host template's
+`[(value)]="active"` two-way binding threw `NG0100` whenever a test
+mutated `active` directly as a plain field (`fixture.componentInstance.
+active = 'x'`) and called `detectChanges()` again — but never when the
+*component itself* changed it (a click, an arrow key). `ɵɵtwoWayProperty`
+expects the bound expression to participate in the reactive graph; a
+plain field doesn't, even though a one-way `[value]="active"` binding
+tolerates exactly this pattern everywhere else in this codebase. Fixed by
+binding to a real `signal()` and mutating it with `.set()` — which
+`dialog.spec.ts`'s `[(open)]="isOpen"` was already quietly doing
+correctly; this is the first time another spec's host needed the same
+two-way binding and copied the pattern without knowing why it mattered.
+
+**A real CSS bug the axe check caught, not a test artifact:** `tab-panel.
+css` set no `color` at all, so panel text inherited plain black
+regardless of mode — invisible against a dark-mode background. Every
+other floating-content component (Menu, Dialog, Toast, Tooltip) had
+already declared both `background` and `color` together on `:host` and
+never hit this; `HmhaTabPanel` is the first inline (non-floating,
+non-"owns-its-own-surface") piece, where only `color` turned out to be
+needed. Fixed by adding `color: var(--hmha-color-text)`.
+
+18 new unit tests across `tabs.spec.ts`/`tab-list.spec.ts`/`tab.spec.ts`/
+`tab-panel.spec.ts` (171/171 total), `build:lib`/`lint:css`/
+`lint:standalone` clean.
+
+**Step 6B (stories) hit the same `keyCode` gap as Menu's, plus a new
+render-timing one.** `userEvent.keyboard('{ArrowRight}')` needed the same
+manual-dispatch-with-`keyCode` workaround as Menu's arrow-key stories
+(fork 15's note). More specifically here: `aria-selected` reflects a
+signal updated via `FocusKeyManager`'s RxJS `change` subscription, while
+`.focus()` (asserted via `toHaveFocus()`) is a synchronous DOM side
+effect called directly by the key manager — the two don't settle on the
+same tick, so `toHaveFocus()` passed immediately but `aria-selected`
+needed a `waitFor(...)` around it. Four new component files in one
+dev-server session also re-triggered the brand-new-file restart quirk
+(this time the original styleUrl-error shape, not Toast's "No Preview"
+one) — restarted, and found/cleared an orphaned duplicate `npm run
+storybook` process left over from an earlier session restart in the
+process. All 9 Tabs stories plus the full existing suite (81 stories)
+pass `test-run` (incl. a11y).
+
+---
+
+## 19 — Select: built on `@angular/cdk/listbox`, not hand-rolled key handling
+
+**Decided:** `HmhaSelect` is three pieces, each stacking our own styling
+component with a CDK `listbox` directive on the *same* host element
+rather than re-implementing anything CDK already does —
+`button[hmhaSelectTrigger]` (the `ControlValueAccessor` surface, built on
+`hmhaOverlay()`), `div[hmhaSelectListbox][cdkListbox]` (bridges
+`CdkListbox`'s own value/selection to the trigger), `div[hmhaSelectOption]
+[cdkOption]` (pure styling — `CdkOption` already supplies `role="option"`,
+`aria-selected`, `aria-disabled`, and click handling). CLAUDE.md names
+`@angular/cdk`'s `listbox` module explicitly alongside `a11y`/`overlay` as
+something to use, not hand-roll (unlike Menu and Tabs, where no dedicated
+CDK module exists and a raw `FocusKeyManager` was the right level to build
+on) — this is the first component to reach for it, and it is as complete
+as advertised: full keyboard nav (arrows, Home/End, typeahead), a
+selection model (single or multi), and `ControlValueAccessor` built in.
+`HmhaSelectListbox`'s own job shrinks to almost nothing as a result: sync
+the trigger's value in, forward `cdkListboxValueChange` back out, and
+close the popup on pick (matching native `<select>` — unlike Menu, where
+every item click closes regardless of "selection").
+
+Reopening re-focuses whichever option is currently selected, not always
+the first — `CdkListbox.focus()`'s own documented behavior
+(`_setNextFocusToSelectedOption`), not something built here.
+
+**A real accessibility gap the axe check caught:** `role="listbox"` is an
+ARIA input role and needs an accessible name of its own — easy to miss
+since the *options* inside it already have names (their own text), and
+nothing flagged it until axe's `aria-input-field-name` rule did. Fixed by
+giving the trigger a stable `id` (falling back to a self-generated one via
+`_IdGenerator` when not wrapped in an `HmhaField`, same device as fork
+11's `HmhaRadioGroup`) and pointing the listbox's `aria-labelledby` at it
+— the trigger's own visible text is the listbox's accessible name.
+
+**Rejected — having `HmhaSelect` auto-derive the trigger's closed-state
+label from the options:** the options only exist inside the overlay while
+it's open (same lazy-render shape as Menu), so there's no persistent
+registry to read a label from without keeping a second, always-rendered
+copy of the options around defeating that. Scoped out for v1 — the
+trigger's content is the consumer's own binding, same data they already
+have to feed the `FormControl`. Documented in the README as a deliberate
+scope decision, not an oversight.
+
+**A test-writing note:** interpolating `FormControl.value` directly in a
+template (`{{ control.value || 'placeholder' }}`) threw `NG0100` on a
+second `detectChanges()` after `setValue()` — a plain mutable property
+read, not a signal, behaving differently here than `[formControl]`'s own
+internal wiring does elsewhere in this codebase. Not a product bug;
+rewrote the test host to keep static trigger text and assert `control.
+value` directly instead of through the template.
+
+17 new unit tests across `select-trigger.spec.ts`/`select-listbox.spec.ts`/
+`select-option.spec.ts` (188/188 total), `build:lib`/`lint:css`/
+`lint:standalone` clean.
+
+**Step 7B (stories) caught a real color-contrast failure the unit suite
+never could — `axe-core` in Karma was always scoped to a single fixed
+mode per assertion, but Storybook's a11y panel checks the actual rendered
+page as composed, including a state unit tests hadn't isolated: an option
+that is both selected AND active/hovered at once (blue `--hmha-color-
+action` text on the `--hmha-color-bg-subtle` active background, 4.46:1,
+just under the 4.5:1 AA floor for normal text).** Per the storybook
+skill's a11y guidelines, color contrast is a visual/design call, not an
+auto-fix — asked the user for a direction rather than silently picking
+one. Fixed by dropping the colored-text selection indicator entirely and
+adding a trailing `<hmha-icon name="check">` instead, which sidesteps
+text-on-variable-background contrast altogether. Also hit the brand-new-
+file restart quirk again (expected — Select is new this session) and
+found yet another orphaned duplicate `npm run storybook` process in the
+process, same as fork 18's story step. All 10 Select stories plus the
+full existing suite (91 stories) pass `test-run` (incl. a11y).
+
+---
+
+## 20 — Combobox: active-descendant mode, and why it needs keydown forwarding
+
+**Decided:** `HmhaCombobox` mirrors `HmhaSelect`'s three-piece shape —
+`input[hmhaCombobox]` (the `ControlValueAccessor`, built on
+`hmhaOverlay()`), `div[hmhaComboboxListbox][cdkListbox]` (bridges
+`CdkListbox` to the input), `div[hmhaComboboxOption][cdkOption]` (styling
+only, no "selected" state — a combobox's options are suggestions, not a
+persistent choice) — but with `CdkListbox` configured in **active-
+descendant mode** (`cdkListboxUseActiveDescendant="true"`) instead of
+Select's default real-focus-movement mode. Real DOM focus has to stay in
+the input the entire time — the user is still typing — so the highlighted
+suggestion is tracked virtually via `aria-activedescendant` instead of
+actual focus.
+
+**The mechanical consequence, and the one genuinely new piece of
+plumbing this component needed:** `CdkListbox`'s own `(keydown)` host
+listener lives on *its own* element. In Select, real focus moving into
+the options meant keydowns landed there naturally. Here, focus never
+leaves the input, so those keydowns never reach the listbox via bubbling
+at all — `HmhaComboboxInput` has to construct a fresh `KeyboardEvent` and
+`dispatchEvent()` it directly at the listbox's native element whenever
+the user presses Arrow/Home/End/Enter. `dispatchEvent()` is synchronous,
+so every listener on that element — including `CdkListbox`'s own — has
+finished running by the time it returns, which is also what makes reading
+the resulting active option back immediately afterward safe.
+
+**A real bug the first test attempt caught: `computed()`/`effect()`
+can't see `CdkOption.isActive()` change, because nothing it reads is a
+signal.** `isActive()` resolves to a plain `listKeyManager.activeItem ===
+this` comparison — true state, but not reactive state. Wrapping it in a
+`computed()` (the first attempt) meant Angular's dependency tracking saw
+only the `contentChildren` signal, which never changes across navigation,
+so the computed's cached value never updated after its first (null)
+evaluation — a convincing-looking fix that silently never ran again. The
+working fix drops reactive derivation entirely in favor of what fork 15
+already established the mechanism for: a plain, non-memoized method
+(`HmhaComboboxListbox.getActiveOptionId()`) called imperatively,
+synchronously, right after the forwarded keydown's `dispatchEvent()`
+returns — correctness guaranteed by dispatch ordering, not by hoping
+Angular's reactivity graph noticed something it structurally couldn't.
+
+**A second real bug, same root cause (two directives, one attribute):**
+`CdkListbox` binds its own host `[id]` (auto-generating one if unset) —
+adding a *second*, competing `[attr.id]` binding from `HmhaComboboxListbox`
+lost silently to CDK's own, breaking the `aria-controls` the input needs
+to point at it correctly. Fixed by setting `cdkListbox.id` imperatively
+in the constructor instead of adding a competing host binding — let the
+directive that already owns an attribute keep owning it.
+
+**A third, narrower bug caught only once Enter selected an option:**
+reading the active id unconditionally after every forwarded dispatch
+crashed on Enter specifically — `triggerOption()` fires `cdkListbox
+ValueChange` synchronously *inside* that same dispatch, which flows
+through `selectValue()` → `close()` → nulls the registered listbox
+reference before the dispatch call even returns. Fixed by checking the
+listbox reference is still non-null before reading from it, rather than
+assuming the popup is still open just because its own keydown handler
+hasn't returned yet.
+
+**Rejected — giving Combobox a code/label split like Select's:** there's
+no "display text vs. underlying value" distinction possible for a plain
+text field the way a button-triggered Select can have one — whatever's
+in the box *is* the value. An option's `cdkOption` value is simply its
+own display text.
+
+17 new unit tests across `combobox-input.spec.ts`/
+`combobox-listbox.spec.ts`/`combobox-option.spec.ts` (205/205 total),
+`build:lib`/`lint:css`/`lint:standalone` clean.
+
+**Step 8B (stories) found a fourth real bug, worse than the three above —
+this one only a real pointer interaction could catch.** Storybook's
+`userEvent.click()` on an option left `document.activeElement` on
+`<body>`, not the input — a real browser's default behavior when a
+non-focusable `<div>` is clicked, which blurs whatever was previously
+focused unless something prevents it. This breaks the one guarantee the
+whole component is built on (real focus never leaves the input).
+Confirmed as a genuine gap in the *Karma* suite, not a false alarm: with
+the fix temporarily removed, every existing Karma test — including one
+written specifically to try to catch this via a dispatched `mousedown` —
+kept passing anyway. Neither `.click()` nor a synthetic
+`dispatchEvent(new MouseEvent('mousedown'))` reproduces the browser's
+actual default focus-shift action; only a real pointer interaction does.
+Fixed with `(mousedown)` → `preventDefault()` on `HmhaComboboxOption`
+(standard technique: blocks the browser's default focus-shift, while
+`CdkOption`'s own later `(click)` handler still fires normally). The
+ineffective Karma test was removed rather than kept as false coverage;
+the real verification lives in `ComboboxInput`'s `SelectionInteraction`
+story. General lesson recorded in CLAUDE.md, next to the `<dialog>`
+close-event quirk it mirrors: know which layer — an event firing vs. its
+actual default action — Karma can and can't verify.
+
+Also hit two Storybook-only issues, both resolved without touching the
+component: the brand-new-file restart quirk (expected, Combobox is new
+this session), and a genuine test-logic bug in two of the component's own
+stories — `KeyboardNavigationInteraction` and `EnterCommitsInteraction`
+assumed the *first* `ArrowDown` both opens the popup and activates an
+option, when it only opens (confirmed by the Karma spec's own `openListbox()`
+helper, which opens via a simulated `input` event instead, so its first
+ArrowDown has always had something open to navigate). A failing `waitFor`
+assertion that never becomes true renders in Storybook's test runner as a
+generic "No Preview" page, not a normal assertion failure — worth knowing,
+since that symptom otherwise looks identical to the brand-new-file restart
+quirk and sent the first round of debugging in the wrong direction.
+
+All 10 Combobox stories plus the full existing suite (101 stories) pass
+`test-run` (incl. a11y).
+
+---
+
 ## Wave 3 progress — the step tracker
 
 **This section is the single source of truth for Wave 3 status**, the same
@@ -824,17 +1144,122 @@ mode is a question for when step 8 arrives, not now.
    `hmhaOverlay`'s own Escape handling reads `event.key`, not the legacy
    `keyCode` CDK's `ListKeyManager` still switches on. All 4 Tooltip stories
    plus the full existing suite (69 stories) pass `test-run` (incl. a11y).
-9. [ ] **5A.** Build Toast + tests **← CURRENT STEP**
-10. [ ] **5B.** Story: Toast
-11. [ ] **6A.** Build Tabs + tests
-12. [ ] **6B.** Story: Tabs
-13. [ ] **7A.** Build Select + tests
-14. [ ] **7B.** Story: Select
-15. [ ] **8A.** Build Combobox + tests
-16. [ ] **8B.** Story: Combobox
-17. [ ] **9.** Wave 3 gate — compose Dialog, Menu, Tooltip, Toast, Tabs,
-    Select and Combobox together in `apps/sandbox`, per the wave-gate rule
-    in fork 06 (mirrors Wave 2's step 8 — a real screen, not just stories).
+9. [x] **5A.** Build Toast + tests — `libs/ui/src/lib/toast/` (`toast.ts`,
+   `toast.css`, `toast.spec.ts`, `README.md`). A root-provided service, not
+   a directive — the other named exception to "prefer a native element"
+   alongside Dialog. Needed a foundation fix (fork 17): `hmhaOverlay()`
+   unconditionally required a `ViewContainerRef`, which a service with no
+   host element doesn't have — now optional, leaning on CDK's own
+   `ApplicationRef.attachView()` fallback for component content.
+   9 new unit tests (153/153 total), `build:lib`/`lint:css`/
+   `lint:standalone` clean.
+10. [x] **5B.** Story: Toast — `toast.stories.ts`. Since `HmhaToast` has no
+   selector of its own, the story wraps it in a small demo host component
+   (`ToastDemo`, local to the story file, two buttons calling `show()` with
+   distinct messages) rather than setting `component:` to the service
+   directly. Covers the live region (role/aria-live), auto-dismiss, and
+   queueing. Hit the brand-new-file dev-server quirk in a new shape (a
+   silent "No Preview" page rather than the usual styleUrl error) — now in
+   CLAUDE.md. All 3 Toast stories plus the full existing suite (72 stories)
+   pass `test-run` (incl. a11y).
+11. [x] **6A.** Build Tabs + tests — `libs/ui/src/lib/tabs/` (`tabs.ts`,
+   `tab-list.ts`, `tab.ts`, `tab-panel.ts`, four CSS files, four spec
+   files, `README.md`). Four native-element attribute selectors, no custom
+   tag names — recorded as fork 18, including why that reads as consistent
+   with CLAUDE.md's "Tabs needs a custom element name" rather than against
+   it. Found a real CSS bug via the axe check (panel text had no explicit
+   `color`, invisible in dark mode) and a test-writing gotcha with
+   `[(value)]` two-way bindings needing a real signal, not a plain field.
+   18 new unit tests (171/171 total), `build:lib`/`lint:css`/
+   `lint:standalone` clean.
+12. [x] **6B.** Story: Tabs — four colocated files (`tabs.stories.ts`,
+    `tab-list.stories.ts`, `tab.stories.ts`, `tab-panel.stories.ts`),
+    matching the one-file-per-component-filename convention. Covers the
+    composed widget (selection by click, keyboard navigation with a
+    disabled tab skipped), Home/End, individual tab/panel states, and
+    visibility switching. All 9 Tabs stories plus the full existing suite
+    (81 stories) pass `test-run` (incl. a11y).
+13. [x] **7A.** Build Select + tests — `libs/ui/src/lib/select/`
+    (`select-trigger.ts`, `select-listbox.ts`, `select-option.ts`, three
+    CSS files, three spec files, `README.md`). First component built on
+    `@angular/cdk/listbox` directly (recorded as fork 19) rather than a
+    raw `FocusKeyManager` — CLAUDE.md names it explicitly, unlike Menu/
+    Tabs where no dedicated CDK module existed. Found a real a11y gap via
+    the axe check (the listbox itself had no accessible name) and a
+    test-writing-only `NG0100` from interpolating `FormControl.value`
+    directly in a template. 17 new unit tests (188/188 total), `build:lib`/
+    `lint:css`/`lint:standalone` clean.
+14. [x] **7B.** Story: Select — three colocated files
+    (`select-trigger.stories.ts`, `select-listbox.stories.ts`,
+    `select-option.stories.ts`). Covers open/close, the fork-15
+    toggle-close regression, selection, keyboard navigation with a
+    disabled option skipped, Escape, the listbox's own `aria-labelledby`,
+    and reopen-highlights-selected. Caught a real color-contrast failure
+    (fixed — see fork 19's update above) that the unit suite's per-mode
+    assertions never surfaced. All 10 Select stories plus the full
+    existing suite (91 stories) pass `test-run` (incl. a11y).
+15. [x] **8A.** Build Combobox + tests — `libs/ui/src/lib/combobox/`
+    (`combobox-input.ts`, `combobox-listbox.ts`, `combobox-option.ts`,
+    three CSS files, three spec files, `README.md`). `CdkListbox` in
+    active-descendant mode — real focus stays in the input, so keydowns
+    have to be forwarded to the listbox's own element via `dispatchEvent`
+    rather than relying on bubbling (recorded as fork 20, the hardest a11y
+    problem in Wave 3 per fork 06, saved for last as planned). Found and
+    fixed three real bugs while testing: `computed()` can't see
+    `CdkOption.isActive()` change (not signal-backed), `CdkListbox`'s own
+    `[id]` binding silently wins over a second one, and reading the active
+    option after Enter-selects crashes since selection itself nulls the
+    registered listbox mid-dispatch. 17 new unit tests (205/205 total),
+    `build:lib`/`lint:css`/`lint:standalone` clean.
+16. [x] **8B.** Story: Combobox — three colocated files
+    (`combobox-input.stories.ts`, `combobox-listbox.stories.ts`,
+    `combobox-option.stories.ts`). Found and fixed a fourth real bug only
+    a real pointer interaction could catch (clicking an option blurred the
+    input — see fork 20's update above), plus a test-logic bug in two
+    stories that assumed the first ArrowDown both opens and navigates.
+    All 10 Combobox stories plus the full existing suite (101 stories)
+    pass `test-run` (incl. a11y).
+17. [x] **9.** Wave 3 gate — a real "Team" screen in `apps/sandbox`
+    (`app.ts`/`app.html`/`app.css`), composing all seven: `HmhaTabs` holds
+    three panels (Members, Invite, Danger zone); each member's role is an
+    `HmhaSelect` bound to a real per-member `FormControl`; a kebab
+    `HmhaMenu`'s "Remove from team" opens an `HmhaDialog`, confirming
+    removes the member and fires an `HmhaToast`; an info `HmhaTooltip`
+    explains what the roles mean; the Invite tab's `HmhaCombobox` searches
+    teammates by name and sending an invite fires its own `HmhaToast`; the
+    Danger zone's "Delete workspace" is the same Dialog→Toast shape again.
+    11 new sandbox tests (DOM-only, matching Wave 2's gate style) exercise
+    every path: tab switching, role selection, the full remove-member
+    flow (menu → dialog → toast) and its cancel path, the invite flow, and
+    the delete-workspace flow; 216/216 total across the whole workspace.
+
+    No browser-automation tool was available this session to drive it
+    live the way Wave 2's gate was (Playwright, per that step's entry
+    above) — `build:lib`, `ng build sandbox`, `lint:css`, `lint:standalone`
+    and the full test suite are all clean, and the dev server was run and
+    left serving the real screen for manual visual confirmation, but that
+    is a real gap against this wave's gate relative to Wave 2's, not
+    something to paper over.
+
+    **A real test-writing bug, not a product one:** querying
+    `[hmhaMenuTrigger]`/`input[hmhaCombobox]` by attribute selector — the
+    pattern used throughout every component's own specs — returned `null`
+    here. The difference: those specs always wrote the attribute as a
+    *bare* string (`cdkOption="us"`), which Angular leaves in the compiled
+    DOM because it was typed there directly. This app's template binds
+    both via `[hmhaMenuTrigger]="memberMenu"`/`[hmhaCombobox]="listboxTpl"`
+    — a *property* binding to a template-ref variable, which never
+    reflects as a DOM attribute at all, regardless of whether the
+    directive matched correctly. Fixed by querying each directive's own
+    static host attribute instead (`[aria-haspopup="menu"]`,
+    `[role="combobox"]`) — attributes actually guaranteed to be present,
+    rather than an attribute that happens to exist only when a consumer's
+    binding style leaves it there.
+
+**Wave 3 is complete.** All seven components (Dialog, Menu, Tooltip,
+Toast, Tabs, Select, Combobox) are built, unit-tested, documented in
+Storybook, and proven together in a real screen — the gate fork 06
+requires before a Wave 4 could start.
 
 ---
 

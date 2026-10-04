@@ -104,6 +104,19 @@ preference works until an app pins a mode and then gets out of the way.
   `.close()`'s own internal firing; save the real end-to-end proof (does a
   genuine user interaction actually close it) for a real-browser check —
   Storybook's `test-run`, or driving the sandbox — not the Karma unit suite.
+- **Neither Karma's `.click()` nor a synthetic `dispatchEvent(new
+  MouseEvent('mousedown'))` reproduces the browser's default focus-shift
+  behavior** (moving focus to `<body>` when a non-focusable element is
+  clicked, unless `mousedown`'s default is prevented) — confirmed on
+  `HmhaComboboxOption` (fork 20) by temporarily removing its
+  `preventDefault()` fix and finding every Karma test, including an
+  explicit dispatched-`mousedown` attempt, still passed. This class of
+  bug — anything depending on a real default UA action, not just an event
+  firing — only surfaces through Storybook's `userEvent`-driven real
+  pointer interaction. Same underlying lesson as the `<dialog>` quirk
+  above: know which layer (event firing vs. its actual default action)
+  Karma can and can't verify, and say so in the test file rather than
+  writing a test that silently verifies nothing.
 
 ### The canonical component
 
@@ -206,6 +219,14 @@ The component library lives in `libs/ui`, and its Storybook config is in `libs/u
   (`npm run storybook`) and clear `node_modules/.cache/storybook` first if
   a restart alone doesn't fix it. Ask before killing it if someone has it
   open — a restart briefly disconnects any open preview.
+- **The same brand-new-file quirk can also surface as a silent "No
+  Preview" / "check the Storybook config" page instead of the styleUrl
+  error above** — seen for Toast's story (`toast.stories.ts`, fork 17),
+  where the story was listed correctly in `docs-list` but wouldn't render.
+  Confirmed it wasn't a real error first by running an *unrelated, already-
+  working* story through the same session (it still passed, so the index
+  itself wasn't broken) before restarting. Same fix: restart the dev
+  server, clearing `node_modules/.cache/storybook` first.
 - **If every Storybook MCP call times out (not the styleUrl error above)**,
   check for a *second* `npm run storybook` process before assuming the
   server is just slow: `ps aux | grep storybook` and `lsof -i :6006`. Only
@@ -279,7 +300,14 @@ any of these components, especially fork 11 (Radio's asymmetric
 group/individual-radio split) and fork 12 (Switch has no native element to
 build on).
 
-**Wave 3 is starting.** See `DECISIONS.md`'s **Wave 3 progress** section for
-the live step tracker and current step — same rule as Wave 2: don't rely on
-this file for Wave 3 status, that section is the source of truth. Scope is
-fork 06: Dialog, Menu, Tooltip, Toast, Tabs, then Select, then Combobox.
+**Wave 3 is done.** Dialog, Menu, Tooltip, Toast, Tabs, Select and
+Combobox (fork 06's full scope) are all built, unit-tested, documented in
+Storybook, and proven together in a real "Team" screen in `apps/sandbox`
+— see `DECISIONS.md`'s **Wave 3 progress** section, step 9, for the gate
+write-up. Forks 13–20 cover the wave's real architectural decisions,
+including `hmhaOverlay()` (fork 13, amended by 15–17) — the shared
+positioning/dismissal foundation every floating-content component but
+Dialog is built on — and two Karma-can't-verify-this notes (the
+`<dialog>` close event, fork 14; a real-pointer-interaction-only focus bug
+in Combobox, fork 20) worth reading before writing a test that looks like
+it covers something but doesn't.

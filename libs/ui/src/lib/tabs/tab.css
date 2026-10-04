@@ -1,0 +1,35 @@
+/* tab.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-tab-fg: var(--hmha-color-text-muted);
+  --hmha-tab-fg-selected: var(--hmha-color-text);
+  --hmha-tab-border-selected: var(--hmha-color-action);
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hmha-control-gap);
+  min-height: var(--hmha-control-height);
+  padding-inline: var(--hmha-control-padding-x);
+  background: transparent;
+  color: var(--hmha-tab-fg);
+  border: none;
+  border-bottom: var(--hmha-border-width) solid transparent;
+  font: inherit;
+  font-size: var(--hmha-type-body-md-size);
+  cursor: pointer;
+}
+
+:host([aria-selected='true']) {
+  color: var(--hmha-tab-fg-selected);
+  border-bottom-color: var(--hmha-tab-border-selected);
+}
+
+:host(:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}

@@ -1,0 +1,28 @@
+/* combobox-option.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-combobox-option-bg-active: var(--hmha-color-bg-subtle);
+  --hmha-combobox-option-fg: var(--hmha-color-text);
+
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  gap: var(--hmha-control-gap);
+  padding: var(--hmha-control-padding-y) var(--hmha-control-padding-x);
+  background: transparent;
+  color: var(--hmha-combobox-option-fg);
+  border-radius: var(--hmha-radius-control);
+  font-size: var(--hmha-type-body-md-size);
+  cursor: pointer;
+}
+
+:host(.cdk-option-active),
+:host(:hover) {
+  background: var(--hmha-combobox-option-bg-active);
+}
+
+:host([aria-disabled='true']) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

@@ -1,0 +1,5 @@
+/* tabs.css — purely a layout wrapper; the tab strip and panels carry all
+   the token-driven styling. */
+:host {
+  display: block;
+}

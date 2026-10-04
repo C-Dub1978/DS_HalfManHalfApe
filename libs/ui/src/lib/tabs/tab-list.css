@@ -1,0 +1,7 @@
+/* tab-list.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  display: flex;
+  gap: var(--hmha-control-gap);
+  border-bottom: var(--hmha-border-width) solid var(--hmha-color-border);
+}
