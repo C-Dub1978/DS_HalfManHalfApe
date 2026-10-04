@@ -1,6 +1,10 @@
 # Decisions of record
 
+<<<<<<< HEAD
 Fourteen architectural forks, decided. Each entry gives the decision, the
+=======
+Twelve architectural forks, decided. Each entry gives the decision, the
+>>>>>>> main
 rejected alternatives, and the reasoning — so a later contributor can tell a
 settled decision from an accident.
 
