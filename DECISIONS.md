@@ -1,10 +1,6 @@
 # Decisions of record
 
-<<<<<<< HEAD
-Fourteen architectural forks, decided. Each entry gives the decision, the
-=======
-Twelve architectural forks, decided. Each entry gives the decision, the
->>>>>>> main
+Twenty architectural forks, decided. Each entry gives the decision, the
 rejected alternatives, and the reasoning — so a later contributor can tell a
 settled decision from an accident.
 
@@ -1264,6 +1260,85 @@ mode is a question for when step 8 arrives, not now.
 Toast, Tabs, Select, Combobox) are built, unit-tested, documented in
 Storybook, and proven together in a real screen — the gate fork 06
 requires before a Wave 4 could start.
+
+---
+
+## 21 — Wave 4 scope: Pagination, Table, Data Grid — consumer owns data/state
+
+**Decided:** Wave 4 pursues fork 06's deferred "Table / Data Grid" line, plus
+a `HmhaPagination` control fork 06 never named at all. Build order: Pagination,
+then Table, then Data Grid — smallest and most independent first, the same
+rationale Wave 1 used for Icon-before-Button.
+
+**Why Pagination first, and why it's a real separate component, not a grid
+feature:** fork 06 scoped Table and Data Grid as a pair but said nothing about
+pagination. A page control is useful anywhere there's a page concept — a
+plain list, search results — not only next to a grid. Building it
+independent of the grid is what keeps it reusable there too.
+
+**Architectural call made now, not mid-build: all three components stay
+purely structural — the consumer owns the data array and the paging state.**
+`HmhaPagination` takes a current page and a page count and emits page
+changes; it never sees how many rows exist or what a "page size" means.
+`HmhaTable` only brands native table elements with tokens — no model at all.
+`HmhaDataGrid` (sort/select/resize/virtualize, still "a quarter" per fork 06)
+renders whatever rows it's handed and emits sort/select intents; it does not
+own, slice or cache the backing array. This matches Select's trigger-label
+and Combobox's filtering — both already left to the consumer rather than the
+component — and it keeps every piece composable outside a grid context too
+(Pagination reused for a search-results list with no grid in sight).
+
+**Rejected — Data Grid owning paging/sort state internally:** less code at
+the call site for the common in-memory-array case, but it ties the
+component to one data shape and fights any consumer doing server-side
+paging or sorting, where "the current page" is a network request, not a
+slice of an array already in memory.
+
+---
+
+## Wave 4 progress — the step tracker
+
+**This section is the single source of truth for Wave 4 status**, the same
+way Wave 2 progress and Wave 3 progress were for their waves. Update the
+checklist and the CURRENT STEP marker at the end of every step. The process
+rule itself (one step at a time, stop-and-wait between steps, the done
+criteria) lives in `CLAUDE.md`'s "Working through a wave" section — this
+section only tracks where we are.
+
+Component order follows fork 21: Pagination, then Table, then Data Grid.
+Data Grid's own sub-steps aren't itemized yet — it gets broken down the way
+Select/Combobox were, once step 3 actually arrives, not now.
+
+1. [x] **1A.** Build Pagination + tests — `libs/ui/src/lib/pagination/`
+   (`pagination.ts`, `pagination.css`, `pagination.spec.ts`, `README.md`).
+   An attribute directive on native `<nav>`, purely structural per fork 21:
+   `page` is a required `model()`, `pageCount` a required `input()` the
+   consumer computes from their own data — the component never sees the
+   backing array. Internally composes the existing `HmhaButton`/
+   `HmhaIconButton`/`HmhaIcon` rather than hand-rolling button markup, so it
+   inherits their focus ring, disabled handling and tone styling for free;
+   its own CSS is just a flex layout plus the non-interactive ellipsis.
+   Page window is a fixed default (first, last, current ± 1, one ellipsis
+   per gap) — not exposed as a tunable input. 10 new unit tests (215/215
+   total), `build:lib`/`lint:css`/`lint:standalone` clean.
+
+   Two issues surfaced while writing the spec, both test bugs rather than
+   component bugs: an assertion that assumed the last page renders as
+   plain text instead of a real button (it's a genuine page button, same
+   as any other), and a missing `settle()` wait before sampling colours in
+   the axe loop — nested `HmhaButton` instances transition `background` on
+   a token change (mode switch), the same timing gap `button.spec.ts`
+   already documents and guards against. Reused its exact fix rather than
+   treating it as new.
+2. [ ] **1B.** Story: Pagination.
+3. [ ] **2A.** Build Table + tests.
+4. [ ] **2B.** Story: Table.
+5. [ ] **3.** Data Grid — to be broken into its own sub-steps when this step
+   arrives.
+6. [ ] **4.** Wave 4 gate — compose Pagination, Table and Data Grid together
+   in a real screen in `apps/sandbox`, mirroring Wave 2's and Wave 3's gates.
+
+**CURRENT STEP: 1B.** Story: Pagination.
 
 ---
 

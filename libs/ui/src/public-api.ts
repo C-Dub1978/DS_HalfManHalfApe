@@ -19,6 +19,7 @@ export * from './lib/menu/menu';
 export * from './lib/menu/menu-context';
 export * from './lib/menu/menu-item';
 export * from './lib/menu/menu-trigger';
+export * from './lib/pagination/pagination';
 export * from './lib/radio/radio';
 export * from './lib/radio/radio-group';
 export * from './lib/select/select-listbox';

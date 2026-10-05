@@ -311,3 +311,12 @@ Dialog is built on — and two Karma-can't-verify-this notes (the
 `<dialog>` close event, fork 14; a real-pointer-interaction-only focus bug
 in Combobox, fork 20) worth reading before writing a test that looks like
 it covers something but doesn't.
+
+**Wave 4 is starting.** Scope is fork 06's deferred Table/Data Grid line
+plus a `HmhaPagination` control fork 06 never named — see `DECISIONS.md`
+fork 21 and its **Wave 4 progress** section for the live step tracker and
+current step; that section, not this file, is the source of truth for
+Wave 4 status. Read fork 21 before touching any of these components: all
+three stay purely structural, with the consumer owning the data array and
+paging state, the same pattern Select's trigger-label and Combobox's
+filtering already established.
