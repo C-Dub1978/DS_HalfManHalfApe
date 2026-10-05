@@ -1,0 +1,36 @@
+/* menu-item.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-menu-item-bg-active: var(--hmha-color-bg-subtle);
+  --hmha-menu-item-fg: var(--hmha-color-text);
+
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  gap: var(--hmha-control-gap);
+  padding: var(--hmha-control-padding-y) var(--hmha-control-padding-x);
+  background: transparent;
+  color: var(--hmha-menu-item-fg);
+  border: none;
+  border-radius: var(--hmha-radius-control);
+  font: inherit;
+  font-size: var(--hmha-type-body-md-size);
+  text-align: start;
+  cursor: pointer;
+}
+
+:host([data-active]),
+:host(:hover:not(:disabled)) {
+  background: var(--hmha-menu-item-bg-active);
+}
+
+:host(:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}

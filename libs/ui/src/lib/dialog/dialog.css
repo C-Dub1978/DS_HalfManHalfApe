@@ -1,0 +1,27 @@
+/* dialog.css — declare the override API, then consume it.
+   Not one literal value in the file. Don't touch margin/inset here — the
+   native showModal() centering depends on the UA stylesheet's defaults
+   for those, only the visual chrome is this component's to own. */
+:host {
+  --hmha-dialog-bg: var(--hmha-color-surface-raised);
+  --hmha-dialog-fg: var(--hmha-color-text);
+
+  background: var(--hmha-dialog-bg);
+  color: var(--hmha-dialog-fg);
+  border: none;
+  border-radius: var(--hmha-radius-surface);
+  box-shadow: var(--hmha-elevation-raised);
+  padding: var(--hmha-control-padding-y) var(--hmha-control-padding-x);
+  max-width: 90%;
+  font-size: var(--hmha-type-body-md-size);
+  line-height: var(--hmha-type-body-md-line);
+}
+
+:host::backdrop {
+  background: var(--hmha-color-backdrop);
+}
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}

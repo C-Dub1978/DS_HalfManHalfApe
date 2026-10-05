@@ -1,9 +1,15 @@
 {
-  "$description": "Semantic elevation roles. Independent of mode and density, so it lives in the base layer alongside dimension.json and type.json.",
+  "$description": "Semantic elevation and backdrop roles. Independent of mode and density, so it lives in the base layer alongside dimension.json and type.json. The backdrop scrim is deliberately mode-independent too — it dims whatever page is behind it, light or dark.",
   "elevation": {
     "$type": "shadow",
     "raised": {
       "$value": "{shadow.sm}"
+    }
+  },
+  "color": {
+    "backdrop": {
+      "$type": "color",
+      "$value": "{scrim}"
     }
   }
 }

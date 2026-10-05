@@ -1,0 +1,38 @@
+/* combobox-input.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-combobox-input-bg: var(--hmha-color-surface);
+  --hmha-combobox-input-fg: var(--hmha-color-text);
+  --hmha-combobox-input-border: var(--hmha-color-border);
+  --hmha-combobox-input-border-focus: var(--hmha-color-focus);
+
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: var(--hmha-control-height);
+  padding-inline: var(--hmha-control-padding-x);
+  padding-block: var(--hmha-control-padding-y);
+  background: var(--hmha-combobox-input-bg);
+  color: var(--hmha-combobox-input-fg);
+  border: var(--hmha-border-width) solid var(--hmha-combobox-input-border);
+  border-radius: var(--hmha-radius-control);
+  font: inherit;
+  font-size: var(--hmha-type-body-md-size);
+  line-height: var(--hmha-type-body-md-line);
+  transition: border-color var(--hmha-duration-fast) var(--hmha-easing-standard);
+}
+
+:host([data-invalid]) {
+  --hmha-combobox-input-border: var(--hmha-color-danger);
+}
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+  border-color: var(--hmha-combobox-input-border-focus);
+}
+
+:host(:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

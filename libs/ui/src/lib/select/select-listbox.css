@@ -1,0 +1,16 @@
+/* select-listbox.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-select-listbox-bg: var(--hmha-color-surface-raised);
+  --hmha-select-listbox-fg: var(--hmha-color-text);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--hmha-control-gap);
+  background: var(--hmha-select-listbox-bg);
+  color: var(--hmha-select-listbox-fg);
+  border: var(--hmha-border-width) solid var(--hmha-color-border);
+  border-radius: var(--hmha-radius-surface);
+  box-shadow: var(--hmha-elevation-raised);
+  padding: var(--hmha-control-padding-y);
+}

@@ -1,0 +1,20 @@
+/* toast.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-toast-bg: var(--hmha-color-surface-raised);
+  --hmha-toast-fg: var(--hmha-color-text);
+
+  display: block;
+  /* hmhaOverlay's "global-fixed-corner" position sits flush at the
+     viewport edge (zero offset, by design — see overlay.ts) and leaves
+     spacing to the consumer. --hmha-space-stack is the one existing
+     semantic "space" role not tied to a specific control. */
+  margin: var(--hmha-space-stack);
+  background: var(--hmha-toast-bg);
+  color: var(--hmha-toast-fg);
+  border: var(--hmha-border-width) solid var(--hmha-color-border);
+  border-radius: var(--hmha-radius-surface);
+  box-shadow: var(--hmha-elevation-raised);
+  padding: var(--hmha-control-padding-y) var(--hmha-control-padding-x);
+  font-size: var(--hmha-type-body-md-size);
+}

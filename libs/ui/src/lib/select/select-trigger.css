@@ -1,0 +1,34 @@
+/* select-trigger.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-select-trigger-bg: var(--hmha-color-surface);
+  --hmha-select-trigger-fg: var(--hmha-color-text);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hmha-control-gap);
+  min-height: var(--hmha-control-height);
+  padding-inline: var(--hmha-control-padding-x);
+  background: var(--hmha-select-trigger-bg);
+  color: var(--hmha-select-trigger-fg);
+  border: var(--hmha-border-width) solid var(--hmha-color-border);
+  border-radius: var(--hmha-radius-control);
+  font: inherit;
+  font-size: var(--hmha-type-body-md-size);
+  cursor: pointer;
+}
+
+:host([data-invalid]) {
+  border-color: var(--hmha-color-danger);
+}
+
+:host(:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}
