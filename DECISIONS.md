@@ -1296,6 +1296,74 @@ slice of an array already in memory.
 
 ---
 
+## 22 — Data Grid: `HmhaTable`'s own pieces + plain `@for`, not `@angular/cdk/table`
+
+**Decided, after a reconsideration before any code was written:** the
+first proposal was `CdkTable` stacked directly on `HmhaTable`'s pieces,
+reasoning that both expose native-element selectors
+(`table[cdk-table]`/`tr[cdk-row]`/etc. alongside
+`table[hmhaTable]`/`tr[hmhaTableRow]`/etc.). That reasoning only checked
+selector overlap, not a harder Angular constraint: at most one *component*
+(anything with its own template) may match a given host element — unlike
+directives, which stack freely. `HmhaIconButton` stacking on `HmhaButton`
+works only because `HmhaIconButton` has no template of its own. Checking
+CdkTable's actual compiled source showed `CdkTable`, `CdkRow` and
+`CdkHeaderRow` are all full components with their own internal templates
+(`CdkTable` generates its own `<thead>`/`<tbody>`/`<tfoot>` and outlet
+directives; `CdkRow`/`CdkHeaderRow`'s template is `<ng-container
+cdkCellOutlet>`) — so `<table hmhaTable cdk-table>` and `<tr hmhaTableRow
+cdk-row>` would both be two components matching one element, which Angular
+refuses to compile. (Cells were never a problem: `CdkCell`/`CdkHeaderCell`
+*are* plain directives, so `HmhaTableCell`/`HmhaTableHeaderCell` stack on
+them fine — the conflict is specific to the table root and the row.)
+
+The only real fix at that level is subclassing (`class HmhaDataGrid
+extends CdkTable { ... }`, giving the subclass its own selector and a copy
+of CdkTable's internal template/outlets — how Angular Material's own
+`MatTable` does it) — workable, but meaningfully riskier and more involved
+than the original proposal conveyed, with real chances of further
+surprises once actually built. Given the team context (fork 06: one
+maintainer, maintenance capacity is the binding constraint), the user
+chose to play it safer: hand-roll instead of taking on that risk for a
+library dependency that was never load-bearing for the parts that
+actually matter.
+
+**What's actually built on real CDK, and what's hand-rolled:**
+- **Rendering** — plain `@for`/`track` directly over `HmhaTable`'s
+  existing pieces (`table[hmhaTable]`, `tr[hmhaTableRow]`,
+  `th[hmhaTableHeaderCell]`, `td[hmhaTableCell]`) — no conflict, since
+  there's no competing component. `@for`'s own `track` already handles row
+  identity/reordering; `CdkTable`'s diffing engine wasn't buying anything
+  beyond that.
+- **Virtualization** — still real CDK, just not `CdkTable`:
+  `@angular/cdk/scrolling`'s `CdkVirtualScrollViewport`/`*cdkVirtualFor`
+  are structural directives, not competing components, so they're
+  independent of the whole conflict above. Opt-in; composed in the
+  consumer's own template, documented rather than built as a new
+  component. No *component* conflict doesn't mean no composition
+  gotcha, though — the viewport has to wrap the whole table, not just
+  the body rows, or CSS breaks every column's layout anyway. See step
+  3f below for what that actually looked like and how it was found.
+- **Sort** — no CDK primitive exists regardless of foundation; sorting
+  UI/state (`MatSort`) is Material-only. Hand-rolled: a header click emits
+  a sort intent, the grid never sorts anything itself. The consumer
+  re-sorts their own array and feeds back which column/direction is
+  active so the indicator renders — same input-reflects/output-emits shape
+  `HmhaPagination` already uses.
+- **Selection** — `SelectionModel` (`@angular/cdk/collections`) is real
+  CDK, not Material, and has no template/component-conflict surface at
+  all (it's a plain TypeScript class, not a directive) — used as internal
+  bookkeeping. The actual selected-ids set is still consumer-owned via a
+  bound model (fork 21); checkboxes reuse `HmhaCheckbox` rather than new
+  markup.
+- **Resize** — `@angular/cdk-experimental/column-resize` exists upstream
+  but isn't installed here, and pulling in an "experimental" package for a
+  core interaction was already rejected as a stability risk before the
+  CdkTable reconsideration, independent of it. Hand-rolled via native
+  Pointer Events.
+
+---
+
 ## Wave 4 progress — the step tracker
 
 **This section is the single source of truth for Wave 4 status**, the same
@@ -1330,15 +1398,257 @@ Select/Combobox were, once step 3 actually arrives, not now.
    a token change (mode switch), the same timing gap `button.spec.ts`
    already documents and guards against. Reused its exact fix rather than
    treating it as new.
-2. [ ] **1B.** Story: Pagination.
-3. [ ] **2A.** Build Table + tests.
-4. [ ] **2B.** Story: Table.
-5. [ ] **3.** Data Grid — to be broken into its own sub-steps when this step
-   arrives.
-6. [ ] **4.** Wave 4 gate — compose Pagination, Table and Data Grid together
-   in a real screen in `apps/sandbox`, mirroring Wave 2's and Wave 3's gates.
+2. [x] **1B.** Story: Pagination — `pagination.stories.ts` (Playground,
+   Sizes, ManyPages, EdgeStates, Disabled, PageClickInteraction,
+   PreviousNextInteraction). Hit the documented "every Storybook MCP call
+   times out" quirk, but broader than usual: `test-run` timed out even for
+   an existing, already-passing story (Button's Playground), while
+   `docs-list`/`stories-preview` kept responding — pointed at the separate
+   `addon-vitest` process specifically (alive since Oct 3), not a problem
+   with the new component. Restarted the dev server (killed `npm run
+   storybook`/`ng run hmha-ui:storybook`/the vitest process, cleared
+   `node_modules/.cache/storybook`), which cleared it. Caught one real,
+   if minor, a11y finding: the Sizes and EdgeStates stories each render
+   three `<nav aria-label="Pagination">` instances side by side, which
+   axe's `landmark-unique` rule correctly flags — fixed by giving each
+   instance a distinct `ariaLabel`, the input that exists for exactly
+   this case (documented in the component's own README). All 7 Pagination
+   stories plus the full existing suite (102 stories) pass `test-run`
+   (incl. a11y).
+3. [x] **2A.** Build Table + tests — `libs/ui/src/lib/table/` (`table.ts`,
+   `table-row.ts`, `table-header-cell.ts`, `table-cell.ts`, four CSS files,
+   `table.spec.ts`, `README.md`). Four attribute-selector pieces on native
+   table elements (`table[hmhaTable]`, `tr[hmhaTableRow]`,
+   `th[hmhaTableHeaderCell]`, `td[hmhaTableCell]`) — the same multi-piece
+   shape fork 18 used for Tabs, for the same reason: a component with no
+   template of its own can't reach past `<ng-content>` into projected
+   children with scoped CSS, so each native sub-element that needs its own
+   visual treatment gets its own small component. `HmhaTableRow` is meant
+   for body rows only — striping (`:host(:nth-child(even))`) and hover
+   don't apply to a header row, which needs no directive; all header
+   styling lives on `HmhaTableHeaderCell` instead, which also defaults
+   `scope="col"` (settable to `"row"`) since real screen readers benefit
+   from it and native tables don't set it themselves. Purely visual per
+   fork 21 — no sort/select/resize/data model, row padding comes from the
+   already density-aware `--hmha-control-padding-y/x` tokens for free.
 
-**CURRENT STEP: 1B.** Story: Pagination.
+   **A real bug, not a test artifact:** the first draft assumed `<table>`'s
+   text color would inherit from the app's global `body { color: var(
+   --hmha-color-text) }` (set in `apps/sandbox/src/styles.css` and
+   mirrored in Storybook's `preview.css`) — but Karma's test environment
+   never loads that global stylesheet, so the table fell back to the
+   browser's black default against a dark-mode background, an axe
+   `color-contrast` failure. Every other component in the library sets its
+   own color explicitly rather than relying on ambient page inheritance
+   (Button's `--hmha-button-fg`, Card's `--hmha-card-fg`); fixed by doing
+   the same here (`--hmha-table-fg`, consumed as `color` on `:host`) rather
+   than leaning on a global stylesheet a real consumer could just as
+   easily forget to wire up. 7 new unit tests (221/221 total), `build:lib`/
+   `lint:css`/`lint:standalone` clean.
+4. [x] **2B.** Story: Table — `table.stories.ts` (Playground, RowHeaderScope,
+   Densities). Hit the documented brand-new-component styleUrl quirk again
+   on the first story written against `HmhaTable`; same fix (restart the
+   dev server, clear the cache) cleared it. A genuinely new finding this
+   time: an attempted `HoverInteraction` story asserting `:host(:hover)`'s
+   background swap failed in both environments, because `userEvent.hover()`
+   dispatches synthetic pointer events without updating the browser's own
+   `:hover` pseudo-class tracking — CSS's reverse of the already-documented
+   Combobox focus-shift gap (fork 20), and with no JS-level workaround
+   available since `:hover` has no event behind it to dispatch directly.
+   Deleted the story rather than keep a play function asserting something
+   this layer structurally can't produce; documented the gap in
+   `CLAUDE.md` next to the `<dialog>`/Combobox notes. All 3 Table stories
+   plus the full existing suite (105 stories) pass `test-run` (incl.
+   a11y).
+5. [x] **3a.** Propose Data Grid's foundation (options + recommendation) —
+   approved, then corrected before any code: the first proposal (`CdkTable`
+   stacked on `HmhaTable`'s pieces) turned out to need two components on
+   one element, which Angular doesn't allow; revised to a plain `@for`
+   over `HmhaTable`'s existing pieces instead, with `@angular/cdk/
+   scrolling`/`SelectionModel` kept for virtualization/selection since
+   those have no such conflict. See fork 22 for the full reconsideration.
+6. [x] **3b.** Core grid — `libs/ui/src/lib/data-grid/` (`data-grid.ts`,
+   `data-grid.spec.ts`, `README.md`). `HmhaDataGrid` is a thin `@Directive`
+   (not a component — stacks on `table[hmhaTable]` with no conflict) that
+   sets `table-layout: fixed`, the anchor every later piece (sort button,
+   resize handle) belongs to. No CSS file of its own — all visual styling
+   stays in `HmhaTable`'s existing component tokens. Rendering itself is
+   just `HmhaTable`'s pieces plus the consumer's own `@for`; nothing new
+   needed there, confirmed by a real composition test (a plain array
+   signal, `@for`/`track`, removing a row and reflecting it) rather than
+   just asserting the directive exists — that test is the actual proof
+   fork 22's revised foundation holds up, not merely an assumption. 6 new
+   unit tests (227/227 total), `build:lib`/`lint:css`/`lint:standalone`
+   clean, first try — no real bugs found this step, unlike Pagination and
+   Table.
+7. [x] **3c.** Sorting — `HmhaDataGridSortButton`
+   (`button[hmhaDataGridSortButton]`, `data-grid-sort-button.ts`/`.css`/
+   `.spec.ts`). A pure intent emitter: clicking never sorts anything,
+   it suggests the next direction as a two-state cycle (ascending ⇄
+   descending, never a third "unsorted" state) via `sortRequest`, and the
+   consumer decides what to actually do — re-sort their own array, feed
+   the real state back through `active`/`direction`. No cross-column
+   coordination — confirmed by the component having no dependency on
+   siblings at all, not just by design intent. Also extended
+   `HmhaTableHeaderCell` (built in step 2A) with an optional `sort` input
+   reflecting `aria-sort`, unset by default so a plain header stays
+   non-sortable — a small, backward-compatible addition, not a new piece.
+   `HmhaSortDirection` added to `core/types.ts` alongside `HmhaTone`/
+   `HmhaSize`. 11 new unit tests (238/238 total), `build:lib`/`lint:css`/
+   `lint:standalone` clean, first try.
+8. [x] **3d.** Selection — no new `Hmha*` component at all.
+   `HmhaCheckbox` is reused directly in header (select-all) and body
+   cells, bound via `[ngModel]`/`(ngModelChange)` rather than `[checked]`/
+   `(change)` (which `HmhaCheckbox` already claims for its own Forms
+   integration) — works on any `ControlValueAccessor` without a
+   `FormGroup`/`FormControl` per row. Added `indeterminate` to
+   `HmhaCheckbox` itself (a small, backward-compatible addition, same
+   shape as 3c's `HmhaTableHeaderCell.sort` — a plain DOM property, not an
+   attribute, and unrelated to the checked value/CVA). The select-all
+   tri-state is a `computed()` the consumer writes themselves from their
+   own rows + selected set; `SelectionModel` (`@angular/cdk/collections`)
+   is real CDK used as bookkeeping convenience, bridged to a signal via
+   `takeUntilDestroyed()` since its `changed` stream is RxJS. No DI
+   context needed, confirmed the same way as 3c: the test host has no
+   coordination machinery at all, just plain bindings.
+
+   **A real a11y bug, caught by axe, not invented for coverage:** the
+   first draft of both the test and the README's own example had neither
+   checkbox wrapped in a `<label>` nor given an `aria-label` — axe's
+   `label` rule failed immediately (`critical` impact), correctly, since
+   a screen reader user would have had no idea what either checkbox was
+   for. Fixed both the test and the README example with explicit
+   `aria-label`s, the per-row one naming the row rather than repeating
+   identical text for every row. 16 new unit tests across
+   `checkbox.spec.ts` and the new `data-grid-selection.spec.ts` (246/246
+   total), `build:lib`/`lint:css`/`lint:standalone` clean.
+9. [x] **3e.** Column resizing — `HmhaDataGridResizeHandle`
+   (`div[hmhaDataGridResizeHandle]`, `data-grid-resize-handle.ts`/`.css`/
+   `.spec.ts`). Sits inside the header cell it resizes and finds its own
+   column via `closest('th')` — a plain DOM query, not DI, same reasoning
+   as 3c/3d's "nothing to coordinate with a parent for." `width` is a
+   `model()`, internal-by-default (works with zero bindings) but
+   two-way so a consumer can persist it. Implements the WAI-ARIA
+   `separator` pattern for real — keyboard (ArrowLeft/ArrowRight) resize
+   alongside pointer drag, not just the pointer half, since a drag-only
+   handle is unusable from the keyboard. Required `HmhaTableHeaderCell`
+   to gain `position: relative` (table step, small and backward
+   compatible) so the handle can anchor to its trailing edge. 19 new unit
+   tests (262/262 total), `build:lib`/`lint:css`/`lint:standalone` clean.
+
+   **Two real findings, both from the test writing, not invented for
+   coverage:**
+   1. `aria-valuenow` was being omitted entirely until the first resize —
+      WAI-ARIA requires it whenever a `separator` is focusable, which this
+      one always is. Fixed by always reporting the *effective* current
+      width, measuring the rendered column via `getBoundingClientRect()`
+      as a fallback when the `width` model is still unset, rather than
+      reporting nothing until a first interaction.
+   2. The test's own first attempt to establish a "known starting width"
+      via a `<col style="width:200px">` under `table-layout:fixed` wasn't
+      reliable — measured widths drifted upward across sequential test
+      runs (396px, then 406px, then 436px), consistent with the test
+      runner's own page accumulating un-destroyed fixtures from prior
+      tests rather than any product bug. Fixed by binding `[width]`
+      explicitly in the test host instead of depending on real CSS table
+      layout for a precise starting pixel value — the one test that
+      genuinely needs to exercise the real-measurement fallback path
+      compares against a fresh `getBoundingClientRect()` read at
+      assertion time instead of a hard-coded pixel constant.
+10. [x] **3f.** Story: Data Grid — `data-grid.stories.ts` (Playground,
+    SortingInteraction, SelectionInteraction, ResizingInteraction,
+    Virtualization). Playground/the three interaction stories compose
+    sort + selection + resize together in one realistic demo
+    (`DataGridDemo`), the same way the real consumer would — nothing in
+    that demo belongs to any Hmha component. Hit the brand-new-component
+    styleUrl quirk again on the first story; the usual restart cleared
+    it.
+
+    **The virtualization story found that the README's own guidance,
+    written back in step 3b before any of this was built, was wrong —
+    not just incomplete.** The original claim was "wrap the body in
+    `<cdk-virtual-scroll-viewport>`, swap `@for` for `*cdkVirtualFor`,
+    it just works." It compiles and renders with no error that way, but
+    actually measuring rendered widths (not just checking the story
+    didn't crash) showed every column's layout broken — CSS's
+    anonymous-table-object rules squeeze a div-shaped viewport placed
+    directly inside `<tbody>` into roughly one column's width instead of
+    the table's full width. Root-caused with two throwaway Karma
+    experiments (deleted after use, per the established discipline of
+    not keeping diagnostic-only specs) before touching the real story:
+    one isolating `CdkVirtualScrollViewport` completely outside any
+    table (which also surfaced a second, independent finding below),
+    one testing the fix. The fix is structural: the viewport wraps the
+    **entire table** with a sticky `<thead>`, not just the body rows —
+    confirmed by that second experiment measuring header and body
+    column widths as identical before it replaced the broken version in
+    both the story and the README. `CLAUDE.md` now documents the
+    specific breakage mechanism so the next person doesn't have to
+    re-derive it from a passing-looking-but-wrong story.
+
+    **A second, independent finding from the same investigation:**
+    `CdkVirtualScrollViewport` renders nothing on the first tick in a
+    zoneless app — confirmed in isolation outside any table, so it's a
+    real `@angular/cdk/scrolling` gap under zoneless change detection,
+    not caused by this library's own composition. Fixed the story's
+    assertions with a `waitFor` poll rather than asserting immediately
+    after creation.
+
+    **A third, smaller finding:** axe's `scrollable-region-focusable`
+    rule correctly flagged the viewport itself for having no keyboard
+    path to reach it — fixed with `tabindex="0"`, now called out in the
+    README so it isn't silently dropped by a future consumer copying the
+    pattern.
+
+    All 5 Data Grid stories plus the full existing suite (110 stories)
+    pass `test-run` (incl. a11y).
+11. [x] **4.** Wave 4 gate — a real "Directory" screen in `apps/sandbox`
+    (`app.ts`/`app.html`/`app.css`), composing all three: a `HmhaTable`/
+    `HmhaDataGrid` of 23 people with a sortable Name column
+    (`HmhaDataGridSortButton`), resizable Name/Email columns
+    (`HmhaDataGridResizeHandle`), row + select-all-on-page checkboxes
+    (`HmhaCheckbox` + `SelectionModel`) feeding a real "Remove selected"
+    bulk action that updates the array and fires an `HmhaToast`, and
+    `HmhaPagination` slicing the same sorted array into pages of 8. The
+    array, the sort direction, the selected ids and the current page all
+    live in `App` itself, not in any Hmha component — fork 21 held for
+    real, end to end, not just in isolated stories. 7 new sandbox tests
+    (pagination slicing, sort reversing the page, select-all-on-page +
+    indeterminate, the full remove flow asserting the toast text, and
+    keyboard resize), `build:lib`/`ng build sandbox`/`lint:css`/
+    `lint:standalone` and the full test suite all clean — 18/18 in
+    `sandbox`, 262/262 in `hmha-ui`.
+
+    **A real bug, found only by this gate, not by any prior story or
+    unit test:** the Directory table's first draft gave its resizable
+    columns both a `<colgroup>` (for clean initial proportions) and
+    `HmhaDataGridResizeHandle`s. Resizing moved the handle's own model,
+    its `aria-valuenow`, everything the component owns — and the column
+    never visibly changed width, because a `<col>`'s declared width is
+    authoritative under `table-layout: fixed` and wins over a cell's own
+    `style.width`. Every prior test of the resize handle happened to use
+    either a model-bound width or a bare `<th>`, never a `<colgroup>` in
+    the same table — this gate is the only place that combination
+    actually occurred. Fixed by setting initial widths on the `<th>`
+    elements instead and dropping the `<colgroup>`; documented in
+    `CLAUDE.md` and the Data Grid README so the next consumer doesn't
+    lose an afternoon to it.
+
+    Also hit the familiar "table has no explicit width, so
+    `table-layout: fixed` redistributes extra space proportionally and
+    the Resizing test's `before` measurement drifts across sequential
+    tests in the same file" issue — same root cause as the Storybook
+    `ResizingInteraction` story and the resize handle's own unit tests,
+    fixed the same way: give the table an explicit width matching its
+    columns' sum, which also happens to be a reasonable real design
+    choice here, not only a test convenience.
+
+**Wave 4 is complete.** `HmhaPagination`, `HmhaTable` (4 pieces) and
+`HmhaDataGrid` (core + sort + selection + resize + a verified
+virtualization pattern) are all built, unit-tested, documented in
+Storybook, and proven together in a real screen — fork 06's deferred
+Table/Data Grid line, plus the `HmhaPagination` control fork 06 never
+named, both delivered.
 
 ---
 

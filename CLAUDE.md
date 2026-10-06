@@ -117,6 +117,56 @@ preference works until an app pins a mode and then gets out of the way.
   above: know which layer (event firing vs. its actual default action)
   Karma can and can't verify, and say so in the test file rather than
   writing a test that silently verifies nothing.
+- **The reverse case: `userEvent.hover()` doesn't update the CSS `:hover`
+  pseudo-class at all**, in Storybook's `test-run` or Karma — confirmed on
+  `HmhaTableRow`'s `:host(:hover)` rule (a background swap with no JS
+  behind it). `:hover` is the browser's own pointer-position tracking, not
+  something any `dispatchEvent`-based tool (including `userEvent`) can set;
+  only genuine OS/CDP-level pointer movement does. Unlike the `<dialog>`/
+  Combobox gaps above, there's no JS reaction to test your own handling
+  of here — it's pure CSS, so there's no workaround, only the same
+  rule: don't write a play function asserting something this layer
+  structurally cannot produce. A component whose only interactive state
+  is CSS-`:hover`-driven gets a non-interactive showcase story (so a human
+  can still hover the real rendered story and see it), not a play
+  function.
+- **`CdkVirtualScrollViewport`/`*cdkVirtualFor` render nothing on the
+  first tick in a zoneless app** — confirmed in complete isolation,
+  outside any table context, so it's a real `@angular/cdk/scrolling`
+  gap under zoneless change detection, not something this library's own
+  composition causes. The viewport's initial measurement happens on a
+  later frame that a single `whenStable()`/`detectChanges()` doesn't
+  wait for. Don't assert on rendered virtual-scroll content immediately
+  after creating a fixture; wait for it first (`waitFor`, or an extra
+  frame).
+- **A `<cdk-virtual-scroll-viewport>` placed directly inside `<tbody>`
+  (wrapping only the rows) compiles and renders with no error, but
+  breaks every column's layout** — confirmed by measuring actual
+  rendered widths (`data-grid/data-grid.stories.ts`'s `Virtualization`
+  story, fork 22). CSS's anonymous-table-object rules treat that
+  div-shaped element as needing to fit inside the column grid, squeezing
+  it to roughly one column's width instead of the table's full width.
+  The fix is structural, not a style tweak: the viewport wraps the
+  **entire table**, with a sticky `<thead>` (`position: sticky` works
+  fine, since the viewport is the nearest scrolling ancestor), not just
+  the body rows. No error or warning hints at this — the only way to
+  catch it is to actually measure rendered widths, which is exactly what
+  the first attempt here skipped before this fix.
+- **A `<colgroup>` with explicit column widths silently wins over
+  `HmhaDataGridResizeHandle`'s own `th.style.width` mutation under
+  `table-layout: fixed`** — confirmed in the Wave 4 gate
+  (`apps/sandbox`'s Directory screen): the resize handle's `width` model
+  updated correctly, its `effect()` set the style, `aria-valuenow`
+  reflected the new value — and the column's rendered width never
+  moved, because the `<colgroup>` is the authoritative width source
+  under fixed layout and a `<col>` wins over any one cell's own
+  `style.width`. No error, no console warning — the test caught it
+  purely by measuring `getBoundingClientRect()` and finding it
+  unchanged. Set initial column widths on the `<th>` elements
+  themselves (`style="width: …"`, as the Data Grid README's resize
+  section already does) when a column is resizable; don't also give it
+  a `<col>`. A `<colgroup>` is fine for a non-resizable column in the
+  same table.
 
 ### The canonical component
 
@@ -236,6 +286,14 @@ The component library lives in `libs/ui`, and its Storybook config is in `libs/u
   hmha-ui:storybook`, `addon-vitest/dist/node/vitest.js`, the wrapping `npm
   run storybook`), clear `node_modules/.cache/storybook`, then start exactly
   one instance.
+- **A narrower variant of the same symptom**: only `test-run` times out
+  (repeatedly, for both a brand-new story and an existing, previously-
+  passing one), while `docs-list` and `stories-preview` keep responding
+  normally. That split points at the separate `addon-vitest` process
+  specifically — it had been running since the start of a prior session —
+  rather than the main dev server being down. Same fix still works
+  (restart everything, clearing the cache); `lsof -i :6006` alone won't
+  show this one, since the main server is still bound and answering.
 - **A `*.stories.ts` file Storybook's glob matches but that has no real CSF
   export (no `export default meta`) breaks the entire index** — every
   Storybook MCP call fails with `Unable to index <path>`, not just that
@@ -312,11 +370,21 @@ Dialog is built on — and two Karma-can't-verify-this notes (the
 in Combobox, fork 20) worth reading before writing a test that looks like
 it covers something but doesn't.
 
-**Wave 4 is starting.** Scope is fork 06's deferred Table/Data Grid line
-plus a `HmhaPagination` control fork 06 never named — see `DECISIONS.md`
-fork 21 and its **Wave 4 progress** section for the live step tracker and
-current step; that section, not this file, is the source of truth for
-Wave 4 status. Read fork 21 before touching any of these components: all
-three stay purely structural, with the consumer owning the data array and
-paging state, the same pattern Select's trigger-label and Combobox's
-filtering already established.
+**Wave 4 is done.** `HmhaPagination`, `HmhaTable` (four native-element
+pieces) and `HmhaDataGrid` (sort/selection/resize, plus a verified
+virtualization composition pattern) are all built, unit-tested,
+documented in Storybook, and proven together in a real "Directory" screen
+in `apps/sandbox` — fork 06's deferred Table/Data Grid line, plus the
+`HmhaPagination` control fork 06 never named, both delivered. Forks 21–22
+cover the wave's real architectural decisions, including a genuine
+mid-wave correction (fork 22: the first Data Grid proposal would have
+needed two components on one element, caught before any code was
+written) and three real CDK/table composition gaps the gate itself
+surfaced, all now in this file's Storybook-stories section: the
+zoneless-timing gap in `CdkVirtualScrollViewport`, the
+viewport-must-wrap-the-whole-table finding, and the `<colgroup>`-beats-
+resize-handle conflict. Read fork 21/22 before touching any of these
+components: all three stay purely structural, with the consumer owning
+the data array, sort state, selection and paging state — the same
+pattern Select's trigger-label and Combobox's filtering already
+established.

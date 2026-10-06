@@ -29,6 +29,7 @@ custom SVG — see `DECISIONS.md` fork 10 for why.
 | `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Reflected as `data-size`; drives `--hmha-checkbox-size` (reuses the `--hmha-icon-*` scale). |
 | `disabled` | `boolean` | `false` | Combines with Forms' `setDisabledState` — either can disable the control. |
 | `invalid` | `boolean` | `false` | Combines with a wrapping `HmhaField`'s `error` — either sets `aria-invalid`/`data-invalid`. |
+| `indeterminate` | `boolean` | `false` | Sets the native `indeterminate` DOM property (not an attribute — it isn't one). Purely visual, unrelated to the checked value/CVA; used for a "select all" checkbox when only some items are selected (see `data-grid/README.md`). |
 
 ## Component tokens — the override API
 

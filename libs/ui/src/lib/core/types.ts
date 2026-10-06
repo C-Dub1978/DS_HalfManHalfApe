@@ -5,3 +5,4 @@
  */
 export type HmhaTone = 'neutral' | 'primary' | 'danger' | 'warning' | 'success';
 export type HmhaSize = 'sm' | 'md' | 'lg';
+export type HmhaSortDirection = 'asc' | 'desc';

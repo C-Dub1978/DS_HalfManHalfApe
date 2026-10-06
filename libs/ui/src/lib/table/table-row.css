@@ -1,0 +1,12 @@
+:host {
+  --hmha-table-row-stripe-bg: var(--hmha-color-bg-subtle);
+  --hmha-table-row-hover-bg: var(--hmha-color-surface-raised);
+}
+
+:host(:nth-child(even)) {
+  background: var(--hmha-table-row-stripe-bg);
+}
+
+:host(:hover) {
+  background: var(--hmha-table-row-hover-bg);
+}

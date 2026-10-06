@@ -1,0 +1,11 @@
+:host {
+  --hmha-table-border: var(--hmha-color-border-strong);
+  --hmha-table-bg: var(--hmha-color-surface);
+  --hmha-table-fg: var(--hmha-color-text);
+
+  width: 100%;
+  border-collapse: collapse;
+  border: var(--hmha-border-width) solid var(--hmha-table-border);
+  background: var(--hmha-table-bg);
+  color: var(--hmha-table-fg);
+}

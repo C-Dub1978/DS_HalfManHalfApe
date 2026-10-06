@@ -225,4 +225,123 @@ describe('App', () => {
       expect(toastText(appRef)).toContain('Workspace deleted');
     });
   });
+
+  describe('Wave 4 gate — Directory screen', () => {
+    let fixture: ComponentFixture<App>;
+    let el: HTMLElement;
+    let appRef: ApplicationRef;
+
+    function directoryRows(): HTMLElement[] {
+      return Array.from(el.querySelectorAll('table.directory-table tbody tr'));
+    }
+
+    function directoryNames(): (string | null)[] {
+      return directoryRows().map((row) => row.querySelector('td:nth-child(2)')?.textContent ?? null);
+    }
+
+    beforeEach(() => {
+      fixture = TestBed.createComponent(App);
+      appRef = TestBed.inject(ApplicationRef);
+      fixture.detectChanges();
+      el = fixture.nativeElement as HTMLElement;
+    });
+
+    it('Pagination: shows only the first page of 8, with a page count matching 23 rows', () => {
+      expect(directoryRows().length).toBe(8);
+      expect(directoryNames()).toContain('Ada Lovelace');
+      expect(directoryNames()).not.toContain('Guido van Rossum'); // row 19, page 3
+
+      const pageButtons = Array.from(el.querySelectorAll('[aria-label^="Page "]'));
+      expect(pageButtons.length).toBeGreaterThan(0);
+    });
+
+    it('Pagination: Next page shows the next 8 rows', () => {
+      const next = el.querySelector('[aria-label="Next page"]') as HTMLButtonElement;
+      next.click();
+      fixture.detectChanges();
+
+      expect(directoryRows().length).toBe(8);
+      expect(directoryNames()).not.toContain('Ada Lovelace');
+      expect(directoryNames()).toContain('Dorothy Vaughan'); // row 10
+    });
+
+    it('Sorting: clicking the Name sort button reorders the page alphabetically, and again reverses it', () => {
+      const sortButton = Array.from(el.querySelectorAll('button')).find(
+        (button) => button.textContent?.trim() === 'Name',
+      ) as HTMLButtonElement;
+
+      sortButton.click();
+      fixture.detectChanges();
+      let names = directoryNames();
+      expect(names[0]).toBe('Ada Lovelace'); // alphabetically first of all 23
+
+      sortButton.click();
+      fixture.detectChanges();
+      names = directoryNames();
+      expect(names[0]).toBe('Vint Cerf'); // alphabetically last of all 23
+    });
+
+    it('Selection: checking a row enables the bulk-remove button with the right count', () => {
+      const removeButton = Array.from(el.querySelectorAll('button')).find((button) =>
+        button.textContent?.trim().includes('Remove selected'),
+      ) as HTMLButtonElement;
+      expect(removeButton.disabled).toBe(true);
+
+      const firstRowCheckbox = el.querySelector('[aria-label="Select Ada Lovelace"]') as HTMLInputElement;
+      firstRowCheckbox.checked = true;
+      firstRowCheckbox.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+
+      expect(removeButton.disabled).toBe(false);
+      expect(removeButton.textContent).toContain('Remove selected (1)');
+    });
+
+    it('Selection: select-all-on-page checks every visible row, and unchecking one drops it back to indeterminate', async () => {
+      const selectAll = el.querySelector('[aria-label="Select all people on this page"]') as HTMLInputElement;
+      selectAll.checked = true;
+      selectAll.dispatchEvent(new Event('change'));
+      await fixture.whenStable();
+
+      const rowCheckboxes = Array.from(el.querySelectorAll('table.directory-table tbody input[type="checkbox"]'));
+      expect(rowCheckboxes.every((checkbox) => (checkbox as HTMLInputElement).checked)).toBe(true);
+
+      const adaCheckbox = el.querySelector('[aria-label="Select Ada Lovelace"]') as HTMLInputElement;
+      adaCheckbox.checked = false;
+      adaCheckbox.dispatchEvent(new Event('change'));
+      await fixture.whenStable();
+
+      expect(selectAll.checked).toBe(false);
+      expect(selectAll.indeterminate).toBe(true);
+    });
+
+    it('Remove selected: removes the chosen people, clears selection, and fires a toast', async () => {
+      const firstRowCheckbox = el.querySelector('[aria-label="Select Ada Lovelace"]') as HTMLInputElement;
+      firstRowCheckbox.checked = true;
+      firstRowCheckbox.dispatchEvent(new Event('change'));
+      await fixture.whenStable();
+
+      const removeButton = Array.from(el.querySelectorAll('button')).find((button) =>
+        button.textContent?.trim().includes('Remove selected'),
+      ) as HTMLButtonElement;
+      removeButton.click();
+      await fixture.whenStable();
+
+      expect(directoryNames()).not.toContain('Ada Lovelace');
+      expect(toastText(appRef)).toContain('1 person removed from the directory');
+      expect(removeButton.disabled).toBe(true); // selection cleared
+    });
+
+    it('Resizing: ArrowRight on the Name column\'s resize handle grows it', async () => {
+      const handle = el.querySelector('[aria-label="Resize Name column"]') as HTMLElement;
+      const nameHeader = handle.closest('th') as HTMLElement;
+      const before = nameHeader.getBoundingClientRect().width;
+
+      handle.focus();
+      handle.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+      await fixture.whenStable();
+
+      const after = nameHeader.getBoundingClientRect().width;
+      expect(after).toBe(before + 10);
+    });
+  });
 });

@@ -1,0 +1,6 @@
+:host {
+  --hmha-table-cell-border: var(--hmha-color-border);
+
+  padding: var(--hmha-control-padding-y) var(--hmha-control-padding-x);
+  border-bottom: var(--hmha-border-width) solid var(--hmha-table-cell-border);
+}

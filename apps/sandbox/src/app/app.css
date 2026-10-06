@@ -88,3 +88,7 @@ h2 {
 .role-trigger {
   flex: 0 0 auto;
 }
+
+.directory-toolbar {
+  justify-content: flex-end;
+}

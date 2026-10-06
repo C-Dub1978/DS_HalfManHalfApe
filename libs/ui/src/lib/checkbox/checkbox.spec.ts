@@ -20,7 +20,7 @@ class CheckboxReactiveHost {
   imports: [HmhaCheckbox, HmhaField],
   template: `
     <hmha-field [label]="label" [hint]="hint" [error]="error" [required]="required">
-      <input type="checkbox" hmhaCheckbox [size]="size" [disabled]="disabled" [invalid]="invalid" />
+      <input type="checkbox" hmhaCheckbox [size]="size" [disabled]="disabled" [invalid]="invalid" [indeterminate]="indeterminate" />
     </hmha-field>
   `,
 })
@@ -32,6 +32,7 @@ class CheckboxFieldHost {
   size: HmhaSize = 'md';
   disabled = false;
   invalid = false;
+  indeterminate = false;
 }
 
 describe('HmhaCheckbox — reactive forms', () => {
@@ -124,6 +125,17 @@ describe('HmhaCheckbox — standalone inputs and HMHA_FIELD integration', () => 
     const { checkbox } = create({ invalid: true });
     expect(checkbox.getAttribute('aria-invalid')).toBe('true');
     expect(checkbox.getAttribute('data-invalid')).toBe('');
+  });
+
+  it('is not indeterminate by default', () => {
+    const { checkbox } = create();
+    expect(checkbox.indeterminate).toBe(false);
+  });
+
+  it('sets the native indeterminate DOM property, not an attribute', () => {
+    const { checkbox } = create({ indeterminate: true });
+    expect(checkbox.indeterminate).toBe(true);
+    expect(checkbox.hasAttribute('indeterminate')).toBe(false);
   });
 
   it('picks up id, aria-required and aria-describedby from the wrapping HmhaField', () => {
