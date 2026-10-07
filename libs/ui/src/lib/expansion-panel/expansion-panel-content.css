@@ -1,0 +1,8 @@
+:host {
+  display: block;
+  padding: var(--hmha-control-padding-y) var(--hmha-control-padding-x);
+  border-top: var(--hmha-border-width) solid var(--hmha-color-border);
+  color: var(--hmha-color-text);
+  font-size: var(--hmha-type-body-md-size);
+  line-height: var(--hmha-type-body-md-line);
+}

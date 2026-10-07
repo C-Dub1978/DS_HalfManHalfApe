@@ -1,0 +1,24 @@
+:host {
+  --hmha-expansion-panel-bg: var(--hmha-color-surface);
+  --hmha-expansion-panel-border: var(--hmha-color-border);
+
+  display: block;
+  background: var(--hmha-expansion-panel-bg);
+  color: var(--hmha-color-text);
+  border: var(--hmha-border-width) solid var(--hmha-expansion-panel-border);
+  border-radius: var(--hmha-radius-control);
+}
+
+/* Inside an HmhaAccordion (data-in-accordion, set via injecting it —
+   see expansion-panel.ts), the group's own outer border/radius takes
+   over — each panel loses its own border except a divider between
+   stacked panels, matching how the accordion group clips panel corners
+   to its own rounded outline (accordion.css's overflow: hidden). */
+:host([data-in-accordion]) {
+  border: none;
+  border-radius: 0;
+}
+
+:host([data-in-accordion]:not(:first-child)) {
+  border-top: var(--hmha-border-width) solid var(--hmha-expansion-panel-border);
+}

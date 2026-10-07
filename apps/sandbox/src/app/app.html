@@ -316,4 +316,86 @@
   </table>
 
   <nav hmhaPagination [page]="clampedDirectoryPage()" [pageCount]="directoryPageCount()" (pageChange)="directoryPage.set($event)"></nav>
+
+  <h2>New project — Wave 5, Drawer + Stepper + Chip + Expansion Panel composed together</h2>
+  <p class="muted">
+    A Drawer holds a linear Stepper (Details → Tags → Review): the Tags step
+    uses a ChipSet for multi-select tags, and Review tucks an optional
+    setting behind an Expansion Panel. Which step is current, which tags are
+    picked and whether "Advanced options" is expanded all live here, in the
+    app — not in any Hmha component. This is the Wave 5 gate.
+  </p>
+
+  <button hmhaButton tone="primary" (click)="openProjectDrawer()">
+    <hmha-icon name="plus" size="sm" />
+    New project
+  </button>
+
+  <dialog
+    hmhaDialog
+    hmhaDrawer
+    placement="end"
+    [open]="projectDrawerOpen()"
+    (openChange)="projectDrawerOpen.set($event)"
+    aria-labelledby="project-drawer-title"
+    class="project-drawer"
+  >
+    <h2 id="project-drawer-title">New project</h2>
+
+    <div hmhaStepper [(value)]="projectStep" class="project-stepper">
+      <div hmhaStepList>
+        <button hmhaStep value="details">Details</button>
+        <button hmhaStep value="tags">Tags</button>
+        <button hmhaStep value="review">Review</button>
+      </div>
+
+      <div hmhaStepPanel value="details" class="project-step-panel">
+        <hmha-field label="Project name" required="true">
+          <input hmhaInput [ngModel]="projectName()" (ngModelChange)="projectName.set($event)" placeholder="Apollo" />
+        </hmha-field>
+        <div class="row">
+          <button hmhaButton tone="primary" size="sm" [disabled]="!projectName()" (click)="goToProjectStep('tags')">
+            Next
+          </button>
+        </div>
+      </div>
+
+      <div hmhaStepPanel value="tags" class="project-step-panel">
+        <p class="muted">Pick whatever applies.</p>
+        <div hmhaChipSet ariaLabel="Project tags">
+          @for (tag of availableProjectTags; track tag) {
+            <button hmhaChip selectable="true" [selected]="isProjectTagSelected(tag)" (selectedChange)="toggleProjectTag(tag)">
+              {{ tag }}
+            </button>
+          }
+        </div>
+        <div class="row">
+          <button hmhaButton tone="neutral" size="sm" (click)="goToProjectStep('details')">Back</button>
+          <button hmhaButton tone="primary" size="sm" (click)="goToProjectStep('review')">Next</button>
+        </div>
+      </div>
+
+      <div hmhaStepPanel value="review" class="project-step-panel">
+        <p><strong>{{ projectName() }}</strong></p>
+        <p class="muted">{{ projectTagsSummary() }}</p>
+
+        <details hmhaExpansionPanel>
+          <summary hmhaExpansionPanelTrigger>Advanced options</summary>
+          <div hmhaExpansionPanelContent>
+            <hmha-field label="Make project private" hint="You can change this anytime in settings.">
+              <button hmhaSwitch [ngModel]="projectPrivate()" (ngModelChange)="projectPrivate.set($event)"></button>
+            </hmha-field>
+          </div>
+        </details>
+
+        <div class="row">
+          <button hmhaButton tone="neutral" size="sm" (click)="goToProjectStep('tags')">Back</button>
+          <button hmhaButton tone="primary" (click)="createProject()">
+            <hmha-icon name="check" size="sm" />
+            Create project
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
 </main>

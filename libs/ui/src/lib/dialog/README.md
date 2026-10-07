@@ -44,6 +44,53 @@ The backdrop uses `--hmha-color-backdrop` (not a component token — a
 semantic one, since every overlay-ish surface will want the same scrim;
 see `DECISIONS.md` fork 14).
 
+## HmhaDrawer — an edge-anchored, full-height HmhaDialog
+
+```html
+<button type="button" (click)="navOpen.set(true)">Menu</button>
+
+<dialog hmhaDialog hmhaDrawer [(open)]="navOpen" aria-labelledby="nav-title">
+  <h2 id="nav-title">Navigation</h2>
+  <nav>…</nav>
+</dialog>
+
+<!-- placement="end" — slides in from the trailing edge instead -->
+<dialog hmhaDialog hmhaDrawer placement="end" [(open)]="filtersOpen" aria-labelledby="filters-title">
+  <h2 id="filters-title">Filters</h2>
+  …
+</dialog>
+```
+
+A second attribute directive that stacks on `hmhaDialog` on the same native
+`<dialog>` — it carries no logic of its own at all. `open`, `dismissible`,
+the focus trap, Escape-to-close and backdrop-click dismissal all still come
+from `HmhaDialog` + native `showModal()`, completely unchanged; `hmhaDrawer`
+only changes where it sits (full height, anchored to an edge instead of
+centered) via `dialog.css`'s own `[data-placement]` rules. See `DECISIONS.md`
+fork 26 for why this is a directive, not a new component, and why there is no
+separate persistent/push variant.
+
+There is no open/close slide animation (yet) — it appears/disappears exactly
+as instantly as a plain `HmhaDialog` does today; see fork 26 for why that was
+the deliberate, reconsidered call rather than an oversight.
+
+### Inputs
+
+| Input | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `placement` | `'start' \| 'end'` | `'start'` | Which edge it's anchored to, using logical properties — `'start'` is the left edge in LTR, the right edge in RTL, and vice versa for `'end'`. |
+
+`open` and `dismissible` both still come from `hmhaDialog`.
+
+### Component tokens — the override API
+
+| Token | Default | Set by |
+| --- | --- | --- |
+| `--hmha-drawer-width` | `var(--hmha-layout-drawer-width)` (320px) | Declared on `:host([data-placement])` in `dialog.css`; override on your own `dialog[hmhaDialog][hmhaDrawer]` selector to resize it. |
+
+`--hmha-dialog-bg`/`--hmha-dialog-fg` still apply — a drawer is still a
+dialog visually, just repositioned.
+
 ## Unsupported
 
 `::ng-deep`, selectors targeting internal DOM, or overriding by specificity —

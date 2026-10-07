@@ -1,0 +1,5 @@
+/* stepper.css — purely a layout wrapper; the step list and panels carry
+   all the token-driven styling. */
+:host {
+  display: block;
+}

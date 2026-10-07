@@ -51,27 +51,47 @@ is needed:
 Match the icon's `size` to the button's `size` (`sm`/`sm`, `md`/`md`,
 `lg`/`lg`) for visual balance — there is no automatic coupling between them.
 
-## HmhaIconButton — icon-only buttons
+## HmhaIconButton — icon-only, leading-icon and trailing-icon buttons
 
 ```html
+<!-- iconPosition="only" (the default) — icon, no visible text -->
 <button hmhaButton hmhaIconButton label="More options" tone="neutral">
   <hmha-icon name="more-vertical" />
+</button>
+
+<!-- iconPosition="leading" — icon, then text -->
+<button hmhaButton hmhaIconButton iconPosition="leading" tone="primary">
+  <hmha-icon name="check" size="sm" />
+  Save
+</button>
+
+<!-- iconPosition="trailing" — text, then icon -->
+<button hmhaButton hmhaIconButton iconPosition="trailing" tone="neutral">
+  Next
+  <hmha-icon name="chevron-right" size="sm" />
 </button>
 ```
 
 `hmhaIconButton` is a second attribute directive that stacks on `hmhaButton`
-on the same native `<button>` — it carries no styles of its own. It:
+on the same native `<button>` — it carries no styles of its own, and no
+template of its own either, so it has no way to reorder projected content.
+For `leading`/`trailing`, the icon/text order is entirely your own content
+order — write `<hmha-icon/>` before or after your text and that's the order
+rendered.
 
-- requires a `label` input and writes it to `aria-label`. Since `HmhaIcon` is
-  always `aria-hidden`, a plain `hmhaButton` with only an icon inside has no
-  accessible name; `hmhaIconButton` makes that structurally impossible to
-  forget rather than relying on the consumer to remember `aria-label`.
-- sets `data-icon-only`, which `button.css` uses to square the control
-  (`width` pinned to `--hmha-control-height*`, horizontal padding dropped)
-  instead of letting the icon's intrinsic width drive it.
+### Inputs
 
-`tone`, `size`, `loading` and `disabled` all still come from `hmhaButton` —
-`hmhaIconButton` only adds the label requirement and the square sizing.
+| Input | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `iconPosition` | `'only' \| 'leading' \| 'trailing'` | `'only'` | `'only'` sets `data-icon-only` (square sizing, no change needed for `leading`/`trailing` — `hmhaButton`'s own `gap` already spaces icon and text). |
+| `label` | `string` | — | Required in substance when `iconPosition` is `'only'` — **throws** if missing, rather than shipping a button with no accessible name. Optional for `leading`/`trailing`; if given there, it overrides the visible text as the accessible name, so only pass it when you deliberately want that (the common case is to leave it unset and let the visible text name the button). |
+
+`HmhaIcon`'s SVG is unconditionally `aria-hidden`, which is why `'only'`
+needs `label` at all, and why passing one for `leading`/`trailing` is an
+override rather than harmless — see `DECISIONS.md` fork 23 for the WCAG
+reasoning (Label in Name).
+
+`tone`, `size`, `loading` and `disabled` all still come from `hmhaButton`.
 
 ## Unsupported
 

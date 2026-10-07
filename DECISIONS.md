@@ -1652,6 +1652,440 @@ named, both delivered.
 
 ---
 
+## 23 — IconButton: three icon/text layouts, one new input, no breaking change
+
+**Decided:** `HmhaIconButton` gains `iconPosition: 'only' | 'leading' |
+'trailing'`, defaulting to `'only'` — today's entire behavior, unchanged.
+Every existing call site (`HmhaPagination`'s prev/next buttons, and all
+four icon-only usages in `apps/sandbox`) keeps compiling and rendering
+identically with zero edits.
+
+- **`'only'`** — `data-icon-only` is set (square sizing, `button.css`
+  unchanged); `label` is required in substance, though no longer at the
+  type level (see below).
+- **`'leading'` / `'trailing'`** — no `data-icon-only`; `HmhaButton`'s
+  existing `:host` `gap` already spaces icon and text correctly, so
+  nothing new was needed in `button.css` for either. The icon/text
+  *order* is entirely the consumer's own content order
+  (`<hmha-icon/>Save` vs. `Next<hmha-icon/>`) — the directive has no
+  template of its own (it stacks on `HmhaButton`, itself a component;
+  two components can't share one host element, the fork 22 lesson
+  applying again here), so it has no way to reorder projected content
+  and doesn't try to.
+
+**`label` moves from `input.required<string>()` to optional, enforced
+instead by a `throw new Error(...)` inside an `effect()` when
+`iconPosition() === 'only'` and no label is set.** It couldn't stay a
+compile-time required input because requiredness now depends on another
+input's value, which Angular's `input.required()` has no way to express.
+Forcing a `label` on a `'leading'`/`'trailing'` button was rejected for a
+sharper reason than redundancy: `HmhaIcon`'s SVG is unconditionally
+`aria-hidden`, so a label there would set an `aria-label` that silently
+overrides the button's own visible text as its accessible name — a real
+WCAG 2.5.3 (Label in Name) violation, not just an unnecessary prop. The
+runtime throw matches this codebase's existing convention for a missing
+mandatory value (`hmhaOverlay`'s two `throw new Error('ComponentName:
+...')` checks) rather than letting an icon-only button silently ship
+with no accessible name at all.
+
+**Rejected — turning `HmhaIconButton` into the icon-rendering component
+itself** (taking an `icon` input and an `<ng-content>` slot for the
+text, rendering the icon in the right position itself): would need its
+own template, and a second component can't stack on `HmhaButton` for the
+same reason CdkTable couldn't stack on `HmhaTable` (fork 22). Keeping it
+a plain directive, with the consumer placing `<hmha-icon>` themselves in
+whichever order they intend, was the only option that didn't also
+require giving up stacking on `HmhaButton` entirely.
+
+---
+
+## 24 — Wave 5 scope: Chip, Expansion Panel, Stepper, Sidenav/Drawer
+
+**Decided:** a new wave, outside fork 06's original three-wave v1 plan —
+the same precedent as Wave 4's Pagination/Table/Data Grid, post-v1 scope
+the user chose to pursue rather than something fork 06 ever named. Build
+order: Chip, then Expansion Panel, then Stepper, then Sidenav/Drawer —
+smallest and most architecturally settled first, the same "smallest scale
+first" reasoning every prior wave kickoff used.
+
+- **Chip** — default, removable (a nested icon-button — fork 23's
+  `iconPosition="trailing"` fits directly) and selectable/toggleable
+  variants, plus a `ChipSet` container for roving-tabindex arrow-key
+  navigation between chips, similar in spirit to `RadioGroup`'s shared
+  container role (fork 11).
+- **Expansion Panel** — WAI-ARIA's Disclosure pattern (one trigger,
+  `aria-expanded`/`aria-controls`, one region) plus an Accordion grouping
+  on top, single-open or multi-open.
+- **Stepper** — conceptually close to `Tabs`' one-panel-visible-at-a-time
+  mechanic (fork 18), but linear — a consumer can't jump ahead
+  arbitrarily the way a tab can be clicked directly — and needs distinct
+  per-step states (completed/active/upcoming/error) Tabs never needed.
+- **Sidenav/Drawer** — deliberately last, and its real foundation
+  question deliberately **not** resolved here: a drawer can be a modal
+  overlay (slides over content, backdrop, focus-trapped —
+  `hmhaOverlay()`'s existing territory, fork 13/15–17) or a persistent/
+  push panel that coexists with page content and resizes the layout
+  around it, which native `<dialog>` (Dialog's own foundation, fork 14)
+  cannot do at all. Gets its own proposal once step 4a actually arrives,
+  the same way Data Grid's foundation got fork 22 rather than being
+  decided in passing during fork 21.
+
+---
+
+## 25 — Expansion Panel: native `<details>`/`<summary>`, native `name` grouping
+
+**Decided:** `HmhaExpansionPanel` is built on the native `<details>`
+element, `HmhaExpansionPanelTrigger` on `<summary>` — expanded/collapsed
+state, keyboard operability and a real `toggle` event all come for free,
+no ARIA needed, the same "use the native element" call as Dialog (fork
+14). `expanded` is a `model()` kept in sync with the native `open`
+property in both directions: `[open]="expanded()"` one way,
+`(toggle)="onToggle($event)"` reading `event.target.open` back into the
+model the other.
+
+**Accordion grouping (single-open vs. multi-open) is entirely native
+too — a shared `name` attribute on sibling `<details>` elements, the
+same mechanism radio buttons use.** No input for this on
+`HmhaExpansionPanel` at all; `name` is a plain HTML attribute with
+nothing Angular-specific to wrap. This isn't common-knowledge enough to
+take on faith, so it was verified directly before relying on it: a
+throwaway Karma spec confirmed opening one `<details name="faq">`
+natively closes a sibling sharing that name, including when `open` is
+set *programmatically* (`a.open = true`), not only via a real click —
+deleted after confirming, per the established discipline of not keeping
+diagnostic-only specs around. `HmhaAccordion` itself ended up with zero
+JS logic for grouping; it's purely the visual wrapper (one outer border
+around the stacked group instead of each panel's own).
+
+**A real Karma-launcher gap, the same class as `<dialog>`'s own `close`
+event (fork 14): `summary.click()` never fires `<details>`'s native
+`toggle` event in Karma's `ChromeHeadlessNoSandbox` launcher**, confirmed
+with a direct listener — the native `open` property itself still flips
+correctly (real, launcher-independent behavior), only the event is
+missing. Fixed the same way fork 14 established: test the reaction to
+the event by dispatching it directly
+(`details.dispatchEvent(new Event('toggle'))` after setting `.open`
+manually) rather than relying on a synthetic click's internal firing to
+reach it.
+
+**A real encapsulation-boundary violation caught by lint, not just a
+rule to work around: the first draft of the chevron-rotation and
+accordion-border-suppression CSS used `:host-context()`**, which this
+project's own stylelint config blocks via
+`selector-disallowed-list` — the same reasoning as `::ng-deep` being
+blocked (fork 05): a component reaching outside its own encapsulation
+boundary to read ancestor context is exactly the kind of override this
+contract exists to prevent, not an arbitrary tooling restriction.
+Fixed with the established, correct pattern instead: `inject()` the
+relevant ancestor directly (`HmhaExpansionPanelTrigger` injects
+`HmhaExpansionPanel` for its `expanded` state;
+`HmhaExpansionPanel` optionally injects `HmhaAccordion` for its own
+grouped-or-not state) and reflect a `data-*` host attribute the CSS
+reads via a plain `:host([data-x])` selector — self-referential, no
+ancestor-reaching needed. Neither file imports the other back in either
+case, so no separate context-token file was needed the way Menu's/
+ChipSet's parent-child relationships require one.
+
+---
+
+## 26 — Drawer: a directive stacking on `HmhaDialog`, not a new component
+
+**Decided:** `HmhaDrawer` is a `@Directive` with selector
+`dialog[hmhaDialog][hmhaDrawer]` — it stacks on the *existing*
+`HmhaDialog`, the exact compositional shape fork 23's `HmhaIconButton`
+established for `HmhaButton`. It adds exactly one input, `placement:
+'start' | 'end'` (default `'start'`), reflected as `data-placement` on
+the shared host element, and its own visual rules live inside
+`dialog.css` gated on `[data-placement]` — because a `@Directive` has no
+`styleUrl` of its own (confirmed from `HmhaIconButton`: all its visuals
+already live in `button.css`, consumed via the `data-icon-only`
+attribute it sets on `HmhaButton`'s host). No new component, no
+duplicated open/dismiss/focus-trap/backdrop logic at all.
+
+**Why this resolves cleanly, where fork 24 deliberately left it open:**
+a modal edge-anchored drawer and a centered dialog need *identical*
+machinery — a real focus trap, Escape-to-close, backdrop click,
+top-layer rendering, implicit `role="dialog"`/`aria-modal` — all of
+which `HmhaDialog` already gets for free from native `<dialog>` +
+`showModal()` (fork 14). The only actual difference is positioning:
+anchored to an edge and full-height instead of centered with a max
+width. That's a CSS-only difference, which is exactly the shape fork 23
+already solved (a variant that's "the same component, arranged
+differently" gets an input on top of the existing piece, not a parallel
+component reimplementing its behavior).
+
+- **`placement`** only takes `'start'`/`'end'` — not `'top'`/`'bottom'`.
+  A *sidenav* is a side panel by definition; a top/bottom sliding sheet
+  is a materially different, separately-named pattern (a "bottom
+  sheet") that wasn't asked for and isn't speculatively built now.
+- **No persistent/push mode was built, and none is planned.** That
+  variant isn't modal at all — no focus trap, no backdrop, content
+  coexists with it instead of being blocked by it — and native
+  `<dialog>` cannot produce that behavior regardless of CSS. Once you
+  take modality away, what's left ("a toggleable-width `<nav>`/`<aside>`
+  that participates in page layout") has close to zero component logic
+  of its own — the same "don't build a component when plain composition
+  already does the job" reasoning fork 21 used to keep Data Grid
+  selection out of a dedicated piece. A consumer who wants that layout
+  reaches for a plain `<nav>`/`<aside>` and the density/control tokens
+  already in the library — no `Hmha*` component gap to fill.
+- **Width is a component token (`--hmha-drawer-width`), not a new
+  input** — the established "component tokens are the public override
+  API" convention (`CLAUDE.md`), consistent with every other
+  size-ish override in the library (`--hmha-chip-bg`, etc.) rather than
+  adding an Angular input for something CSS already owns cleanly.
+- **No open/close slide animation, at least not yet — reconsidered
+  before writing any CSS, the same way fork 22's first Data Grid
+  proposal got corrected before any code.** The initial draft of this
+  decision reached for `@starting-style` + `transition-behavior:
+  allow-discrete` to animate a native `<dialog>`'s own
+  show/showModal/close lifecycle. That's real, shipped CSS, but it's
+  also new enough, and subtle enough in exactly how the browser times
+  the "still rendered while transitioning out" step, that nothing in
+  this project's own tooling can actually verify it animates
+  correctly — Karma has no visual rendering to assert against, and a
+  Storybook play function can check a `translate`/attribute value at
+  an instant, not "did this animate smoothly." Shipping an unverifiable
+  claim about a visual effect is worse than not having the effect.
+  `HmhaDialog` itself already ships with zero open/close animation
+  (confirmed in `dialog.css`) — matching that exactly, instant
+  position change, no transition, keeps the drawer consistent with the
+  component it stacks on rather than introducing an asymmetry. Adding a
+  slide later is a pure CSS addition, not a breaking change, if it's
+  ever actually asked for and can be checked by eye.
+
+**Naming:** "sidenav" and "drawer" are the same UI pattern under two
+common names (Angular Material itself ships `MatSidenav`/`MatDrawer` as
+aliases for one component) — `HmhaDrawer` was picked as the one name
+actually built; no separate `HmhaSidenav` alias.
+
+---
+
+## Wave 5 progress — the step tracker
+
+**This section is the single source of truth for Wave 5 status**, the
+same way Wave 2/3/4 progress were for their waves. Update the checklist
+and the CURRENT STEP marker at the end of every step. The process rule
+itself (one step at a time, stop-and-wait between steps, the done
+criteria) lives in `CLAUDE.md`'s "Working through a wave" section — this
+section only tracks where we are.
+
+Component order follows fork 24: Chip, Expansion Panel, Stepper, then
+Sidenav/Drawer. Sidenav/Drawer's own sub-steps aren't itemized yet beyond
+its foundation proposal — it gets broken down further once step 4a
+actually arrives, the same way Data Grid's step 3 was.
+
+1. [x] **1A.** Build Chip (+ ChipSet) + tests — `libs/ui/src/lib/chip/`
+   (`chip.ts`/`.css`/`.spec.ts`, `chip-set.ts`/`.css`/`.spec.ts`,
+   `chip-set-context.ts`, `README.md`). `HmhaChip` works on either a
+   native `<span>` (display/removable — never itself interactive) or
+   `<button>` (selectable/toggleable, native `aria-pressed`, no custom
+   role). Removal has no dedicated input at all — a nested
+   `HmhaIconButton` the consumer projects themselves, the same
+   "composition over a new component" precedent as Wave 4's selection
+   step. `HmhaChipSet` is purely a `FocusKeyManager` over its `HmhaChip`
+   content children (horizontal roving tabindex, `.withWrap()`/
+   `.withHomeAndEnd()`), structured exactly like Menu's own key manager
+   (fork 15) including the separate `chip-set-context.ts` file to avoid
+   the same circular-import shape `menu-context.ts` solves. `HmhaChip`'s
+   own `selected` stays a `model()` it owns directly — distinguished
+   explicitly from the kind of *collection* state ("which chips are
+   selected in a group") fork 21 keeps out of every component; a single
+   chip's own on/off state is the same shape as `HmhaCheckbox`'s checked
+   value, not that. 19 new unit tests (289/289 total), `build:lib`/
+   `lint:css`/`lint:standalone` clean.
+
+   **Three real bugs, caught by running the tests, not by inspection:**
+   1. `[disabled]` as a property binding threw `NG0303` on the `<span>`
+      variant — spans have no native `disabled` DOM property, and
+      Angular's binding throws rather than silently no-opping the way a
+      raw JS property assignment would have. Fixed with `[attr.disabled]`
+      instead, which works universally and a real `<button>` still
+      reflects into its own `.disabled` property.
+   2. `disabledInput` (the alias-plus-getter shape `FocusableOption`
+      needs, same as `HmhaMenuItem`'s) was `protected`, matching Menu's
+      own code — but a bare `disabled="true"` template attribute
+      resolves to that aliased input ahead of the native button
+      property of the same name, and Angular's strict template checking
+      requires it be accessible from the template for that resolution to
+      type-check. Menu's own specs never exercised a bare-attribute
+      `disabled` anywhere, so this was a latent gap there too, just
+      never triggered — fixed here by making the field public; Menu's
+      own file wasn't touched, since nothing asked for that and nothing
+      here depends on it.
+   3. `data-selected` was `'[attr.data-selected]': 'selected() || null'`
+      — for `selected() === true`, Angular stringifies the literal
+      boolean to the attribute value `"true"`, not an empty string,
+      unlike every other boolean `data-*` attribute already in this
+      library (Card's `data-elevated`, Menu's `data-active`), which all
+      use `? '' : null` explicitly. Harmless for the CSS attribute
+      selector either way, but inconsistent with the rest of the
+      codebase — fixed to match.
+
+   Also needed `await fixture.whenStable()` after click/keydown
+   interactions in both new spec files — the same zoneless-effect-timing
+   pattern this session has hit repeatedly (Resize Handle, Data Grid
+   selection), not a new discovery, just applied again.
+2. [x] **1B.** Story: Chip — `chip.stories.ts` (Playground, Display,
+   Removable, Selectable, SelectionInteraction,
+   ChipSetKeyboardNavigationInteraction). Hit the already-documented
+   `keyCode` gap proactively (fixed before running anything, not
+   rediscovered) and a new, closely-related timing gap: the key
+   manager's "activate the first item" effect needs a render flush to
+   land, the same lesson Tabs' own `KeyboardNavigationInteraction` story
+   already recorded — fixed with the same `waitFor` pattern. All 6 Chip
+   stories plus the full existing suite (120 stories) pass `test-run`
+   (incl. a11y).
+3. [x] **2A.** Build Expansion Panel (+ Accordion grouping) + tests —
+   `libs/ui/src/lib/expansion-panel/` (`expansion-panel.ts`/`.css`/
+   `.spec.ts`, `expansion-panel-trigger.ts`/`.css`/`.spec.ts`,
+   `expansion-panel-content.ts`/`.css`/`.spec.ts`, `accordion.ts`/`.css`/
+   `.spec.ts`, `README.md`). Full writeup in fork 25: built on native
+   `<details>`/`<summary>`, single-open/multi-open grouping entirely via
+   native `name` (verified with a throwaway experiment, not assumed),
+   plus two real findings — a new Karma-launcher gap matching `<dialog>`'s
+   own `close` event (fork 14), and a genuine encapsulation-boundary
+   violation (`:host-context`, caught by stylelint, fixed with `inject()`
+   + `data-*` attributes instead). 17 new unit tests (306/306 total),
+   `build:lib`/`lint:css`/`lint:standalone` clean.
+4. [x] **2B.** Story: Expansion Panel — `expansion-panel.stories.ts`
+   (Playground, AccordionSingleOpen, AccordionMultiOpen,
+   ToggleInteraction, AccordionSingleOpenInteraction). Caught a real
+   test-coverage gap during the story, not a component bug: the existing
+   unit test for the trigger's chevron rotation only checked an *initial*
+   bound value, never a *live* post-render toggle — added a real Karma
+   test for that (confirmed the DI-based cross-component signal
+   propagation genuinely works), then hit the familiar async-settling
+   gap in the Storybook story specifically (same class as `HmhaChipSet`'s
+   own key-manager story), fixed with `waitFor`. All 5 stories plus the
+   full suite (131 stories) pass `test-run` (incl. a11y).
+5. [x] **3A.** Build Stepper + tests — `libs/ui/src/lib/stepper/`
+   (`stepper.ts`/`.css`/`.spec.ts`, `step-list.ts`/`.css`/`.spec.ts`,
+   `step-list-context.ts`, `step.ts`/`.css`/`.spec.ts`,
+   `step-panel.ts`/`.css`/`.spec.ts`, `README.md`). Four pieces mirroring
+   `HmhaTabs`/`HmhaTabList`/`HmhaTab`/`HmhaTabPanel`'s exact DI shape
+   (fork 18), adapted for linear, ordered progress: `HmhaStepList` reads
+   `contentChildren(HmhaStep)` and exposes ordered `value`s via a new
+   `HMHA_STEP_LIST` context (its own file, same circular-import reasoning
+   as `chip-set-context.ts`/`menu-context.ts`); `HmhaStep` injects both
+   `HMHA_STEPPER` and `HMHA_STEP_LIST` to derive its own
+   `completed`/`active`/`upcoming` state from index comparison. `hasError`
+   is a separate, independent-of-state input (`data-error`), reflected as
+   a `triangle-alert` icon in place of the check/number regardless of
+   state. `aria-current="step"` on the active step — there's no official
+   WAI-ARIA stepper pattern the way there is for Tabs, so this is the
+   closest documented token. `HmhaStepper.select()` deliberately doesn't
+   enforce reachability itself — only `HmhaStep`'s own click handler does
+   — so a consumer's own Next/Back buttons keep free control over
+   `value`, the same "consumer owns progression" principle as fork 21. No
+   `FocusKeyManager`/roving-tabindex: deliberately simpler than
+   `HmhaChipSet`/`HmhaTabList`, since linear progression has no "move
+   freely between all steps" interaction to manage. 20 new unit tests
+   (326/326 total), `build:lib`/`lint:css`/`lint:standalone` clean, no
+   new bugs or launcher gaps found this step — the design mirrored
+   already-settled patterns closely enough that nothing novel surfaced.
+6. [x] **3B.** Story: Stepper — `stepper.stories.ts` (Playground,
+   AllPriorStepsCompleted, ErrorOnACompletedStep, DisabledStep,
+   NavigationInteraction). One file covering all four pieces together
+   (meta component `HmhaStepper`), matching Chip/Expansion Panel's own
+   precedent rather than Tabs' older one-file-per-piece layout.
+
+   **Two real a11y findings from `test-run`, not caught by Karma (no
+   a11y checking there) — both fixed, no visual change:**
+   1. `aria-required-children` (critical): `HmhaStepList`'s own
+      `role="list"` host attribute requires `listitem` children, which
+      its `HmhaStep` buttons never had. There's no official WAI-ARIA
+      stepper pattern requiring a list structure at all (already noted
+      in the README) — the role was my own unforced addition. Fixed by
+      removing it entirely rather than adding `listitem` (which would
+      conflict with each step's own native `button` role).
+   2. Each step's accessible name included its visible position number
+      — "3 Payment" instead of "Payment" — because the number-badge
+      `<span>` wasn't hidden from assistive tech the way the check/error
+      icon's own `<svg aria-hidden="true">` already was. Fixed by adding
+      `aria-hidden="true"` to the whole `.hmha-step-indicator` span; the
+      position is already conveyed by DOM order and `aria-current`/
+      `data-state`, so the number is purely a sighted-UI affordance.
+
+   All 5 Stepper stories plus the full existing suite (136 stories) pass
+   `test-run` (incl. a11y).
+7. [x] **4a.** Propose Sidenav/Drawer's foundation — resolved: `HmhaDrawer`
+   is a `@Directive` stacking on `dialog[hmhaDialog]` (fork 23's
+   directive-on-component shape), not a new component, and not a
+   persistent/push variant either. Full reasoning in fork 26.
+8. [x] **4b.** Build Drawer + tests — `libs/ui/src/lib/dialog/drawer.ts`/
+   `.spec.ts`, plus new `[data-placement]` rules in the existing
+   `dialog.css` (a `@Directive` has no `styleUrl` of its own — confirmed
+   from `HmhaIconButton`). `placement: 'start' | 'end'`, default
+   `'start'`, using logical properties for automatic RTL correctness.
+   Added a new token: primitive `space.80` (320px, following the
+   existing `space.N` = `N*4px` naming) → semantic
+   `layout.drawer-width` → component token `--hmha-drawer-width` — the
+   first new primitive/semantic dimension pair added since Phase 1,
+   needed because no existing token was anywhere near a sensible drawer
+   width (`CLAUDE.md` invariant 5: "a token is missing — add it to
+   `tokens/` and rebuild," not inline the literal). `npm run
+   tokens`/`tokens:contrast` clean. 5 new unit tests (331/331 total),
+   `build:lib`/`lint:css`/`lint:standalone` clean.
+
+   **One real bug, caught by running the tests:** the first draft of
+   `drawer.spec.ts` mutated the host's plain `placement` field *after*
+   the shared `beforeEach`'s initial `detectChanges()`, then called
+   `detectChanges()` again — `NG0100` in zoneless mode, the exact
+   constraint `card.spec.ts` already documents (mutate a plain field
+   before the fixture's *first* check, never on an already-checked
+   one). Fixed by switching to the same per-test `create()` factory
+   this session has used for every other new spec file in Wave 5,
+   setting `placement` before that fixture's first `detectChanges()`.
+9. [x] **4c.** Story: Drawer — `drawer.stories.ts` (Playground,
+   PlacementEnd, OpenInteraction, BackdropDismissInteraction). Hit the
+   documented brand-new-component quirk again, but in a new shape: a
+   plain static `placement="end"` attribute in `PlacementEnd`'s own
+   dedicated `render` resolved to `data-placement="start"` — the
+   *wrong* value — even with no `args`/argTypes involved at all (ruled
+   out as a Storybook-args merge bug by that elimination). A full dev
+   server restart + cache clear fixed it with no code change, so this
+   was the dev server not having picked up `HmhaDrawer` at all yet, the
+   same remedy as every prior instance of this quirk, just a new
+   trigger shape (a hardcoded template attribute on a component the
+   server has genuinely never loaded, not merely an args-binding
+   issue). All 4 Drawer stories plus the full existing suite (141
+   stories) pass `test-run` (incl. a11y).
+10. [x] **5.** Wave 5 gate — a real "New project" drawer in `apps/sandbox`
+    (`app.ts`/`app.html`/`app.css`), composing all four: a "New project"
+    button opens an `HmhaDrawer` (`placement="end"`) holding an
+    `HmhaStepper` (Details → Tags → Review); Details gates its own Next
+    button on a name being entered; Tags uses an `HmhaChipSet` of
+    selectable tag chips, each one's own `selected` driven by the app's
+    own `Set<string>` via `[selected]`/`(selectedChange)` (not two-way
+    sugar, since a `@for`-looped chip has no single lvalue to bind);
+    Review surfaces the entered name and tag summary, tucking a Switch
+    behind an `HmhaExpansionPanel` ("Advanced options"), and a "Create
+    project" button closes the drawer and fires an `HmhaToast` naming
+    the project. The current step, the entered name, the selected tags
+    and the private flag all live in `App` itself, not in any Hmha
+    component — fork 21 held for real, end to end, the same proof every
+    prior gate has required. 6 new sandbox tests (opens on Details;
+    Next gated on a name then advances to Tags; selecting a Chip tracks
+    it into the Review summary; Back preserves the entered name;
+    Expansion Panel toggle, using the same dispatch-the-event-directly
+    pattern as fork 25 since Karma still doesn't fire a real `toggle`
+    from `summary.click()`; Create project closes the drawer and fires
+    the toast), `build:lib`/`ng build sandbox`/`lint:css`/
+    `lint:standalone` and the full test suite all clean — 24/24 in
+    `sandbox`, 331/331 in `hmha-ui`. No new bugs found at this step —
+    every piece composed exactly as its own isolated story already
+    proved it would.
+
+**Wave 5 is complete.** `HmhaChip`/`HmhaChipSet`, `HmhaExpansionPanel`/
+`HmhaAccordion`, the four-piece `HmhaStepper`, and `HmhaDrawer` (a
+directive on `HmhaDialog`, fork 26) are all built, unit-tested,
+documented in Storybook, and proven together in a real screen —
+post-v1 scope the user chose to pursue (fork 24), the same precedent
+Wave 4 set.
+
+---
+
 ## Open items
 
 - **The blue is a placeholder.** Swap the hue in `tokens/primitive/color.json`

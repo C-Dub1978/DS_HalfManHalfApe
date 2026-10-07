@@ -344,4 +344,147 @@ describe('App', () => {
       expect(after).toBe(before + 10);
     });
   });
+
+  describe('Wave 5 gate — New project drawer', () => {
+    let fixture: ComponentFixture<App>;
+    let el: HTMLElement;
+    let appRef: ApplicationRef;
+
+    function projectDrawer(): HTMLDialogElement {
+      return el.querySelector('dialog[aria-labelledby="project-drawer-title"]') as HTMLDialogElement;
+    }
+
+    function stepPanel(value: string): HTMLElement {
+      return projectDrawer().querySelector(`[hmhaStepPanel][value="${value}"]`) as HTMLElement;
+    }
+
+    function clickButton(root: Element, text: string): void {
+      const button = Array.from(root.querySelectorAll('button')).find((b) => b.textContent?.trim() === text) as HTMLButtonElement;
+      button.click();
+    }
+
+    beforeEach(() => {
+      fixture = TestBed.createComponent(App);
+      appRef = TestBed.inject(ApplicationRef);
+      fixture.detectChanges();
+      el = fixture.nativeElement as HTMLElement;
+    });
+
+    it('opens on the Details step, closed by default beforehand', () => {
+      expect(projectDrawer().open).toBe(false);
+
+      clickButton(el, 'New project');
+      fixture.detectChanges();
+
+      expect(projectDrawer().open).toBe(true);
+      expect(projectDrawer().getAttribute('data-placement')).toBe('end');
+      expect(stepPanel('details').hidden).toBe(false);
+      expect(stepPanel('tags').hidden).toBe(true);
+    });
+
+    it('Stepper: Next is disabled on Details until a name is entered, then advances to Tags', () => {
+      clickButton(el, 'New project');
+      fixture.detectChanges();
+
+      const detailsNext = Array.from(stepPanel('details').querySelectorAll('button')).find(
+        (b) => b.textContent?.trim() === 'Next',
+      ) as HTMLButtonElement;
+      expect(detailsNext.disabled).toBe(true);
+
+      const nameInput = stepPanel('details').querySelector('input') as HTMLInputElement;
+      nameInput.value = 'Apollo';
+      nameInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      expect(detailsNext.disabled).toBe(false);
+      detailsNext.click();
+      fixture.detectChanges();
+
+      expect(stepPanel('details').hidden).toBe(true);
+      expect(stepPanel('tags').hidden).toBe(false);
+    });
+
+    it('Chip/ChipSet: selecting tags on the Tags step tracks them, surfaced in the Review summary', () => {
+      clickButton(el, 'New project');
+      fixture.detectChanges();
+      const nameInput = stepPanel('details').querySelector('input') as HTMLInputElement;
+      nameInput.value = 'Apollo';
+      nameInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      clickButton(stepPanel('details'), 'Next');
+      fixture.detectChanges();
+
+      const frontendChip = Array.from(stepPanel('tags').querySelectorAll('[hmhaChip]')).find(
+        (chip) => chip.textContent?.trim() === 'Frontend',
+      ) as HTMLButtonElement;
+      frontendChip.click();
+      fixture.detectChanges();
+      expect(frontendChip.getAttribute('data-selected')).toBe('');
+
+      clickButton(stepPanel('tags'), 'Next');
+      fixture.detectChanges();
+
+      expect(stepPanel('review').textContent).toContain('Tags: Frontend');
+    });
+
+    it('Stepper: Back from Tags returns to Details without losing the entered name', () => {
+      clickButton(el, 'New project');
+      fixture.detectChanges();
+      const nameInput = stepPanel('details').querySelector('input') as HTMLInputElement;
+      nameInput.value = 'Apollo';
+      nameInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      clickButton(stepPanel('details'), 'Next');
+      fixture.detectChanges();
+
+      clickButton(stepPanel('tags'), 'Back');
+      fixture.detectChanges();
+
+      expect(stepPanel('details').hidden).toBe(false);
+      expect((stepPanel('details').querySelector('input') as HTMLInputElement).value).toBe('Apollo');
+    });
+
+    it('Expansion Panel: "Advanced options" on Review starts collapsed and expands on toggle', () => {
+      clickButton(el, 'New project');
+      fixture.detectChanges();
+      const nameInput = stepPanel('details').querySelector('input') as HTMLInputElement;
+      nameInput.value = 'Apollo';
+      nameInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      clickButton(stepPanel('details'), 'Next');
+      fixture.detectChanges();
+      clickButton(stepPanel('tags'), 'Next');
+      fixture.detectChanges();
+
+      const details = stepPanel('review').querySelector('details') as HTMLDetailsElement;
+      expect(details.open).toBe(false);
+
+      // summary.click() doesn't fire <details>'s native toggle event in
+      // Karma's launcher (DECISIONS.md fork 25) — set open and dispatch the
+      // event directly, testing this app's own reaction to it.
+      details.open = true;
+      details.dispatchEvent(new Event('toggle'));
+      fixture.detectChanges();
+      expect(details.open).toBe(true);
+    });
+
+    it('Create project: closes the drawer and fires a toast naming the project', async () => {
+      clickButton(el, 'New project');
+      fixture.detectChanges();
+      const nameInput = stepPanel('details').querySelector('input') as HTMLInputElement;
+      nameInput.value = 'Apollo';
+      nameInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      clickButton(stepPanel('details'), 'Next');
+      fixture.detectChanges();
+      clickButton(stepPanel('tags'), 'Next');
+      fixture.detectChanges();
+
+      clickButton(stepPanel('review'), 'Create project');
+      await fixture.whenStable();
+
+      expect(projectDrawer().open).toBe(false);
+      expect(toastText(appRef)).toContain('Project "Apollo" created');
+    });
+  });
 });

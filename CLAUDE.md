@@ -388,3 +388,26 @@ components: all three stay purely structural, with the consumer owning
 the data array, sort state, selection and paging state — the same
 pattern Select's trigger-label and Combobox's filtering already
 established.
+
+**`HmhaIconButton` now supports three icon/text layouts** — `only`
+(unchanged default), `leading` and `trailing` — with `label` moved from a
+compile-time-required input to an optional one enforced instead by a
+runtime throw when `iconPosition` is `only` and no label is given. See
+fork 23 before touching this component: the reasoning turns on WCAG
+Label in Name, not just convenience.
+
+**Wave 5 is done.** `HmhaChip`/`HmhaChipSet`, `HmhaExpansionPanel`/
+`HmhaAccordion`, the four-piece `HmhaStepper` (`HmhaStepper`/
+`HmhaStepList`/`HmhaStep`/`HmhaStepPanel`) and `HmhaDrawer` are all built,
+unit-tested, documented in Storybook, and proven together in a real "New
+project" drawer screen in `apps/sandbox` — see `DECISIONS.md`'s **Wave 5
+progress** section for the full step-by-step write-up. Forks 24–26 cover
+the wave's real architectural decisions — read fork 26 before assuming
+Drawer is its own component: it's a `@Directive` stacking on
+`HmhaDialog`, not a new one, and there is deliberately no persistent/push
+variant. Two recurring lesson classes showed up again this wave, not for
+the first time: a Karma-launcher event gap on `<details>`'s native
+`toggle` (fork 25, the same class as `<dialog>`'s own `close` gap, fork
+14), and `:host-context()` being blocked by stylelint for the same
+encapsulation reason as `::ng-deep` (fork 05) — both already fixed with
+their established remedies, not rediscovered from scratch.

@@ -92,3 +92,21 @@ h2 {
 .directory-toolbar {
   justify-content: flex-end;
 }
+
+.project-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hmha-space-stack);
+}
+
+.project-stepper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hmha-space-stack);
+}
+
+.project-step-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hmha-space-stack);
+}

@@ -25,3 +25,26 @@
   outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
   outline-offset: var(--hmha-focus-offset);
 }
+
+/* HmhaDrawer (fork 26) stacks on this same element and has no styleUrl
+   of its own — its visual rules live here, gated on the data-placement
+   it sets, the same way HmhaIconButton's rules live in button.css. */
+:host([data-placement]) {
+  --hmha-drawer-width: var(--hmha-layout-drawer-width);
+
+  position: fixed;
+  inset-block: 0;
+  margin: 0;
+  width: var(--hmha-drawer-width);
+  max-width: var(--hmha-drawer-width);
+  height: 100%;
+  border-radius: 0;
+}
+
+:host([data-placement='start']) {
+  inset-inline-start: 0;
+}
+
+:host([data-placement='end']) {
+  inset-inline-end: 0;
+}

@@ -1,0 +1,38 @@
+:host {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hmha-control-gap);
+  padding: var(--hmha-control-padding-y) var(--hmha-control-padding-x);
+  cursor: pointer;
+  font-size: var(--hmha-type-label-md-size);
+  font-weight: var(--hmha-type-label-md-weight);
+  line-height: var(--hmha-type-label-md-line);
+  color: var(--hmha-color-text);
+}
+
+/* Removes the browser's own disclosure-triangle marker — display: flex
+   above already overrides the UA stylesheet's display: list-item (which
+   is what the ::marker triangle depends on); this is only a safety net
+   for engines that still render one via their own legacy pseudo-element. */
+:host::-webkit-details-marker {
+  display: none;
+}
+
+:host(:hover) {
+  background: var(--hmha-color-bg-subtle);
+}
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}
+
+hmha-icon {
+  flex-shrink: 0;
+  transition: transform var(--hmha-duration-fast) var(--hmha-easing-standard);
+}
+
+:host([data-expanded]) hmha-icon {
+  transform: rotate(180deg);
+}

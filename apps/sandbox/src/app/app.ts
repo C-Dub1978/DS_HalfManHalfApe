@@ -7,6 +7,8 @@ import {
   HmhaButton,
   HmhaCard,
   HmhaCheckbox,
+  HmhaChip,
+  HmhaChipSet,
   HmhaComboboxInput,
   HmhaComboboxListbox,
   HmhaComboboxOption,
@@ -14,6 +16,10 @@ import {
   HmhaDataGridResizeHandle,
   HmhaDataGridSortButton,
   HmhaDialog,
+  HmhaDrawer,
+  HmhaExpansionPanel,
+  HmhaExpansionPanelContent,
+  HmhaExpansionPanelTrigger,
   HmhaField,
   HmhaIcon,
   HmhaIconButton,
@@ -27,6 +33,10 @@ import {
   HmhaSelectListbox,
   HmhaSelectOption,
   HmhaSelectTrigger,
+  HmhaStep,
+  HmhaStepList,
+  HmhaStepPanel,
+  HmhaStepper,
   HmhaSwitch,
   HmhaTab,
   HmhaTabList,
@@ -69,6 +79,8 @@ function createPerson(id: string, name: string, email: string, role: string): Di
     HmhaButton,
     HmhaCard,
     HmhaCheckbox,
+    HmhaChip,
+    HmhaChipSet,
     HmhaComboboxInput,
     HmhaComboboxListbox,
     HmhaComboboxOption,
@@ -76,6 +88,10 @@ function createPerson(id: string, name: string, email: string, role: string): Di
     HmhaDataGridResizeHandle,
     HmhaDataGridSortButton,
     HmhaDialog,
+    HmhaDrawer,
+    HmhaExpansionPanel,
+    HmhaExpansionPanelContent,
+    HmhaExpansionPanelTrigger,
     HmhaField,
     HmhaIcon,
     HmhaIconButton,
@@ -89,6 +105,10 @@ function createPerson(id: string, name: string, email: string, role: string): Di
     HmhaSelectListbox,
     HmhaSelectOption,
     HmhaSelectTrigger,
+    HmhaStep,
+    HmhaStepList,
+    HmhaStepPanel,
+    HmhaStepper,
     HmhaSwitch,
     HmhaTab,
     HmhaTabList,
@@ -316,5 +336,58 @@ export class App {
     this.directory.update((rows) => rows.filter((row) => !ids.has(row.id)));
     this.directorySelection.clear();
     this.toast.show(`${count} ${count === 1 ? 'person' : 'people'} removed from the directory`);
+  }
+
+  // Wave 5 gate — "New project" drawer. A Drawer holds a linear Stepper
+  // (Details → Tags → Review); which step is current, which tags are
+  // picked and whether "Advanced options" is expanded all live here, in
+  // the app, not in any Hmha component (fork 21's principle, again).
+  // Next/Back set the step signal directly rather than going through
+  // HmhaStepper's own select() — the same "consumer owns progression"
+  // call fork 24 made for Stepper itself.
+  protected readonly projectDrawerOpen = signal(false);
+  protected readonly projectStep = signal<'details' | 'tags' | 'review'>('details');
+  protected readonly projectName = signal('');
+  protected readonly projectPrivate = signal(false);
+  protected readonly availableProjectTags = ['Frontend', 'Backend', 'Design', 'Infra', 'ML'];
+  protected readonly selectedProjectTags = signal<ReadonlySet<string>>(new Set());
+
+  protected readonly projectTagsSummary = computed(() => {
+    const tags = this.selectedProjectTags();
+    return tags.size === 0 ? 'No tags selected.' : `Tags: ${[...tags].join(', ')}`;
+  });
+
+  protected openProjectDrawer(): void {
+    this.projectStep.set('details');
+    this.projectName.set('');
+    this.projectPrivate.set(false);
+    this.selectedProjectTags.set(new Set());
+    this.projectDrawerOpen.set(true);
+  }
+
+  protected goToProjectStep(step: 'details' | 'tags' | 'review'): void {
+    this.projectStep.set(step);
+  }
+
+  protected isProjectTagSelected(tag: string): boolean {
+    return this.selectedProjectTags().has(tag);
+  }
+
+  protected toggleProjectTag(tag: string): void {
+    this.selectedProjectTags.update((current) => {
+      const next = new Set(current);
+      if (next.has(tag)) {
+        next.delete(tag);
+      } else {
+        next.add(tag);
+      }
+      return next;
+    });
+  }
+
+  protected createProject(): void {
+    const name = this.projectName();
+    this.projectDrawerOpen.set(false);
+    this.toast.show(`Project "${name}" created`);
   }
 }
