@@ -1,0 +1,22 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hmha-control-gap);
+}
+
+.hmha-pagination-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--hmha-control-height);
+  color: var(--hmha-color-text-muted);
+  font-size: var(--hmha-type-label-md-size);
+}
+
+:host([data-size="sm"]) .hmha-pagination-ellipsis {
+  min-width: var(--hmha-control-height-sm);
+}
+
+:host([data-size="lg"]) .hmha-pagination-ellipsis {
+  min-width: var(--hmha-control-height-lg);
+}

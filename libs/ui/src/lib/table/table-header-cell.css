@@ -1,0 +1,14 @@
+:host {
+  --hmha-table-header-bg: var(--hmha-color-bg-subtle);
+  --hmha-table-header-fg: var(--hmha-color-text);
+
+  position: relative;
+  text-align: left;
+  padding: var(--hmha-control-padding-y) var(--hmha-control-padding-x);
+  background: var(--hmha-table-header-bg);
+  color: var(--hmha-table-header-fg);
+  font-size: var(--hmha-type-label-md-size);
+  line-height: var(--hmha-type-label-md-line);
+  font-weight: var(--hmha-type-label-md-weight);
+  border-bottom: var(--hmha-border-width) solid var(--hmha-color-border-strong);
+}

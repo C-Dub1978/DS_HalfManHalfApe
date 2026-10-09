@@ -22,6 +22,7 @@ import { HMHA_FIELD } from '../field/field';
     '[attr.aria-required]': 'field?.required() ? true : null',
     '[disabled]': 'disabled() || accessor.disabled()',
     '[checked]': 'accessor.value()',
+    '[indeterminate]': 'indeterminate()',
     '(change)': 'onChange($event)',
     '(blur)': 'accessor.markTouched()',
   },
@@ -33,6 +34,8 @@ export class HmhaCheckbox implements ControlValueAccessor {
   readonly size = input<HmhaSize>('md');
   readonly disabled = input(false, { transform: booleanAttribute });
   readonly invalid = input(false, { transform: booleanAttribute });
+  /** A purely visual DOM property, unrelated to the checked value/CVA — e.g. a "select all" checkbox when only some rows are selected. */
+  readonly indeterminate = input(false, { transform: booleanAttribute });
 
   writeValue = this.accessor.writeValue;
   registerOnChange = this.accessor.registerOnChange;

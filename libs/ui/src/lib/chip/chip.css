@@ -1,0 +1,40 @@
+:host {
+  --hmha-chip-bg: var(--hmha-color-bg-subtle);
+  --hmha-chip-fg: var(--hmha-color-text);
+  --hmha-chip-border: var(--hmha-color-border);
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hmha-control-gap);
+  padding-inline: var(--hmha-control-padding-x);
+  min-height: var(--hmha-control-height-sm);
+  border-radius: var(--hmha-radius-pill);
+  border: var(--hmha-border-width) solid var(--hmha-chip-border);
+  background: var(--hmha-chip-bg);
+  color: var(--hmha-chip-fg);
+  font-size: var(--hmha-type-label-md-size);
+  font-weight: var(--hmha-type-label-md-weight);
+  line-height: var(--hmha-type-label-md-line);
+  cursor: default;
+}
+
+:host(button) {
+  font: inherit;
+  cursor: pointer;
+}
+
+:host(button:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+:host([data-selected]) {
+  --hmha-chip-bg: var(--hmha-color-action-subtle);
+  --hmha-chip-fg: var(--hmha-color-action);
+  --hmha-chip-border: var(--hmha-color-action);
+}
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}

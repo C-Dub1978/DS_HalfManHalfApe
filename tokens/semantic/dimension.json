@@ -38,5 +38,11 @@
     "lg": {
       "$value": "{space.6}"
     }
+  },
+  "layout": {
+    "$type": "dimension",
+    "drawer-width": {
+      "$value": "{space.80}"
+    }
   }
 }

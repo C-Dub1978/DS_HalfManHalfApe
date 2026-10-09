@@ -1,0 +1,22 @@
+:host {
+  --hmha-data-grid-resize-handle-hover-bg: var(--hmha-color-border-strong);
+
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--hmha-control-gap);
+  cursor: col-resize;
+  touch-action: none;
+  background: transparent;
+}
+
+:host(:hover),
+:host(:focus-visible) {
+  background: var(--hmha-data-grid-resize-handle-hover-bg);
+}
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}

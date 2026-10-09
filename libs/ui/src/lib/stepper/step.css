@@ -1,0 +1,63 @@
+/* step.css — declare the override API, then consume it. */
+:host {
+  --hmha-step-fg: var(--hmha-color-text-muted);
+  --hmha-step-fg-active: var(--hmha-color-text);
+  --hmha-step-indicator-bg: var(--hmha-color-bg-subtle);
+  --hmha-step-indicator-fg: var(--hmha-color-text-muted);
+  --hmha-step-indicator-border: var(--hmha-color-border);
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hmha-control-gap);
+  background: transparent;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: var(--hmha-type-body-md-size);
+  color: var(--hmha-step-fg);
+  cursor: pointer;
+}
+
+.hmha-step-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--hmha-control-height-sm);
+  height: var(--hmha-control-height-sm);
+  border-radius: var(--hmha-radius-pill);
+  border: var(--hmha-border-width) solid var(--hmha-step-indicator-border);
+  background: var(--hmha-step-indicator-bg);
+  color: var(--hmha-step-indicator-fg);
+  font-size: var(--hmha-type-label-md-size);
+  font-weight: var(--hmha-type-label-md-weight);
+}
+
+:host([data-state='active']) {
+  --hmha-step-fg: var(--hmha-step-fg-active);
+  --hmha-step-indicator-bg: var(--hmha-color-action);
+  --hmha-step-indicator-fg: var(--hmha-color-text-on-action);
+  --hmha-step-indicator-border: var(--hmha-color-action);
+}
+
+:host([data-state='completed']) {
+  --hmha-step-indicator-bg: var(--hmha-color-success);
+  --hmha-step-indicator-fg: var(--hmha-color-text-on-success);
+  --hmha-step-indicator-border: var(--hmha-color-success);
+}
+
+:host([data-error]) {
+  --hmha-step-indicator-bg: var(--hmha-color-danger);
+  --hmha-step-indicator-fg: var(--hmha-color-text-on-danger);
+  --hmha-step-indicator-border: var(--hmha-color-danger);
+}
+
+:host(:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}

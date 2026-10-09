@@ -1,0 +1,7 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  border: var(--hmha-border-width) solid var(--hmha-color-border);
+  border-radius: var(--hmha-radius-control);
+  overflow: hidden;
+}

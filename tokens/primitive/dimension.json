@@ -31,6 +31,9 @@
     "12": {
       "$value": "48px"
     },
+    "80": {
+      "$value": "320px"
+    },
     "$type": "dimension"
   },
   "size": {

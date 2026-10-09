@@ -242,4 +242,160 @@
       <button hmhaButton tone="danger" (click)="confirmDeleteWorkspace()">Delete</button>
     </div>
   </dialog>
+
+  <h2>Directory — Wave 4, Pagination + Table + Data Grid composed together</h2>
+  <p class="muted">
+    Sorting, row selection and column resizing all live in the Data Grid's
+    own pieces; the array, the sort state, the selected ids and which page
+    is showing all live here, in the app — not in any Hmha component. This
+    is the Wave 4 gate.
+  </p>
+
+  <div class="row directory-toolbar">
+    <button
+      hmhaButton
+      tone="danger"
+      size="sm"
+      [disabled]="selectedDirectoryIds().size === 0"
+      (click)="removeSelectedDirectoryRows()"
+    >
+      <hmha-icon name="trash-2" size="sm" />
+      Remove selected ({{ selectedDirectoryIds().size }})
+    </button>
+  </div>
+
+  <table hmhaTable hmhaDataGrid class="directory-table" style="width: 540px;">
+    <thead>
+      <tr>
+        <th hmhaTableHeaderCell style="width: 40px">
+          <input
+            type="checkbox"
+            hmhaCheckbox
+            aria-label="Select all people on this page"
+            [ngModel]="allVisibleSelected()"
+            [indeterminate]="someVisibleSelected()"
+            (ngModelChange)="toggleAllVisibleDirectoryRows()"
+          />
+        </th>
+        <th hmhaTableHeaderCell style="width: 160px" [sort]="directorySortAria()">
+          <button
+            hmhaDataGridSortButton
+            [active]="directorySort() !== null"
+            [direction]="directorySort() ?? 'asc'"
+            (sortRequest)="directorySortRequest($event)"
+          >
+            Name
+          </button>
+          <div hmhaDataGridResizeHandle label="Resize Name column"></div>
+        </th>
+        <th hmhaTableHeaderCell style="width: 200px">
+          Email
+          <div hmhaDataGridResizeHandle label="Resize Email column"></div>
+        </th>
+        <th hmhaTableHeaderCell style="width: 140px">Role</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (person of visibleDirectory(); track person.id) {
+        <tr hmhaTableRow>
+          <td hmhaTableCell>
+            <input
+              type="checkbox"
+              hmhaCheckbox
+              [attr.aria-label]="'Select ' + person.name"
+              [ngModel]="isDirectorySelected(person.id)"
+              (ngModelChange)="toggleDirectoryRow(person.id)"
+            />
+          </td>
+          <td hmhaTableCell>{{ person.name }}</td>
+          <td hmhaTableCell>{{ person.email }}</td>
+          <td hmhaTableCell>{{ person.role }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <nav hmhaPagination [page]="clampedDirectoryPage()" [pageCount]="directoryPageCount()" (pageChange)="directoryPage.set($event)"></nav>
+
+  <h2>New project — Wave 5, Drawer + Stepper + Chip + Expansion Panel composed together</h2>
+  <p class="muted">
+    A Drawer holds a linear Stepper (Details → Tags → Review): the Tags step
+    uses a ChipSet for multi-select tags, and Review tucks an optional
+    setting behind an Expansion Panel. Which step is current, which tags are
+    picked and whether "Advanced options" is expanded all live here, in the
+    app — not in any Hmha component. This is the Wave 5 gate.
+  </p>
+
+  <button hmhaButton tone="primary" (click)="openProjectDrawer()">
+    <hmha-icon name="plus" size="sm" />
+    New project
+  </button>
+
+  <dialog
+    hmhaDialog
+    hmhaDrawer
+    placement="end"
+    [open]="projectDrawerOpen()"
+    (openChange)="projectDrawerOpen.set($event)"
+    aria-labelledby="project-drawer-title"
+    class="project-drawer"
+  >
+    <h2 id="project-drawer-title">New project</h2>
+
+    <div hmhaStepper [(value)]="projectStep" class="project-stepper">
+      <div hmhaStepList>
+        <button hmhaStep value="details">Details</button>
+        <button hmhaStep value="tags">Tags</button>
+        <button hmhaStep value="review">Review</button>
+      </div>
+
+      <div hmhaStepPanel value="details" class="project-step-panel">
+        <hmha-field label="Project name" required="true">
+          <input hmhaInput [ngModel]="projectName()" (ngModelChange)="projectName.set($event)" placeholder="Apollo" />
+        </hmha-field>
+        <div class="row">
+          <button hmhaButton tone="primary" size="sm" [disabled]="!projectName()" (click)="goToProjectStep('tags')">
+            Next
+          </button>
+        </div>
+      </div>
+
+      <div hmhaStepPanel value="tags" class="project-step-panel">
+        <p class="muted">Pick whatever applies.</p>
+        <div hmhaChipSet ariaLabel="Project tags">
+          @for (tag of availableProjectTags; track tag) {
+            <button hmhaChip selectable="true" [selected]="isProjectTagSelected(tag)" (selectedChange)="toggleProjectTag(tag)">
+              {{ tag }}
+            </button>
+          }
+        </div>
+        <div class="row">
+          <button hmhaButton tone="neutral" size="sm" (click)="goToProjectStep('details')">Back</button>
+          <button hmhaButton tone="primary" size="sm" (click)="goToProjectStep('review')">Next</button>
+        </div>
+      </div>
+
+      <div hmhaStepPanel value="review" class="project-step-panel">
+        <p><strong>{{ projectName() }}</strong></p>
+        <p class="muted">{{ projectTagsSummary() }}</p>
+
+        <details hmhaExpansionPanel>
+          <summary hmhaExpansionPanelTrigger>Advanced options</summary>
+          <div hmhaExpansionPanelContent>
+            <hmha-field label="Make project private" hint="You can change this anytime in settings.">
+              <button hmhaSwitch [ngModel]="projectPrivate()" (ngModelChange)="projectPrivate.set($event)"></button>
+            </hmha-field>
+          </div>
+        </details>
+
+        <div class="row">
+          <button hmhaButton tone="neutral" size="sm" (click)="goToProjectStep('tags')">Back</button>
+          <button hmhaButton tone="primary" (click)="createProject()">
+            <hmha-icon name="check" size="sm" />
+            Create project
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
 </main>
