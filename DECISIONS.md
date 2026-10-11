@@ -2256,6 +2256,79 @@ for.
 
 ---
 
+## 28 — Divider: `hr[hmhaDivider]`, color/length as real inputs, not just tokens
+
+**Decided:** `HmhaDivider` is an attribute directive on native `<hr>` —
+`hr[hmhaDivider]` — the same "inherit real semantics for free" bias as
+every prior native-element choice (Dialog/fork 14, Expansion Panel/fork
+25, Chip-on-`<button>`/fork 24). `<hr>`'s implicit ARIA role is already
+`separator`; no `role` attribute needs setting. `aria-orientation` is
+set explicitly either way (not only for the non-default `vertical`
+value) for clarity, matching how `data-tone`/`data-size` are always
+reflected on `HmhaButton` regardless of whether the value is the
+default.
+
+Inputs, each mapping onto the existing conventions rather than
+inventing a new one:
+
+- **`orientation: 'horizontal' | 'vertical'`** (new shared type,
+  `HmhaOrientation` in `core/types.ts`), default `'horizontal'`.
+  Reflected as `data-orientation` and `aria-orientation`. Horizontal
+  sizes by `width`; vertical sizes by `height` — the inverse dimension
+  defaults to the divider's own thickness token either way.
+- **`length`** — a real, consumer-supplied runtime value (a CSS length
+  string: `'50%'`, `'4rem'`, …), not a token. This doesn't relitigate
+  invariant 5: that invariant is about this library's own source never
+  hardcoding a value it owns, not about blocking a consumer from
+  passing their own arbitrary value through a legitimate input — the
+  same shape as `HmhaDataGridResizeHandle`'s own user-driven pixel
+  width. Applied via `[style.width]`/`[style.height]`, whichever
+  matches `orientation()`; `null` (the default) leaves the dimension
+  unset, so the token-driven CSS default (100% / the inset `calc()`)
+  applies instead — inline style always outranks either.
+- **`color`** — a real `string` input, but it doesn't bypass the
+  component-token override API `CLAUDE.md` requires; it reflects
+  straight into `--hmha-divider-color` via `[style.--hmha-divider-color]`.
+  A consumer gets both a convenient Angular input *and* the same
+  override surface every other component exposes (they could also just
+  set the custom property on an ancestor themselves — the input is a
+  convenience, not a second mechanism). Defaults to
+  `var(--hmha-color-border)`, the same semantic role `HmhaCard`'s own
+  border already uses.
+- **`inset`** — `boolean`, default `false`, reflected as `data-inset`
+  (fork 05's variants-are-attributes convention). Shrinks the divider
+  and adds a *start* margin, using logical properties
+  (`margin-inline-start` horizontal, `margin-block-start` vertical) so
+  it's correct in RTL too, via a `--hmha-divider-inset` component token
+  defaulting to `var(--hmha-control-padding-x)` — a density-aware
+  default, reused rather than inventing a fixed amount, so the inset
+  automatically tightens under `data-hmha-density="compact"` the same
+  way every control's own padding does.
+- **Thickness has a component token (`--hmha-divider-thickness`,
+  default `var(--hmha-border-width)`) but no dedicated input** — the
+  same "token-only override, no input needed for everything" shape
+  `HmhaButton`'s hover/active fills already use.
+
+Rendered via `background` (sized by `width`/`height`), not `border` —
+avoids fighting `<hr>`'s own default border-box rendering and gives one
+consistent sizing model for both orientations, rather than a
+border-side swap between `border-top`/`border-left`.
+
+**Built in two steps, same as fork 23's IconButton work:** 1A —
+`divider.ts`/`.css`/`.spec.ts`/`README.md`, 8 new unit tests
+(347/347 total), `build:lib`/`lint:css`/`lint:standalone` clean, no bugs
+found. 1B — `divider.stories.ts` (Playground, Vertical, CustomLength,
+CustomColor, InsetInAList — the last one the real-world case `inset`
+exists for, a divider between two list rows with a leading icon). Hit
+the documented brand-new-component `test-run` timeout on the first
+call; the dev server had live Chrome connections (someone had it open),
+so confirmed with the user before restarting rather than doing it
+unilaterally — cleared immediately once restarted. All 5 Divider
+stories plus the full existing suite (151 stories) pass `test-run`
+(incl. a11y). No component bugs found in either step.
+
+---
+
 ## Open items
 
 - **The blue is a placeholder.** Swap the hue in `tokens/primitive/color.json`

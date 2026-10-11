@@ -423,3 +423,10 @@ page does, or should, add any new theming feature to `tokens/` — it
 deliberately doesn't. The whole point is demonstrating that any
 consumer can already override this library's semantic color/type tokens
 at runtime, with zero new token work.
+
+**`HmhaDivider` is done** (`hr[hmhaDivider]`, `libs/ui/src/lib/divider/`)
+— horizontal/vertical, a real `length` input (your own runtime CSS
+length, not a token), a real `color` input that forwards into the
+`--hmha-divider-color` component token, and `inset` for list use. See
+fork 28. 8 unit tests, 5 Storybook stories (Playground, Vertical,
+CustomLength, CustomColor, InsetInAList), all passing.
