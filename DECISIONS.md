@@ -2086,6 +2086,176 @@ Wave 4 set.
 
 ---
 
+## 27 — Kitchen Sink: demonstrating runtime overrides, not shipping new presets
+
+**Decided:** the Kitchen Sink showcase's "6 color themes" and "typography
+themes" are **pure demo-local data in `kitchen-sink.ts`** — plain
+TypeScript objects holding override *values*, applied at runtime via
+`[ngStyle]` setting CSS custom properties directly on the component's own
+host. Nothing is added to `tokens/`. No new primitive hue ramps, no new
+semantic roles, no third `data-hmha-*` theming axis, no change to
+`CLAUDE.md`'s "two independent, composable axes" theming section.
+
+**Why — this isn't a missing feature, it's the system already working
+as designed.** Every semantic role is already a live `var(--hmha-*)`
+custom property (the whole point of `outputReferences: true`, and
+exactly the thing the **Open items** note at the end of this file has
+said since Phase 1: *"The blue is a placeholder... the structure is the
+deliverable."*). Any consumer — `apps/sandbox`, a real app, or this
+showcase — can already override `--hmha-color-action` (or any other
+role) by redeclaring it at whatever scope they want, with zero rebuild
+and zero new token work. The first draft of this task proposed building
+a shipped `data-hmha-theme="ocean|forest|…"` feature with two brand-new
+primitive hue ramps — caught and corrected before writing any token
+code, once it became clear the user's actual question was "does
+overriding work at all," not "ship more presets." Building the bigger
+feature would have been solving a problem that doesn't exist, at the
+cost of a real architecture change (new ramps, per-theme contrast
+checking across 6×2 combinations, a `CLAUDE.md` invariant rewrite) that
+nobody asked for.
+
+- **Color presets** (`COLOR_THEMES` in `kitchen-sink.ts`) override
+  exactly the six roles that encode "brand hue" and nothing else —
+  `action`, `action-hover`, `action-active`, `action-subtle`, `focus`,
+  `text-on-action`. `danger`/`warning`/`success` stay fixed across every
+  preset on purpose: those are status colors, not brand colors, and a
+  real app retheming its brand shouldn't also be retheming what "error"
+  means. Four of the six presets (Forest/Sunset/Crimson/Slate) reuse
+  already-shipped, already-contrast-verified pairs from this library's
+  own `success`/`warning`/`danger` roles (e.g. Sunset's
+  `text-on-action` reuses `text-on-warning`'s already-passing
+  amber.500/neutral.950 pairing) — not because reuse is required, but
+  because it comes with a free, already-proven-safe contrast guarantee.
+  Violet is the one genuinely invented value (no matching existing
+  role), picked at the same lightness/chroma as `action`'s own
+  default (`blue.600`, L 0.550 C 0.192) so it inherits the same
+  contrast margin against white text without a new check being run.
+  Ocean is today's real default, included as the implicit "reset" card.
+- **Typography presets** (`TYPE_THEMES`) override heading size/weight
+  only, never `font-family` — adding a second real typeface is a new
+  external dependency (a font to load) that nobody asked for here, and
+  three presets (Standard/Compact/Bold) already demonstrate the
+  mechanism just as well as a font swap would.
+- **Density is the one real, applied choice in this flow** — it already
+  exists as a genuine token axis (`data-hmha-density`), so Step 2 sets
+  the real attribute, not a demo override.
+- Applied via `[ngStyle]` (not individual `[style.--x]` bindings) purely
+  for conciseness — `NgStyle` already supports custom-property keys.
+  Set on the showcase component's own host, wrapping the entire page
+  (header, stepper, tabs), so picking a card re-themes everything live,
+  not just a sample swatch.
+
+Scoped specifically to `libs/ui/src/showcase/` — none of this is public
+API, none of it is exported from `public-api.ts`, and the literal
+color/typography values living in `kitchen-sink.ts` are deliberately
+exempt from invariant 5's "no hard-coded values" (that invariant governs
+`libs/ui`'s own *components*, which must stay themeable; a demo whose
+entire point is "look, arbitrary override values work" is the one place
+inventing a literal value is the correct move, not a violation of it).
+
+---
+
+## Kitchen Sink progress — the step tracker
+
+**This section is the single source of truth for Kitchen Sink showcase
+status**, the same role Wave 2–5 progress sections played for their
+waves — same process too (`CLAUDE.md`'s "Working through a wave": one
+step at a time, stop-and-wait between steps, the done criteria), even
+though this isn't a numbered component-building wave. Update the
+checklist and the CURRENT STEP marker at the end of every step.
+
+Scope, per the user's own request and fork 27's resolution: a master
+layout component at `libs/ui/src/showcase/kitchen-sink.ts`, mounted by
+the already-present (empty) `kitchen-sink.stories.ts`. A centered "Kitchen
+Sink" header with a light/dark mode switch; the tabs hidden behind a
+3-step onboarding stepper (color theme → typography + density →
+confirmation) until completed; 6 blank, generically-labeled tab panels
+("Tab 1"–"Tab 6") to be filled in later, outside this scope.
+
+1. [x] **1A.** Build the `KitchenSink` component + tests —
+   `libs/ui/src/showcase/kitchen-sink.ts`/`.html`/`.css`/`.spec.ts`
+   (template split into its own `.html` file — the markup is sizable
+   enough, between the header, a 3-step onboarding stepper and the
+   6-tab shell, that an inline `template:` string would have hurt
+   readability for no real gain, unlike most `libs/ui` components'
+   deliberately tiny templates). Header (centered `<h1>` via a 3-column
+   CSS grid, not a flex spacer hack; right-aligned `HmhaSwitch` for
+   mode, starting light, wired live). Gated onboarding `HmhaStepper`:
+   step 1 is 6 color-theme cards (`HmhaCard` wrapped in a plain trigger
+   `<button>`, since `HmhaCard` itself isn't interactive), each a 2x2
+   swatch grid; step 2 is 3 typography-preset cards plus two density
+   toggle buttons (real `data-hmha-density`, not a demo value); step 3
+   is a summary + "Enter the Kitchen Sink!". Picking a card applies
+   live immediately (not deferred to step 3) — the whole point is
+   watching the page re-theme as you go. 6 blank `HmhaTabPanel`s
+   (`Tab 1`–`Tab 6`) replace the stepper once onboarding completes.
+   Fork 27 covers the theming approach (demo-local override values, no
+   new `tokens/` work) in full. 8 new unit tests (339/339 total),
+   `build:lib`/`lint:css`/`lint:standalone` clean.
+
+   **Two real mistakes caught before/while running tests, not by
+   inspection:**
+   1. First draft bound `'[ngStyle]': 'activeStyleOverrides()'` in the
+      component's own `host: {}` metadata — invalid: `host` bindings
+      are Angular's own property/attribute/class/style/event DSL, not
+      a way to attach an arbitrary directive (`NgStyle`) to `:host`.
+      The IDE's own diagnostics caught it immediately (`NG8002`, "Can't
+      bind to 'ngStyle'"). Fixed with the native `'[style]':
+      'activeStyleOverrides()'` host binding instead, which accepts an
+      object of style declarations — including custom-property keys —
+      directly, making the `NgStyle` import unnecessary entirely.
+   2. The first spec file's `clickButton(el, 'Next')` helper searched
+      the *whole* rendered page for a button by text, but
+      `HmhaStepPanel` hides inactive panels with `[hidden]`, not
+      `@if` — they stay in the DOM. Since both the Theme and Typography
+      panels have their own "Next" button, `.find()` was silently
+      matching the Theme panel's "Next" (a no-op once already on
+      Typography) instead of the visible panel's own button. Caught by
+      a failing assertion, not by inspection; fixed by scoping every
+      ambiguous button lookup to the specific step panel being acted
+      on, the same pattern already used for the Wave 5 sandbox gate's
+      own multi-panel tests.
+2. [x] **1B.** Story: Kitchen Sink — `kitchen-sink.stories.ts`
+   (Playground, DarkModeInteraction, ThemeSelectionInteraction,
+   TypographyAndDensityInteraction, CompletesOnboardingInteraction),
+   titled `'Overview/Kitchen Sink'` per `kitchen-sink.md`'s own
+   planning note, its own top-level sidebar section. `component:
+   KitchenSink` with no custom `render` — the component is fully
+   self-contained, nothing for a story to pass in.
+
+   Hit the documented "every Storybook MCP call times out" quirk on
+   the very first `test-run` — the dev server/`addon-vitest` process
+   had been running since Oct 6 (per `ps aux`), well past any single
+   session. Restarted it (killed all three processes, cleared
+   `node_modules/.cache/storybook`), which cleared it immediately —
+   the known remedy, not a new investigation.
+
+   **One real test-authoring bug, caught by `test-run`, not by
+   inspection:** `CompletesOnboardingInteraction`'s first draft used
+   `canvas.getByText('Ocean', { exact: false })` to check the Confirm
+   step's summary — but `getByText` (unlike `getByRole`) does **not**
+   respect the `hidden` attribute the way accessibility-tree-aware
+   role queries do, so it matched both the Confirm panel's visible
+   summary *and* the Theme panel's own still-in-DOM, still-hidden
+   "Ocean" card header, throwing on the ambiguity. Confirms the same
+   lesson the Karma spec's `clickButton` bug (step 1A) already taught,
+   from the opposite direction: `getByRole` queries are hidden-safe
+   here, but not every testing-library query is — `getByText` isn't,
+   so an ambiguous one needs scoping to a specific container instead.
+   Fixed by reading `confirmPanel.textContent` directly rather than a
+   page-wide text query. All 5 Kitchen Sink stories plus the full
+   existing suite (146 stories) pass `test-run` (incl. a11y).
+
+**Kitchen Sink step 1 is complete.** The master layout — header, live
+mode switch, the gated 3-step onboarding stepper (demonstrating runtime
+color/typography/density overrides per fork 27), and the 6 blank tabs —
+is built, unit-tested, and proven in Storybook. Filling in each tab's
+real content is explicitly out of scope here, per the user's own "leave
+these blank for now" — no further step is tracked until that's asked
+for.
+
+---
+
 ## Open items
 
 - **The blue is a placeholder.** Swap the hue in `tokens/primitive/color.json`
