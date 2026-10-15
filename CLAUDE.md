@@ -411,3 +411,22 @@ the first time: a Karma-launcher event gap on `<details>`'s native
 14), and `:host-context()` being blocked by stylelint for the same
 encapsulation reason as `::ng-deep` (fork 05) — both already fixed with
 their established remedies, not rediscovered from scratch.
+
+**A new Kitchen Sink showcase is in progress** at
+`libs/ui/src/showcase/kitchen-sink.ts`, mounted by the previously-empty
+`kitchen-sink.stories.ts`. This is not a reusable `libs/ui` component —
+it's a demo-only master layout, exempt from invariant 5's no-literals
+rule for the specific theme-preset values it holds (fork 27 explains
+why). See `DECISIONS.md`'s **Kitchen Sink progress** section for the
+live step tracker and current step; read fork 27 before assuming this
+page does, or should, add any new theming feature to `tokens/` — it
+deliberately doesn't. The whole point is demonstrating that any
+consumer can already override this library's semantic color/type tokens
+at runtime, with zero new token work.
+
+**`HmhaDivider` is done** (`hr[hmhaDivider]`, `libs/ui/src/lib/divider/`)
+— horizontal/vertical, a real `length` input (your own runtime CSS
+length, not a token), a real `color` input that forwards into the
+`--hmha-divider-color` component token, and `inset` for list use. See
+fork 28. 8 unit tests, 5 Storybook stories (Playground, Vertical,
+CustomLength, CustomColor, InsetInAList), all passing.

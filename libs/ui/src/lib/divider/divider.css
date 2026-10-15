@@ -1,0 +1,35 @@
+/* divider.css — declare the override API, then consume it.
+   Not one literal value in the file. Rendered via `background`, sized
+   by width/height, rather than `border` — one consistent sizing model
+   for both orientations instead of a border-side swap. */
+:host {
+  --hmha-divider-color: var(--hmha-color-border);
+  --hmha-divider-thickness: var(--hmha-border-width);
+  --hmha-divider-inset: var(--hmha-control-padding-x);
+
+  display: block;
+  flex-shrink: 0;
+  border: none;
+  margin: 0;
+  background: var(--hmha-divider-color);
+}
+
+:host([data-orientation='horizontal']) {
+  width: 100%;
+  height: var(--hmha-divider-thickness);
+}
+
+:host([data-orientation='vertical']) {
+  width: var(--hmha-divider-thickness);
+  height: 100%;
+}
+
+:host([data-orientation='horizontal'][data-inset]) {
+  width: calc(100% - var(--hmha-divider-inset));
+  margin-inline-start: var(--hmha-divider-inset);
+}
+
+:host([data-orientation='vertical'][data-inset]) {
+  height: calc(100% - var(--hmha-divider-inset));
+  margin-block-start: var(--hmha-divider-inset);
+}

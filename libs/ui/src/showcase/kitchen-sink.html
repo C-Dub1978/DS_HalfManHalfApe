@@ -1,0 +1,130 @@
+<header class="kitchen-sink-header">
+  <span class="header-spacer"></span>
+  <h1>Kitchen Sink</h1>
+  <div class="mode-toggle">
+    <hmha-icon name="sun" size="sm" />
+    <button
+      hmhaSwitch
+      [ngModel]="mode() === 'dark'"
+      (ngModelChange)="setDarkMode($event)"
+      aria-label="Toggle dark mode"
+    ></button>
+    <hmha-icon name="moon" size="sm" />
+  </div>
+</header>
+
+@if (!onboardingComplete()) {
+  <div hmhaStepper [(value)]="onboardingStep" class="onboarding">
+    <div hmhaStepList>
+      <button hmhaStep value="theme">Theme</button>
+      <button hmhaStep value="typography">Typography</button>
+      <button hmhaStep value="confirm">Confirm</button>
+    </div>
+
+    <div hmhaStepPanel value="theme" class="onboarding-panel">
+      <p class="muted">Pick a color theme — every control on this page re-themes live, right now.</p>
+      <div class="preset-grid">
+        @for (theme of colorThemes; track theme.id) {
+          <button
+            type="button"
+            class="preset-card-trigger"
+            [attr.aria-pressed]="selectedThemeId() === theme.id"
+            (click)="selectTheme(theme.id)"
+          >
+            <hmha-card [elevated]="selectedThemeId() === theme.id">
+              <span hmhaCardHeader>{{ theme.label }}</span>
+              <div class="swatch-grid">
+                @for (swatch of theme.swatches; track swatch) {
+                  <span class="swatch" [style.background]="swatch"></span>
+                }
+              </div>
+            </hmha-card>
+          </button>
+        }
+      </div>
+      <div class="row">
+        <button hmhaButton tone="primary" size="sm" (click)="goToOnboardingStep('typography')">Next</button>
+      </div>
+    </div>
+
+    <div hmhaStepPanel value="typography" class="onboarding-panel">
+      <p class="muted">Pick a typography preset, and a density to start with.</p>
+      <div class="preset-grid">
+        @for (preset of typeThemes; track preset.id) {
+          <button
+            type="button"
+            class="preset-card-trigger"
+            [attr.aria-pressed]="selectedTypeId() === preset.id"
+            (click)="selectTypography(preset.id)"
+          >
+            <hmha-card [elevated]="selectedTypeId() === preset.id">
+              <span hmhaCardHeader>{{ preset.label }}</span>
+              <p class="type-preview" [style]="preset.vars">Aa</p>
+              <p class="muted">{{ preset.description }}</p>
+            </hmha-card>
+          </button>
+        }
+      </div>
+
+      <div class="row">
+        <button
+          type="button"
+          hmhaButton
+          [tone]="density() === 'comfortable' ? 'primary' : 'neutral'"
+          size="sm"
+          [attr.aria-pressed]="density() === 'comfortable'"
+          (click)="setDensity('comfortable')"
+        >
+          Comfortable
+        </button>
+        <button
+          type="button"
+          hmhaButton
+          [tone]="density() === 'compact' ? 'primary' : 'neutral'"
+          size="sm"
+          [attr.aria-pressed]="density() === 'compact'"
+          (click)="setDensity('compact')"
+        >
+          Compact
+        </button>
+      </div>
+
+      <div class="row">
+        <button hmhaButton tone="neutral" size="sm" (click)="goToOnboardingStep('theme')">Back</button>
+        <button hmhaButton tone="primary" size="sm" (click)="goToOnboardingStep('confirm')">Next</button>
+      </div>
+    </div>
+
+    <div hmhaStepPanel value="confirm" class="onboarding-panel">
+      <p class="muted">Here's what you picked — you can still go back and change any of it.</p>
+      <p><strong>Color theme:</strong> {{ activeColorTheme().label }}</p>
+      <p><strong>Typography:</strong> {{ activeTypeTheme().label }}</p>
+      <p><strong>Density:</strong> {{ density() }}</p>
+      <div class="row">
+        <button hmhaButton tone="neutral" size="sm" (click)="goToOnboardingStep('typography')">Back</button>
+        <button hmhaButton tone="primary" (click)="completeOnboarding()">
+          <hmha-icon name="check" size="sm" />
+          Enter the Kitchen Sink!
+        </button>
+      </div>
+    </div>
+  </div>
+} @else {
+  <div hmhaTabs [(value)]="activeTab" class="kitchen-sink-tabs">
+    <div hmhaTabList>
+      <button hmhaTab value="tab1">Tab 1</button>
+      <button hmhaTab value="tab2">Tab 2</button>
+      <button hmhaTab value="tab3">Tab 3</button>
+      <button hmhaTab value="tab4">Tab 4</button>
+      <button hmhaTab value="tab5">Tab 5</button>
+      <button hmhaTab value="tab6">Tab 6</button>
+    </div>
+
+    <div hmhaTabPanel value="tab1"><p class="muted">Tab 1 content — coming soon.</p></div>
+    <div hmhaTabPanel value="tab2"><p class="muted">Tab 2 content — coming soon.</p></div>
+    <div hmhaTabPanel value="tab3"><p class="muted">Tab 3 content — coming soon.</p></div>
+    <div hmhaTabPanel value="tab4"><p class="muted">Tab 4 content — coming soon.</p></div>
+    <div hmhaTabPanel value="tab5"><p class="muted">Tab 5 content — coming soon.</p></div>
+    <div hmhaTabPanel value="tab6"><p class="muted">Tab 6 content — coming soon.</p></div>
+  </div>
+}
