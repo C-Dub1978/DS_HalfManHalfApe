@@ -48,10 +48,13 @@
   },
   "font": {
     "family": {
-      "$value": "{font-family.sans}"
+      "$value": "{font-family.raleway}"
+    },
+    "family-heading": {
+      "$value": "{font-family.fraunces}"
     },
     "family-mono": {
-      "$value": "{font-family.mono}"
+      "$value": "{font-family.recursive}"
     }
   }
 }

@@ -16,3 +16,12 @@ body {
   line-height: var(--hmha-type-body-md-line);
   font-weight: var(--hmha-type-body-md-weight);
 }
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--hmha-font-family-heading);
+}

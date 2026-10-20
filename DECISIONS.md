@@ -2329,6 +2329,84 @@ stories plus the full existing suite (151 stories) pass `test-run`
 
 ---
 
+## 29 — Typography: 8 named font-family primitives, CDN-loaded, Raleway/Recursive as the new defaults
+
+**Decided:** `tokens/primitive/type.json`'s single `font-family.sans`/
+`.mono` pair became eight named primitives — `raleway`, `geist`,
+`cormorant`, `fraunces` (sans/serif) and `recursive`, `geist-mono`,
+`jetbrains-mono`, `ibm-plex-mono` (mono) — named by identity, the same
+convention the colour ramps already use (`blue`, `green`, …), not by
+role (role naming is a *semantic*-tier rule). `tokens/semantic/
+type.json`'s `font.family`/`font.family-mono` — the only font tokens
+any component actually consumes — now point at `raleway`/`recursive` as
+the new defaults, replacing the old system-font stacks. This is the
+**Open items** note at the very end of this file ("swap the hue… the
+structure is the deliverable") realized for typography instead of
+colour — the three-tier shape was already built to take this.
+
+**Token value and font *availability* are two separate concerns, and
+only the first is `tokens/`'s job.** A `font-family` token is just a
+CSS name string; nothing in the Style Dictionary build touches font
+files or the network. All eight are pre-loaded via one Google Fonts
+CDN link (weights 400/500/600/700, matching the existing
+`font-weight.regular/medium/semibold/bold` scale) added to **two**
+separate places, because they're two separate render contexts with no
+shared `<head>`:
+
+- `apps/sandbox/src/index.html` — the app shell.
+- `libs/ui/.storybook/preview-head.html` — a brand-new file, Storybook's
+  own documented convention for injecting into the preview iframe's
+  `<head>`; mirrors (rather than imports) the sandbox link, the same
+  "colocated and duplicated, not coupled to an app that exists for a
+  different reason" call `preview.css` already made for
+  `apps/sandbox/src/styles.css`.
+
+Picking any of the eight needs no further work beyond the semantic
+token edit + rebuild. A 9th font needs its own `@font-face` or CDN link
+added to **both** files above, or it silently falls back to the
+generic (`sans-serif`/`serif`/`monospace`) with no error — documented
+in `libs/ui/README.md`'s new "Changing fonts" section, which is the
+actual answer to "would it work out of the box" this fork exists to
+record.
+
+`font.family-mono` still isn't consumed by any component's CSS (no
+`<code>`-shaped component exists yet) — loaded and wired through
+regardless, same as before this change, just with real typefaces behind
+it now instead of an unused system stack.
+
+`reference/tokens.css`/`reference/hmha-tokens.ts` (the root README's
+documented "diff a fresh build against this" snapshots) were
+regenerated and committed alongside — not CI-enforced, but left stale
+would contradict the root README's own instructions.
+
+---
+
+## 30 — Typography: `font.family-heading`, Fraunces/Raleway as the pairing
+
+**Decided:** a third semantic font role, `font.family-heading`,
+defaulting to `{font-family.fraunces}` — the follow-up fork 29 itself
+flagged as the natural next question once someone actually tries the
+new fonts. Applied globally to `h1`–`h6` in both base stylesheets
+(`apps/sandbox/src/styles.css`, `libs/ui/.storybook/preview.css`), the
+same place `body`'s own `font.family` already lives — every heading
+gets it automatically, with zero per-component work, the same reason
+the body rule works that way.
+
+**Why Fraunces + Raleway, not Cormorant:** a distinctive serif for
+headings against a plain, highly-legible sans for body copy is a
+common, low-risk pairing — personality in short bursts (headlines),
+speed in the dense stuff (paragraphs, UI text). Between the two serif
+options added in fork 29, Fraunces is explicitly a *display* classification
+(built for headlines, wide optical-size range, on-trend in current
+product/SaaS branding) where Cormorant reads more classical/editorial —
+better suited to long-form reading than short, bold headline bursts.
+Flagged as a caution for whoever reaches for either serif on **body**
+text later: display/decorative serifs are tuned for being read at a
+glance at large sizes, not for paragraphs at 14–16px — swapping one in
+for `font.family` (not `.family-heading`) will cost real reading speed.
+
+---
+
 ## Open items
 
 - **The blue is a placeholder.** Swap the hue in `tokens/primitive/color.json`

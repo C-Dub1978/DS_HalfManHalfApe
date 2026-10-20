@@ -1,12 +1,30 @@
 {
-  "$description": "Primitive type scales. Swap font-family here and the whole system follows.",
+  "$description": "Primitive type scales. font-family is a curated set of already-CDN-loaded options (sandbox's index.html, Storybook's preview-head.html, both under libs/ui/README.md's 'Changing fonts' section) — point tokens/semantic/type.json's font.family/font.family-mono at whichever one you want active.",
   "font-family": {
     "$type": "fontFamily",
-    "sans": {
-      "$value": "system-ui, -apple-system, 'Segoe UI', sans-serif"
+    "raleway": {
+      "$value": "'Raleway', sans-serif"
     },
-    "mono": {
-      "$value": "ui-monospace, SFMono-Regular, Menlo, monospace"
+    "geist": {
+      "$value": "'Geist', sans-serif"
+    },
+    "cormorant": {
+      "$value": "'Cormorant', serif"
+    },
+    "fraunces": {
+      "$value": "'Fraunces', serif"
+    },
+    "recursive": {
+      "$value": "'Recursive', monospace"
+    },
+    "geist-mono": {
+      "$value": "'Geist Mono', monospace"
+    },
+    "jetbrains-mono": {
+      "$value": "'JetBrains Mono', monospace"
+    },
+    "ibm-plex-mono": {
+      "$value": "'IBM Plex Mono', monospace"
     }
   },
   "font-size": {

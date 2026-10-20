@@ -48,6 +48,7 @@
   --hmha-space-8: 32px;
   --hmha-space-10: 40px;
   --hmha-space-12: 48px;
+  --hmha-space-80: 320px;
   --hmha-size-7: 28px;
   --hmha-size-8: 32px;
   --hmha-size-10: 40px;
@@ -64,8 +65,15 @@
   --hmha-duration-fast: 120ms;
   --hmha-duration-base: 200ms;
   --hmha-easing-standard: cubic-bezier(0.2, 0, 0, 1);
-  --hmha-font-family-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --hmha-font-family-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --hmha-scrim: oklch(0.176 0.011 260 / 0.5);
+  --hmha-font-family-raleway: 'Raleway', sans-serif;
+  --hmha-font-family-geist: 'Geist', sans-serif;
+  --hmha-font-family-cormorant: 'Cormorant', serif;
+  --hmha-font-family-fraunces: 'Fraunces', serif;
+  --hmha-font-family-recursive: 'Recursive', monospace;
+  --hmha-font-family-geist-mono: 'Geist Mono', monospace;
+  --hmha-font-family-jetbrains-mono: 'JetBrains Mono', monospace;
+  --hmha-font-family-ibm-plex-mono: 'IBM Plex Mono', monospace;
   --hmha-font-size-xs: 12px;
   --hmha-font-size-sm: 14px;
   --hmha-font-size-md: 16px;
@@ -80,6 +88,7 @@
   --hmha-line-height-tight: 1.2;
   --hmha-line-height-normal: 1.5;
   --hmha-line-height-relaxed: 1.65;
+  --hmha-color-backdrop: var(--hmha-scrim);
   --hmha-radius-control: var(--hmha-radius-md);
   --hmha-radius-surface: var(--hmha-radius-lg);
   --hmha-radius-pill: var(--hmha-radius-full);
@@ -89,6 +98,7 @@
   --hmha-icon-sm: var(--hmha-space-4);
   --hmha-icon-md: var(--hmha-space-5);
   --hmha-icon-lg: var(--hmha-space-6);
+  --hmha-layout-drawer-width: var(--hmha-space-80);
   --hmha-type-heading-lg-size: var(--hmha-font-size-3xl);
   --hmha-type-heading-lg-line: var(--hmha-line-height-tight);
   --hmha-type-heading-lg-weight: var(--hmha-font-weight-bold);
@@ -101,8 +111,10 @@
   --hmha-type-label-md-size: var(--hmha-font-size-sm);
   --hmha-type-label-md-line: var(--hmha-line-height-tight);
   --hmha-type-label-md-weight: var(--hmha-font-weight-medium);
-  --hmha-font-family: var(--hmha-font-family-sans);
-  --hmha-font-family-mono: var(--hmha-font-family-mono);
+  --hmha-font-family: var(--hmha-font-family-raleway);
+  --hmha-font-family-heading: var(--hmha-font-family-fraunces);
+  --hmha-font-family-mono: var(--hmha-font-family-recursive);
+  --hmha-elevation-raised: var(--hmha-shadow-sm);
 }
 
 :root, [data-hmha-mode="light"] {
