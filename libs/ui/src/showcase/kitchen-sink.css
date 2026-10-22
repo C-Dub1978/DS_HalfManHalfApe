@@ -116,3 +116,107 @@
   gap: var(--hmha-space-stack);
   padding: var(--hmha-control-padding-y) var(--hmha-control-padding-x);
 }
+
+/* Typography tab — one instance of every type-scale role (fork 31) and
+   every font-family role (fork 29/30), each driven by a plain data-*
+   attribute, the same variant convention every real component uses. */
+.typography-showcase {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hmha-space-stack);
+}
+
+.typography-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hmha-space-stack);
+}
+
+.type-sample {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hmha-control-gap);
+  padding-block: var(--hmha-control-padding-y);
+  border-bottom: var(--hmha-border-width) solid var(--hmha-color-border);
+}
+
+.type-sample:last-child {
+  border-bottom: none;
+}
+
+.type-role-name {
+  margin: 0;
+  color: var(--hmha-color-text-muted);
+  font-family: var(--hmha-font-family-mono);
+  font-size: var(--hmha-type-caption-size);
+  line-height: var(--hmha-type-caption-line);
+  font-weight: var(--hmha-type-caption-weight);
+}
+
+/* Base = body-md, so a sample with no data-role (the font-family-only
+   demos below) still renders at a sensible, token-driven size. */
+.type-sample-text {
+  margin: 0;
+  color: var(--hmha-color-text);
+  font-family: var(--hmha-font-family);
+  font-size: var(--hmha-type-body-md-size);
+  line-height: var(--hmha-type-body-md-line);
+  font-weight: var(--hmha-type-body-md-weight);
+}
+
+.type-sample-text[data-role='heading-lg'] {
+  font-family: var(--hmha-font-family-heading);
+  font-size: var(--hmha-type-heading-lg-size);
+  line-height: var(--hmha-type-heading-lg-line);
+  font-weight: var(--hmha-type-heading-lg-weight);
+}
+
+.type-sample-text[data-role='heading-md'] {
+  font-family: var(--hmha-font-family-heading);
+  font-size: var(--hmha-type-heading-md-size);
+  line-height: var(--hmha-type-heading-md-line);
+  font-weight: var(--hmha-type-heading-md-weight);
+}
+
+.type-sample-text[data-role='heading-sm'] {
+  font-family: var(--hmha-font-family-heading);
+  font-size: var(--hmha-type-heading-sm-size);
+  line-height: var(--hmha-type-heading-sm-line);
+  font-weight: var(--hmha-type-heading-sm-weight);
+}
+
+.type-sample-text[data-role='body-sm'] {
+  font-size: var(--hmha-type-body-sm-size);
+  line-height: var(--hmha-type-body-sm-line);
+  font-weight: var(--hmha-type-body-sm-weight);
+}
+
+.type-sample-text[data-role='label-md'] {
+  font-size: var(--hmha-type-label-md-size);
+  line-height: var(--hmha-type-label-md-line);
+  font-weight: var(--hmha-type-label-md-weight);
+}
+
+.type-sample-text[data-role='label-sm'] {
+  font-size: var(--hmha-type-label-sm-size);
+  line-height: var(--hmha-type-label-sm-line);
+  font-weight: var(--hmha-type-label-sm-weight);
+}
+
+.type-sample-text[data-role='caption'] {
+  font-size: var(--hmha-type-caption-size);
+  line-height: var(--hmha-type-caption-line);
+  font-weight: var(--hmha-type-caption-weight);
+}
+
+.type-sample-text[data-family='sans'] {
+  font-family: var(--hmha-font-family);
+}
+
+.type-sample-text[data-family='heading'] {
+  font-family: var(--hmha-font-family-heading);
+}
+
+.type-sample-text[data-family='mono'] {
+  font-family: var(--hmha-font-family-mono);
+}

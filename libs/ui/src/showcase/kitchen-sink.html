@@ -112,7 +112,7 @@
 } @else {
   <div hmhaTabs [(value)]="activeTab" class="kitchen-sink-tabs">
     <div hmhaTabList>
-      <button hmhaTab value="tab1">Tab 1</button>
+      <button hmhaTab value="tab1">Typography</button>
       <button hmhaTab value="tab2">Tab 2</button>
       <button hmhaTab value="tab3">Tab 3</button>
       <button hmhaTab value="tab4">Tab 4</button>
@@ -120,7 +120,76 @@
       <button hmhaTab value="tab6">Tab 6</button>
     </div>
 
-    <div hmhaTabPanel value="tab1"><p class="muted">Tab 1 content — coming soon.</p></div>
+    <div hmhaTabPanel value="tab1" class="typography-showcase">
+      <section class="typography-section">
+        <h2 class="type-sample-text" data-role="heading-sm">Type scale</h2>
+
+        <div class="type-sample">
+          <p class="type-role-name">heading-lg</p>
+          <p class="type-sample-text" data-role="heading-lg">Build once, theme forever</p>
+        </div>
+
+        <div class="type-sample">
+          <p class="type-role-name">heading-md</p>
+          <p class="type-sample-text" data-role="heading-md">Build once, theme forever</p>
+        </div>
+
+        <div class="type-sample">
+          <p class="type-role-name">heading-sm</p>
+          <p class="type-sample-text" data-role="heading-sm">Build once, theme forever</p>
+        </div>
+
+        <div class="type-sample">
+          <p class="type-role-name">body-md</p>
+          <p class="type-sample-text" data-role="body-md">
+            Every component resolves its color, spacing and type to a semantic token — swap the token and the whole
+            system follows, with no rebuild.
+          </p>
+        </div>
+
+        <div class="type-sample">
+          <p class="type-role-name">body-sm</p>
+          <p class="type-sample-text" data-role="body-sm">
+            Every component resolves its color, spacing and type to a semantic token — swap the token and the whole
+            system follows, with no rebuild.
+          </p>
+        </div>
+
+        <div class="type-sample">
+          <p class="type-role-name">label-md</p>
+          <p class="type-sample-text" data-role="label-md">Save changes</p>
+        </div>
+
+        <div class="type-sample">
+          <p class="type-role-name">label-sm</p>
+          <p class="type-sample-text" data-role="label-sm">Save changes</p>
+        </div>
+
+        <div class="type-sample">
+          <p class="type-role-name">caption</p>
+          <p class="type-sample-text" data-role="caption">Last updated 2 minutes ago</p>
+        </div>
+      </section>
+
+      <section class="typography-section">
+        <h2 class="type-sample-text" data-role="heading-sm">Font families</h2>
+
+        <div class="type-sample">
+          <p class="type-role-name">font.family — Raleway</p>
+          <p class="type-sample-text" data-family="sans">The quick brown fox jumps over the lazy dog.</p>
+        </div>
+
+        <div class="type-sample">
+          <p class="type-role-name">font.family-heading — Fraunces</p>
+          <p class="type-sample-text" data-family="heading">The quick brown fox jumps over the lazy dog.</p>
+        </div>
+
+        <div class="type-sample">
+          <p class="type-role-name">font.family-mono — Recursive</p>
+          <p class="type-sample-text" data-family="mono">const hmha = designSystem();</p>
+        </div>
+      </section>
+    </div>
     <div hmhaTabPanel value="tab2"><p class="muted">Tab 2 content — coming soon.</p></div>
     <div hmhaTabPanel value="tab3"><p class="muted">Tab 3 content — coming soon.</p></div>
     <div hmhaTabPanel value="tab4"><p class="muted">Tab 4 content — coming soon.</p></div>
