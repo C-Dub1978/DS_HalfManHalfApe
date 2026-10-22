@@ -2254,6 +2254,33 @@ real content is explicitly out of scope here, per the user's own "leave
 these blank for now" — no further step is tracked until that's asked
 for.
 
+3. [x] **2.** First real tab: Typography — `Tab 1` renamed to
+   `Typography` (its value stays `'tab1'`; only the label text
+   changed). One instance of **every** type role that exists after
+   forks 29–31: the 7 type-scale roles (`heading-lg`/`-md`/`-sm`,
+   `body-md`/`-sm`, `label-md`, `caption`) and the 3 font-family roles
+   (`family`/`family-heading`/`family-mono`), each demoed via a plain
+   `data-role`/`data-family` attribute on one shared `.type-sample-text`
+   class — the same attribute-driven-variant convention every real
+   `libs/ui` component already uses, kept consistent even in demo-only
+   showcase code. Two real section headings (`<h2>` "Type scale"/"Font
+   families", styled via the same `data-role="heading-sm"` attribute
+   the decorative samples use — a real heading element takes a type
+   role exactly the same way a `<p>` swatch does) keep the page's
+   heading hierarchy honest (one real `<h1>` in the header, `<h2>`s
+   under it, no skipped levels) rather than reusing `<h1>`/`<h2>` for
+   every decorative sample, which would have put multiple same-level
+   headings with no real document-structure meaning on the page.
+   `caption`'s demo deliberately doesn't add muted text color — the
+   token itself only defines size/line/weight, and tinting the example
+   would have implied color is part of the role when it isn't; color
+   stays a separate, composable choice same as always. No new
+   component, no new tokens — purely composing what forks 27/29–31
+   already built. 347/347 unit tests (only text/comment changes, no
+   new logic to test), `build:lib`/`lint:css`/`lint:standalone` clean,
+   all 5 Kitchen Sink stories plus the full suite (151 stories) pass
+   `test-run` (incl. a11y) on the first run.
+
 ---
 
 ## 28 — Divider: `hr[hmhaDivider]`, color/length as real inputs, not just tokens
@@ -2404,6 +2431,77 @@ Flagged as a caution for whoever reaches for either serif on **body**
 text later: display/decorative serifs are tuned for being read at a
 glance at large sizes, not for paragraphs at 14–16px — swapping one in
 for `font.family` (not `.family-heading`) will cost real reading speed.
+
+---
+
+## 31 — Type scale: 3 new roles, zero new primitives — `heading-sm`, `body-sm`, `caption`
+
+**Decided:** three new semantic roles — `heading-sm` (18px/tight/
+semibold), `body-sm` (14px/normal/regular), `caption` (12px/normal/
+regular) — alongside the original four (`heading-lg`/`-md`,
+`body-md`, `label-md`). Every one reuses a `font-size` step the
+primitive scale already had (`lg`, `sm`, `xs`) but no semantic role had
+ever pointed at — no new primitive work, same "the structure is the
+deliverable" theme as fork 29's font-family swap and the **Open
+items** note it already echoed.
+
+**Why these three and not more:** asked directly what further
+typography granularity would be worth investing in, three families'
+worth of addition were on the table — more font-*family* roles (a
+`display` face), more type-*scale* steps, and letter-spacing/tracking.
+Recommended scale steps over more families, because most day-to-day UI
+work needs an extra size step ("I need a slightly smaller heading," "I
+need fine-print text") far more often than it needs a whole different
+typeface — and most production systems (Material, Carbon, Polaris)
+carry 6–10+ named size steps against 1–2 font families, not the
+reverse. `heading-sm` covers the everyday "subsection header, smaller
+than a card title" case; `body-sm` covers secondary/supporting
+paragraph text; `caption` covers fine print, timestamps, metadata.
+
+**Deliberately not built, both flagged rather than silently skipped:**
+- **No bigger "display" size above `heading-lg`.** The primitive scale
+  tops out at `font-size.3xl` (30px) — a step above it would need new
+  primitive work, not just rewiring an unused one, and nothing today
+  has a hero/marketing use case for it. Add `font-size.4xl` and a
+  `display`/`heading-xl` role if that need actually shows up.
+- **No separate `overline` role.** An all-caps "eyebrow" label needs
+  `text-transform: uppercase` and usually wider tracking on top of a
+  small size — that's styling layered on `caption`/`label-md` by
+  whatever consumes it, not a reason for a distinct size/line/weight
+  triple of its own.
+
+None of the three new roles are consumed by any component's CSS yet —
+same "wired, available, not yet reached for" state `font.family-mono`
+already sat in after fork 29, until something actually needs it.
+`npm run tokens`/`tokens:contrast` clean, 347/347 unit tests,
+`build:lib`/`lint:css`/`lint:standalone` clean. Letter-spacing/tracking
+(the third granularity axis raised alongside this one) is the next,
+explicitly deferred step — not started.
+
+**Addendum — `label-sm` added, a real gap in this fork's own first
+pass, not a reconsidered decision.** Asked directly why there was only
+one label role, the honest answer turned up two things: the original
+`-md` suffix (Phase 1, predating every fork in this file) was always
+just a forward-compatible naming convention, not evidence siblings were
+considered and rejected; and this pass added `heading-sm`/`body-sm`/
+`caption` without ever checking whether `label-md` needed the same
+treatment. It's the single busiest role in the library (Button, Chip,
+Field, `ExpansionPanelTrigger`, `Pagination`, `Step`,
+`TableHeaderCell` all consume it for their own text, independent of
+their own `size` input — none of those components' size variants touch
+font-size, only control height/padding) — exactly the kind of thing
+this fork's own reasoning should have caught the first time. Added
+`label-sm`: `font-size.xs`/`line-height.tight`/`font-weight.medium` —
+sharing `caption`'s `xs` step, same way `body-sm`/`label-md` already
+share `sm`, distinguished by line/weight rather than a dedicated size,
+consistent with the pattern already established elsewhere in this same
+file. Still not consumed by any component — available for whichever
+one reaches for a smaller label first (a dense `Chip`, a compact
+`TableHeaderCell`, were the two guessed as most likely). Also added to
+the Kitchen Sink's Typography tab (step 2) alongside the rest, keeping
+that tab's "one of every role" promise honest. `npm run tokens`/
+`tokens:contrast` clean, 347/347 unit tests, `build:lib`/`lint:css`/
+`lint:standalone` clean, all 151 Storybook stories (incl. a11y) pass.
 
 ---
 

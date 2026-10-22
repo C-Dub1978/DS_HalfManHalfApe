@@ -1,5 +1,5 @@
 {
-  "$description": "Semantic type roles. Four roles, each an explicit size/line/weight triple — no composite tokens, so the CSS output stays plain custom properties.",
+  "$description": "Semantic type roles, each an explicit size/line/weight triple — no composite tokens, so the CSS output stays plain custom properties. heading-sm/body-sm/caption/label-sm (fork 31) reuse font-size steps already defined in the primitive scale — label-sm shares caption's xs step, same way body-sm/label-md already share sm, distinguished by line/weight, not a dedicated size.",
   "type": {
     "heading-lg": {
       "size": {
@@ -23,9 +23,31 @@
         "$value": "{font-weight.semibold}"
       }
     },
+    "heading-sm": {
+      "size": {
+        "$value": "{font-size.lg}"
+      },
+      "line": {
+        "$value": "{line-height.tight}"
+      },
+      "weight": {
+        "$value": "{font-weight.semibold}"
+      }
+    },
     "body-md": {
       "size": {
         "$value": "{font-size.md}"
+      },
+      "line": {
+        "$value": "{line-height.normal}"
+      },
+      "weight": {
+        "$value": "{font-weight.regular}"
+      }
+    },
+    "body-sm": {
+      "size": {
+        "$value": "{font-size.sm}"
       },
       "line": {
         "$value": "{line-height.normal}"
@@ -43,6 +65,28 @@
       },
       "weight": {
         "$value": "{font-weight.medium}"
+      }
+    },
+    "label-sm": {
+      "size": {
+        "$value": "{font-size.xs}"
+      },
+      "line": {
+        "$value": "{line-height.tight}"
+      },
+      "weight": {
+        "$value": "{font-weight.medium}"
+      }
+    },
+    "caption": {
+      "size": {
+        "$value": "{font-size.xs}"
+      },
+      "line": {
+        "$value": "{line-height.normal}"
+      },
+      "weight": {
+        "$value": "{font-weight.regular}"
       }
     }
   },

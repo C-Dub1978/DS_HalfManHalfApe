@@ -56,7 +56,7 @@ export const TypographyAndDensityInteraction: Story = {
   },
 };
 
-/** Walking through all 3 onboarding steps and clicking "Enter the Kitchen Sink!" hides the stepper and reveals the 6 tabs, starting on Tab 1. */
+/** Walking through all 3 onboarding steps and clicking "Enter the Kitchen Sink!" hides the stepper and reveals the 6 tabs, starting on the first tab (now "Typography"). */
 export const CompletesOnboardingInteraction: Story = {
   play: async ({ canvas, canvasElement }) => {
     await userEvent.click(canvas.getByRole('button', { name: 'Next' })); // theme -> typography
