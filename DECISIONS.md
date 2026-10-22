@@ -2505,6 +2505,51 @@ that tab's "one of every role" promise honest. `npm run tokens`/
 
 ---
 
+## 32 — Consumer docs, and a real peer-dependency bug caught while writing them
+
+**Decided:** three new consumer-facing documents — `libs/ui/README.md`
+(rewritten: install, requirements, quickstart, a complete component
+catalog — it previously listed only Button), `libs/ui/docs/theming.md`
+(new: the three-tier architecture, both axes, the full colour/type/font
+role reference, and the three ways to override anything, consolidating
+and expanding the "Changing fonts" section that used to live alone in
+the README), and `libs/tokens/README.md` (new: that package had zero
+documentation of its own despite being separately publishable and
+framework-agnostic). Audience is explicitly external consumers of the
+published packages, not this repo's own contributors — `CLAUDE.md`/
+`DECISIONS.md` stay the internal working-agreement/decision-log, this
+is the thing a developer sees on the npm package page.
+
+**A real, previously-shipping bug found while auditing peer
+dependencies for accuracy, not something hypothetical:**
+`libs/ui/package.json`'s `peerDependencies` listed only `@angular/cdk`/
+`common`/`core` — missing `@angular/forms` (used by `Checkbox`,
+`Switch`, `Input`, `Combobox`'s input, `RadioGroup`, `SelectTrigger`,
+and `core/value-accessor.ts` itself) and `@angular/platform-browser`
+(used by `HmhaIcon`'s `DomSanitizer` — meaning transitively almost
+every component, since almost everything renders an icon). Any
+consumer installing this package without *also* happening to have
+those two already installed would have gotten a broken build, with
+nothing in the package metadata warning them why. Fixed by adding both
+to `peerDependencies` at the same `>=20.0.0 <22.0.0` range as the
+others; confirmed in the real `dist/hmha-ui/package.json` after a
+rebuild, not just the source file.
+
+**Two claims caught and corrected before shipping, not caught after:**
+drafted "every component is tested against axe-core in both colour
+modes" for the README, then actually checked — `divider` and `stepper`
+have no dedicated axe run in their own `.spec.ts` files, so that was an
+overclaim. Rewritten to the claim that's actually true uniformly
+(every component's Storybook story is checked via the a11y addon,
+confirmed every `test-run` this session) with the dedicated-unit-level
+axe runs described as present on *some* components, not all. Similarly
+drafted "`label-md` is the single most-used role," then grepped actual
+CSS consumption counts before publishing it — `body-md` is used in 13
+component files, `label-md` in 7; the superlative was wrong and was
+removed rather than left in.
+
+---
+
 ## Open items
 
 - **The blue is a placeholder.** Swap the hue in `tokens/primitive/color.json`
