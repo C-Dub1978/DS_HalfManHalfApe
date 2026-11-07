@@ -17,11 +17,13 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
-echo "── Building and packing @halfmanhalfape/hmha-ui ────────────────────────"
-(cd "$ROOT" && npm run icons && npm run build:lib)
-TARBALL_NAME="$(cd "$ROOT/dist/hmha-ui" && npm pack --silent)"
-TARBALL_PATH="$ROOT/dist/hmha-ui/$TARBALL_NAME"
-echo "Packed: $TARBALL_PATH"
+echo "── Building and packing @halfmanhalfape/hmha-tokens + hmha-ui ──────────"
+(cd "$ROOT" && npm run tokens && npm run icons && npm run build:lib)
+TOKENS_TARBALL="$ROOT/libs/tokens/$(cd "$ROOT/libs/tokens" && npm pack --silent)"
+UI_TARBALL="$ROOT/dist/hmha-ui/$(cd "$ROOT/dist/hmha-ui" && npm pack --silent)"
+trap 'rm -rf "$WORKDIR" "$TOKENS_TARBALL" "$UI_TARBALL"' EXIT
+echo "Packed: $TOKENS_TARBALL"
+echo "Packed: $UI_TARBALL"
 
 echo "── Scaffolding a smoke app on @angular/cli@${VERSION} ───────────────"
 cd "$WORKDIR"
@@ -33,7 +35,10 @@ cd smoke
 # some newer Angular scaffolds' own devDependency peer graph — unrelated to
 # hmha-ui, but harmless to apply throughout.
 npm install --legacy-peer-deps
-npm install --legacy-peer-deps "$TARBALL_PATH"
+# Both packages together, as libs/ui/README.md's Install section says —
+# hmha-tokens is a peer of hmha-ui (fork 07 addendum), and the local tarball
+# is used rather than the registry so an unreleased token change is tested.
+npm install --legacy-peer-deps "$TOKENS_TARBALL" "$UI_TARBALL"
 # Pin the CDK to the scaffold's own major. A range here (the old
 # ">=20.0.0 <22.0.0") resolves to its highest match, so the floor run was
 # silently pairing @angular/core@20 with @angular/cdk@21 — and
@@ -116,6 +121,15 @@ export const appConfig: ApplicationConfig = {
   providers: [provideZonelessChangeDetection()],
 };
 CONFIG
+
+# Load the token CSS exactly as the README's Quickstart says to.
+node -e '
+  const fs = require("fs");
+  const cfg = JSON.parse(fs.readFileSync("angular.json", "utf8"));
+  const opts = cfg.projects.smoke.architect.build.options;
+  opts.styles = ["node_modules/@halfmanhalfape/hmha-tokens/src/lib/_all.css", ...(opts.styles ?? [])];
+  fs.writeFileSync("angular.json", JSON.stringify(cfg, null, 2));
+'
 
 echo "── Building the smoke app ────────────────────────────────────────────"
 npx ng build

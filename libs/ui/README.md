@@ -23,6 +23,12 @@ the design tokens (CSS custom properties + TypeScript types) they all
 consume. `hmha-ui` has no visual styling at all without `hmha-tokens`'
 CSS loaded somewhere on the page.
 
+`hmha-tokens` is declared as a **peer dependency** of `hmha-ui` (`^1.0.0`),
+so npm 7+ installs it automatically and warns on a version mismatch. List
+it explicitly anyway, as above: you reference its CSS file directly in
+`angular.json` (see [Quickstart](#quickstart)), so it belongs in your own
+`package.json`, not only in the tree `hmha-ui` pulls in.
+
 ## Requirements
 
 - **Angular 20, 21 or 22** (`@angular/core`, `@angular/common`,

@@ -1,10 +1,28 @@
 {
   "name": "@halfmanhalfape/hmha-tokens",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "license": "MIT",
   "publishConfig": {
     "access": "public"
   },
-  "description": "DTCG-built CSS custom properties and TypeScript types for the Half Man Half Ape design system. Pure CSS, zero dependencies — no Angular required.",
+  "description": "DTCG-built CSS custom properties and TypeScript types for the Half Man Half Ape design system. Pure CSS, zero dependencies — no Angular required. The Angular components that consume these tokens are @halfmanhalfape/hmha-ui.",
+  "keywords": [
+    "design-tokens",
+    "css-custom-properties",
+    "design-system",
+    "dtcg",
+    "theming",
+    "dark-mode"
+  ],
+  "homepage": "https://github.com/C-Dub1978/DS_HalfManHalfApe/tree/main/libs/tokens#readme",
+  "bugs": {
+    "url": "https://github.com/C-Dub1978/DS_HalfManHalfApe/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/C-Dub1978/DS_HalfManHalfApe.git",
+    "directory": "libs/tokens"
+  },
   "type": "module",
   "style": "./src/lib/_all.css",
   "types": "./src/lib/hmha-tokens.ts",
