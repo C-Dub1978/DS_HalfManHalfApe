@@ -1,0 +1,61 @@
+name: Publish
+
+# npm trusted publishing (OIDC) — no NPM_TOKEN secret exists or is needed.
+# npm trusts this exact file (publish.yml) in this repo, in the `npm`
+# environment, for both @halfmanhalfape/hmha-tokens and @halfmanhalfape/hmha-ui.
+# Renaming this file or the environment breaks publishing until the trusted
+# publisher on npmjs.com is recreated to match (npm can't edit one in place).
+#
+# Bump a package.json version, merge, then push a tag (or run it manually):
+#   git tag v1.1.0 && git push origin v1.1.0
+# Each package is published only if its current version isn't already on
+# npm, so a release that only bumps one package publishes only that one.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # mints the OIDC token npm exchanges for a publish credential
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest # trusted publishing requires a GitHub-hosted runner
+    environment: npm
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          # No dependency cache in a release job: a poisoned cache entry
+          # would otherwise flow straight into a published package.
+          package-manager-cache: false
+
+      # Trusted publishing needs npm >= 11.5.1; don't depend on whichever
+      # npm this Node release happens to bundle.
+      - run: npm install -g npm@11
+      - run: npm --version
+
+      - run: npm ci
+
+      # The full gate (tokens, contrast, icons, lint, build, tests) — the
+      # same thing ci.yml runs. Nothing publishes unless all of it passes.
+      - run: npm run ci
+
+      # Tokens first: hmha-ui declares hmha-tokens as a peer, so the token
+      # version it needs must already be on the registry.
+      - name: Publish @halfmanhalfape/hmha-tokens (if new)
+        working-directory: libs/tokens
+        run: bash "$GITHUB_WORKSPACE/scripts/publish-if-new.sh"
+
+      - name: Publish @halfmanhalfape/hmha-ui (if new)
+        working-directory: dist/hmha-ui
+        run: bash "$GITHUB_WORKSPACE/scripts/publish-if-new.sh"
