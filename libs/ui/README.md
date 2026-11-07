@@ -25,9 +25,9 @@ CSS loaded somewhere on the page.
 
 ## Requirements
 
-- **Angular 20 or 21** (`@angular/core`, `@angular/common`,
+- **Angular 20, 21 or 22** (`@angular/core`, `@angular/common`,
   `@angular/forms`, `@angular/platform-browser`, all in the same
-  range), plus **`@angular/cdk`** 20–21. These are peer dependencies —
+  range), plus **`@angular/cdk`** 20–22. These are peer dependencies —
   npm will tell you if any are missing.
 - **Standalone only.** There's no `NgModule` to import, anywhere in
   this library — import the component/directive classes you need

@@ -55,15 +55,14 @@ npm run ci                 # everything above, in CI order
 
 ## Status
 
-**Phase 1 is done**: 37 primitives, 59 semantic roles, both theming axes, the
-token build pipeline, and the two CI guards — proved with a plain-HTML sandbox
-page (`sandbox/index.html`) with no components, where flipping
-`data-hmha-mode`/`data-hmha-density` on `<html>` re-themes everything with no
-rebuild.
+**v1 is released** on npm — `@halfmanhalfape/hmha-tokens` and
+`@halfmanhalfape/hmha-ui` — and supports **Angular 20, 21 and 22**, each
+verified by the CI install matrix (`scripts/verify-install-matrix.sh`).
 
-**Phase 2 is in progress**: the Angular workspace, `hmha-ui` library and
-`sandbox` application are scaffolded (`apps/`, `libs/ui`), zoneless via
-`provideZonelessChangeDetection()`. Remaining: `hmha-core` token types + CDK
-wiring, the two-version install matrix in CI, and `HmhaButton` as the first
-component. See `CLAUDE.md` for the full brief and `DECISIONS.md` for the
-sequencing of waves two and three.
+Phases 1 and 2 (the token foundation, the zoneless workspace and the install
+matrix) and five component waves are done: Icon, Button/IconButton, Card,
+Field, Input, Checkbox, Radio, Switch, Dialog/Drawer, Menu, Tooltip, Toast,
+Tabs, Select, Combobox, Pagination, Table, Data Grid, Chip, Expansion
+Panel/Accordion, Stepper and Divider. `libs/ui/README.md` has the full
+consumer-facing catalog; `DECISIONS.md` has each wave's step tracker and the
+reasoning behind every component.

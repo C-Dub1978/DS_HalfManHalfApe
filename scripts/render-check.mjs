@@ -2,6 +2,10 @@
 // headless browser. Used by verify-install-matrix.sh so the phase-2 install
 // gate doesn't depend on any particular Angular version's default test
 // runner (Karma vs Vitest, etc).
+//
+// Beyond "the button rendered", each check below drives one CDK-backed
+// path for real — overlay, AriaDescriber, _IdGenerator, listbox — so a
+// new Angular major that breaks any of them fails here, not in a consumer.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
@@ -47,16 +51,39 @@ try {
   await page.goto(`http://localhost:${port}/`);
   await page.waitForSelector('[data-testid="smoke-button"]', { timeout: 5000 });
 
-  if (errors.length > 0) {
-    throw new Error(`Console/page errors during render:\n${errors.join('\n')}`);
-  }
-
   const text = await page.textContent('[data-testid="smoke-button"]');
   if (!text?.includes('Smoke test')) {
     throw new Error(`Unexpected button text: "${text}"`);
   }
+  console.log('✓ button rendered');
 
-  console.log('✓ rendered, button present, no console errors');
+  // Field/Input — _IdGenerator + the HMHA_FIELD contract wired label → input.
+  const inputId = await page.getAttribute('[data-testid="smoke-input"]', 'id');
+  const labelFor = await page.getAttribute('hmha-field label', 'for');
+  if (!inputId || inputId !== labelFor) {
+    throw new Error(`Field label/input not associated (label for="${labelFor}", input id="${inputId}")`);
+  }
+  console.log('✓ field label associated with input');
+
+  // Tooltip — AriaDescriber describes the host, and hovering opens the overlay.
+  const describedBy = await page.getAttribute('[data-testid="smoke-button"]', 'aria-describedby');
+  if (!describedBy) throw new Error('Tooltip host has no aria-describedby');
+  await page.hover('[data-testid="smoke-button"]');
+  await page.waitForSelector('.cdk-overlay-container >> text=Smoke tooltip', { timeout: 5000 });
+  console.log('✓ tooltip described and opened in an overlay');
+
+  // Select — opening renders the CDK listbox; picking an option closes it.
+  await page.mouse.move(0, 0);
+  await page.click('[data-testid="smoke-select"]');
+  await page.waitForSelector('[role="listbox"] [role="option"]', { timeout: 5000 });
+  await page.click('[role="option"]:has-text("Beta")');
+  await page.waitForSelector('[role="listbox"]', { state: 'detached', timeout: 5000 });
+  console.log('✓ select listbox opened, selected and closed');
+
+  if (errors.length > 0) {
+    throw new Error(`Console/page errors during render:\n${errors.join('\n')}`);
+  }
+  console.log('✓ no console errors');
 } finally {
   await browser.close();
   server.close();

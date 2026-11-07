@@ -14,7 +14,9 @@ around them.** If a task appears to require breaking one, stop and say so.
 1. **Angular 20 is the floor; the library must work on 20 through current and
    forward.** The workspace is built on Angular 20 so that `ng-packagr`'s
    partial-Ivy output stays forward-compatible. Never raise the workspace's own
-   Angular version to gain an API. Peer range: `">=20.0.0 <22.0.0"`.
+   Angular version to gain an API. Peer range: `">=20.0.0 <23.0.0"` — the
+   ceiling moves up one major at a time, and only after that major passes the
+   CI install matrix (fork 33). The floor never moves.
 2. **Standalone only. Zero `NgModule`s** — not even one convenience re-export.
    Do not add `standalone: true`; it is the default from v19 and stating it is
    noise.
