@@ -57,6 +57,18 @@ try {
   }
   console.log('✓ button rendered');
 
+  // Tokens — the hmha-tokens CSS loaded and the button actually consumes it.
+  const action = await page.evaluate(() =>
+    getComputedStyle(document.documentElement).getPropertyValue('--hmha-color-action').trim(),
+  );
+  const buttonBg = await page.evaluate(() =>
+    getComputedStyle(document.querySelector('[data-testid="smoke-button"]')).backgroundColor,
+  );
+  if (!action || buttonBg === 'rgba(0, 0, 0, 0)') {
+    throw new Error(`Token CSS not applied (--hmha-color-action="${action}", button bg=${buttonBg})`);
+  }
+  console.log('✓ token CSS loaded and applied');
+
   // Field/Input — _IdGenerator + the HMHA_FIELD contract wired label → input.
   const inputId = await page.getAttribute('[data-testid="smoke-input"]', 'id');
   const labelFor = await page.getAttribute('hmha-field label', 'for');

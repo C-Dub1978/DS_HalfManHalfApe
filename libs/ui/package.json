@@ -1,6 +1,26 @@
 {
   "name": "@halfmanhalfape/hmha-ui",
   "version": "1.1.0",
+  "license": "MIT",
+  "description": "Standalone, signals-based, zoneless Angular components for the Half Man Half Ape design system. Requires @halfmanhalfape/hmha-tokens for all visual styling.",
+  "keywords": [
+    "angular",
+    "design-system",
+    "component-library",
+    "signals",
+    "zoneless",
+    "standalone",
+    "design-tokens"
+  ],
+  "homepage": "https://github.com/C-Dub1978/DS_HalfManHalfApe/tree/main/libs/ui#readme",
+  "bugs": {
+    "url": "https://github.com/C-Dub1978/DS_HalfManHalfApe/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/C-Dub1978/DS_HalfManHalfApe.git",
+    "directory": "libs/ui"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -9,7 +29,8 @@
     "@angular/common": ">=20.0.0 <23.0.0",
     "@angular/core": ">=20.0.0 <23.0.0",
     "@angular/forms": ">=20.0.0 <23.0.0",
-    "@angular/platform-browser": ">=20.0.0 <23.0.0"
+    "@angular/platform-browser": ">=20.0.0 <23.0.0",
+    "@halfmanhalfape/hmha-tokens": "^1.0.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"

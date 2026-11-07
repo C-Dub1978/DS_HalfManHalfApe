@@ -168,8 +168,35 @@ entry points are real ng-packagr complexity for no measurable gain.
 **Scope and package names — decided:** `@halfmanhalfape`, confirmed available on
 npm. `libs/ui/package.json` and `libs/tokens/package.json` carry the names.
 
-**Still to decide:** the license (MIT unless there is a reason not to).
+**License — decided: MIT**, the default this entry originally named, with
+no reason found not to. Copyright Christopher Wilson. One `LICENSE` at the
+repo root, copied into `libs/ui/` (ng-packagr copies it into
+`dist/hmha-ui`) and `libs/tokens/` (npm always packs a root `LICENSE`,
+whatever `files` says), plus `"license": "MIT"` in both `package.json`s.
 `CLAUDE.md` carries the publishing mechanics.
+
+**Addendum — `hmha-tokens` is a peer dependency of `hmha-ui` (`^1.0.0`),
+not a regular dependency, and never the reverse.** Before this, the two
+packages only knew about each other through their READMEs: npm neither
+installed `hmha-tokens` alongside `hmha-ui` nor warned when it was missing,
+even though `hmha-ui` renders with no styling at all without it.
+
+- **Peer, not `dependencies`:** the consumer references the token CSS
+  directly by path in their own `angular.json`, so it has to be a
+  top-level package they own. A transitive dependency only appears at
+  `node_modules/@halfmanhalfape/hmha-tokens` through hoisting, which pnpm's
+  strict layout doesn't do. A peer also keeps exactly one copy and lets
+  the consumer move tokens on its own cadence, the reason for two
+  packages in the first place. `^1.0.0` follows the token package's own
+  semver, not Angular's.
+- **Never the reverse:** `hmha-tokens` stays at zero dependencies.
+  It's framework-free on purpose (fork 02, above), and a non-Angular
+  consumer must never pull Angular in through it.
+- Both packages also gained `repository` (with `directory`), `homepage`,
+  `bugs` and `keywords`, so their npm pages link back to the repo. The
+  CI install matrix now installs both local tarballs and asserts the
+  token CSS actually applies (fork 33's smoke app), so the documented
+  two-package install is tested, not just written down.
 
 ---
 
