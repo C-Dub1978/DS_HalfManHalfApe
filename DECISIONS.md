@@ -173,7 +173,18 @@ no reason found not to. Copyright Christopher Wilson. One `LICENSE` at the
 repo root, copied into `libs/ui/` (ng-packagr copies it into
 `dist/hmha-ui`) and `libs/tokens/` (npm always packs a root `LICENSE`,
 whatever `files` says), plus `"license": "MIT"` in both `package.json`s.
-`CLAUDE.md` carries the publishing mechanics.
+
+**Publishing — decided: npm trusted publishing from GitHub Actions, no
+tokens.** `.github/workflows/publish.yml` (a `v*` tag push or a manual run,
+in a GitHub environment named `npm`) runs the full `npm run ci` gate, then
+`scripts/publish-if-new.sh` publishes each package only if its version
+isn't already on npm. Tokens go first, because `hmha-ui` peers on them.
+Both packages trust that one workflow file plus environment on npmjs.com,
+so renaming either breaks publishing until the trusted publisher is
+recreated (npm can't edit one in place). Provenance comes free for a
+public package from a public repo. Publishing from a laptop is no longer
+the path, and package settings disallow tokens once the first OIDC
+publish works.
 
 **Addendum — `hmha-tokens` is a peer dependency of `hmha-ui` (`^1.0.0`),
 not a regular dependency, and never the reverse.** Before this, the two
