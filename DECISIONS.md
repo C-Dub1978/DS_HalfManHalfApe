@@ -12,7 +12,8 @@ maintenance capacity, not capability, is the binding constraint.
 ## 01 — Version floor: Angular 20 through current
 
 **Decided:** one package, workspace built on Angular 20, peer range
-`">=20.0.0 <22.0.0"`.
+`">=20.0.0 <22.0.0"` — ceiling since raised to `<23.0.0` (fork 33); the
+floor is unchanged.
 
 **Why it works:** a library published in partial-Ivy form — `ng-packagr`'s
 default — is compiled by each consuming application's own compiler. Forward
@@ -2547,6 +2548,51 @@ drafted "`label-md` is the single most-used role," then grepped actual
 CSS consumption counts before publishing it — `body-md` is used in 13
 component files, `label-md` in 7; the superlative was wrong and was
 removed rather than left in.
+
+---
+
+## 33 — Angular 22: raise the peer-range ceiling, never the floor
+
+**Decided:** every `peerDependencies` entry in `libs/ui/package.json` goes
+from `">=20.0.0 <22.0.0"` to `">=20.0.0 <23.0.0"`, and the CI install
+matrix gains `'22'` (`['20', '21', '22']`). The workspace itself stays on
+Angular 20 — this is fork 01 working as designed (partial-Ivy output built
+on the floor links forward), not an exception to invariant 1. A consumer
+app on Angular 22 was the trigger.
+
+**The rule for the next major (23, …):** raise the ceiling one major at a
+time, in the same change that adds that major to the matrix, and only once
+`scripts/verify-install-matrix.sh <major>` passes. The matrix lists every
+supported major, not just floor + latest, so a middle major can't regress
+unseen.
+
+**Verified, not assumed:** every CDK symbol `libs/ui` imports (`Overlay`,
+`STANDARD_DROPDOWN_BELOW_POSITIONS`, `ComponentPortal`/`TemplatePortal`,
+`AriaDescriber`, `FocusKeyManager`, the underscore-prefixed
+`_IdGenerator`, `CdkListbox`/`CdkOption`, `ScrollingModule`,
+`SelectionModel`) was checked against `@angular/cdk@22.2.6`'s published
+typings before the range moved. `_IdGenerator` was the real risk, since
+an underscore export carries no stability promise. It's still exported,
+but it's the first thing to check on every future major.
+
+**Two real gaps in the install matrix itself, found while widening it:**
+1. **The floor run was never on CDK 20.** The script installed
+   `@angular/cdk@">=20.0.0 <22.0.0"`, which npm resolves to its highest
+   match, so the "Angular 20" smoke app actually ran core 20 with CDK 21,
+   and `--legacy-peer-deps` hid the mismatch. The script now pins
+   `@angular/cdk@<major>` and fails if core and CDK resolve to different
+   majors.
+2. **The smoke app only rendered `HmhaButton`,** so everything built on
+   the CDK was tree-shaken out and never linked against the major under
+   test. A CDK export removed in a new major would have passed the check.
+   The smoke app (now zoneless, matching `apps/sandbox`) adds Tooltip
+   (overlay, portal, `AriaDescriber`), Field + Input (`_IdGenerator`,
+   Forms CVA) and Select (listbox). `render-check.mjs` drives each one for
+   real: the label/input association, hover-to-open the tooltip overlay,
+   and open/select/close on the listbox.
+
+All three majors pass locally with both fixes in place (core and CDK on
+matching majors, every check green, no console errors).
 
 ---
 

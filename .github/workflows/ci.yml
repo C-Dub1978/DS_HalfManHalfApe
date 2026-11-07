@@ -24,11 +24,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Floor (invariant 1) and current — the newest major still inside
-        # the peer range declared in libs/ui/package.json. Widen this list
-        # only once a new major has been verified and the peer range in
-        # CLAUDE.md / libs/ui/package.json is deliberately raised to match.
-        angular-cli: ['20', '21']
+        # The floor (invariant 1) plus every major inside the peer range
+        # declared in libs/ui/package.json — one entry per supported major,
+        # not just floor + latest, so a middle major can't regress unseen.
+        # Add a new major here in the same change that raises the peer
+        # range ceiling in CLAUDE.md / libs/ui/package.json (fork 33).
+        angular-cli: ['20', '21', '22']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
