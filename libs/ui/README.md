@@ -1,7 +1,7 @@
 # @halfmanhalfape/hmha-ui
 
 A standalone, signals-based Angular component library for the Half Man
-Half Ape design system — 24 components, zero `NgModule`s, every visual
+Half Ape design system — 25 components, zero `NgModule`s, every visual
 value overridable at runtime through CSS custom properties.
 
 - [Install](#install)
@@ -124,6 +124,7 @@ the full reference.
 | Pagination | `nav[hmhaPagination]` | [`src/lib/pagination/README.md`](./src/lib/pagination/README.md) |
 | Radio / RadioGroup | `input[hmhaRadio]`, `fieldset[hmhaRadioGroup]` | [`src/lib/radio/README.md`](./src/lib/radio/README.md) |
 | Select | `button[hmhaSelectTrigger]`, `div[hmhaSelectListbox]`, `div[hmhaSelectOption]` | [`src/lib/select/README.md`](./src/lib/select/README.md) |
+| Slider | `input[hmhaSlider]` | [`src/lib/slider/README.md`](./src/lib/slider/README.md) |
 | Stepper | `div[hmhaStepper]`, `div[hmhaStepList]`, `button[hmhaStep]`, `div[hmhaStepPanel]` | [`src/lib/stepper/README.md`](./src/lib/stepper/README.md) |
 | Switch | `button[hmhaSwitch]` | [`src/lib/switch/README.md`](./src/lib/switch/README.md) |
 | Table | `table[hmhaTable]`, `tr[hmhaTableRow]`, `th[hmhaTableHeaderCell]`, `td[hmhaTableCell]` | [`src/lib/table/README.md`](./src/lib/table/README.md) |
@@ -141,7 +142,8 @@ the only true custom elements in the library).
 ## Forms
 
 Every form control (`Checkbox`, `Input`, `Radio`/`RadioGroup`,
-`Switch`, `Combobox`) implements Angular's `ControlValueAccessor` — use
+`Switch`, `Combobox`, `Select`, `Slider`) implements Angular's
+`ControlValueAccessor` — use
 them with `formControlName`, `[formControl]`, or `[(ngModel)]` exactly
 like a native form element:
 

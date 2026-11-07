@@ -1,0 +1,121 @@
+/* slider.css — declare the override API, then consume it.
+   Not one literal value in the file.
+
+   A native range input has no children to style — its track and thumb are
+   engine pseudo-elements, one set for Blink/WebKit and one for Gecko. A
+   rule can't list both (an unknown pseudo-element invalidates the whole
+   selector list), so each part is written twice, both reading the same
+   tokens declared once on :host. */
+:host {
+  --hmha-slider-track-bg: var(--hmha-color-border);
+  --hmha-slider-buffered-bg: var(--hmha-color-border-strong);
+  --hmha-slider-fill-bg: var(--hmha-color-action);
+  --hmha-slider-thumb-bg: var(--hmha-color-action);
+  --hmha-slider-thumb-border: var(--hmha-color-surface);
+  --hmha-slider-thumb-size: var(--hmha-icon-md);
+  --hmha-slider-track-thickness: var(--hmha-track-thickness);
+  --hmha-slider-length: 100%;
+
+  /* Internal, not override API: the gradient direction, and the fill and
+     buffered end points (set from slider.ts as percentages). */
+  --_hmha-slider-direction: to right;
+  --_hmha-slider-track-paint: linear-gradient(
+    var(--_hmha-slider-direction),
+    var(--hmha-slider-fill-bg) 0 var(--_hmha-slider-fill, 0%),
+    var(--hmha-slider-buffered-bg) var(--_hmha-slider-fill, 0%) var(--_hmha-slider-buffered, 0%),
+    var(--hmha-slider-track-bg) var(--_hmha-slider-buffered, 0%) 100%
+  );
+
+  appearance: none;
+  display: inline-block;
+  box-sizing: border-box;
+  inline-size: var(--hmha-slider-length);
+  /* A control's full height, so a slider lines up in a row with buttons. */
+  block-size: var(--hmha-control-height);
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* ── Blink / WebKit ────────────────────────────────────────────────────── */
+:host::-webkit-slider-runnable-track {
+  block-size: var(--hmha-slider-track-thickness);
+  border-radius: var(--hmha-radius-pill);
+  background: var(--_hmha-slider-track-paint);
+}
+
+:host::-webkit-slider-thumb {
+  appearance: none;
+  box-sizing: border-box;
+  inline-size: var(--hmha-slider-thumb-size);
+  block-size: var(--hmha-slider-thumb-size);
+  /* WebKit aligns the thumb to the track's start edge; centre it. Logical,
+     so it's still correct when the vertical variant swaps the axes. */
+  margin-block-start: calc((var(--hmha-slider-track-thickness) - var(--hmha-slider-thumb-size)) / 2);
+  border: var(--hmha-border-width) solid var(--hmha-slider-thumb-border);
+  border-radius: var(--hmha-radius-pill);
+  background: var(--hmha-slider-thumb-bg);
+  transition: background var(--hmha-duration-fast) var(--hmha-easing-standard);
+}
+
+/* ── Gecko ─────────────────────────────────────────────────────────────── */
+:host::-moz-range-track {
+  block-size: var(--hmha-slider-track-thickness);
+  border-radius: var(--hmha-radius-pill);
+  background: var(--_hmha-slider-track-paint);
+}
+
+:host::-moz-range-thumb {
+  box-sizing: border-box;
+  inline-size: var(--hmha-slider-thumb-size);
+  block-size: var(--hmha-slider-thumb-size);
+  border: var(--hmha-border-width) solid var(--hmha-slider-thumb-border);
+  border-radius: var(--hmha-radius-pill);
+  background: var(--hmha-slider-thumb-bg);
+  transition: background var(--hmha-duration-fast) var(--hmha-easing-standard);
+}
+
+/* ── States ────────────────────────────────────────────────────────────── */
+:host(:hover:not(:disabled)) { --hmha-slider-thumb-bg: var(--hmha-color-action-hover); }
+:host([data-scrubbing]) { --hmha-slider-thumb-bg: var(--hmha-color-action-active); }
+
+:host([data-size="sm"]) {
+  --hmha-slider-thumb-size: var(--hmha-icon-sm);
+  block-size: var(--hmha-control-height-sm);
+}
+:host([data-size="lg"]) {
+  --hmha-slider-thumb-size: var(--hmha-icon-lg);
+  block-size: var(--hmha-control-height-lg);
+}
+
+:host([data-invalid]) {
+  --hmha-slider-fill-bg: var(--hmha-color-danger);
+  --hmha-slider-thumb-bg: var(--hmha-color-danger);
+}
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}
+
+:host(:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ── Direction ─────────────────────────────────────────────────────────── */
+/* Gradient directions are physical, the range's own direction is not. */
+:host(:dir(rtl)) { --_hmha-slider-direction: to left; }
+
+/* Last, so it wins over the RTL rule above: vertical always runs bottom
+   (min) to top (max), whatever the page's direction. Native vertical
+   range — writing-mode turns the inline axis vertical, direction: rtl
+   puts min at the bottom. Its length is the native default unless set. */
+:host([data-orientation="vertical"]) {
+  --hmha-slider-length: auto;
+  --_hmha-slider-direction: to top;
+
+  writing-mode: vertical-lr;
+  direction: rtl;
+}

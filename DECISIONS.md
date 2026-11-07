@@ -2634,6 +2634,198 @@ matching majors, every check green, no console errors).
 
 ---
 
+## 34 — Wave 6 scope: Slider, Progress Bar, and two more — for Stackfi's media player
+
+**Decided:** a sixth wave, released together as one minor version
+(`hmha-ui` 1.2.0) from one branch (`chore/new-components`) and one PR, at
+the user's request, rather than a PR per component. Four components. Two
+are named so far: **Slider**, then **Progress Bar**. The other two get
+named when step 3 arrives. Stackfi (an Angular 22 media-streaming app, the
+library's first real consumer) is the driver: Slider becomes its seek
+timeline and volume control, and Progress Bar its upload and transcode
+status.
+
+**Order breaks the usual smallest-first rule, on purpose.** Slider is the
+most complex piece in the wave and goes first anyway, for two reasons:
+Stackfi needs it most, and Progress Bar's visual design (track, fill)
+should follow whatever Slider settles, not the other way round. Whether
+the two share code is a real question, answered in Slider's foundation
+proposal (step 1a), not assumed here.
+
+**Out of scope, stated rather than left implicit:** the media player
+itself. Play/pause, timestamps and the player shell are Stackfi's own
+code, per its planning doc. The library ships the generic controls they
+are built from.
+
+---
+
+## 35 — Slider: native `<input type="range">`, one signal for `[(value)]` and Forms
+
+**Decided:** `HmhaSlider` is `input[hmhaSlider]`, an attribute component
+on the native range input. It sets `type="range"` itself, the way
+`HmhaCheckbox` sets `type="checkbox"`. The browser supplies `role="slider"`,
+`aria-valuenow`/`-min`/`-max`, arrow, Page Up/Down, Home and End keys,
+pointer and touch drag, track-click-to-jump, RTL and form submission,
+none of it hand-written. Angular Material's own slider has been built on
+the same element since v15.
+
+**Rejected: a custom `div[role="slider"]`** with a templated track and
+thumb. It gives total visual freedom, at the cost of re-implementing
+every behaviour above, which is the same trade forks 10, 14 and 25 turned
+down. The CDK has no slider primitive to lean on either. Electron
+(raised as Stackfi's likely desktop wrapper) strengthens the native case:
+it's always Chromium, so the one real cost, two engine-specific styling
+paths, halves there.
+
+**The value: one `model()` that Forms also reads and writes.** A media
+player needs `[(value)]` without Forms (a playhead written from
+`timeupdate` several times a second), and a settings page needs
+`[formControl]`. No existing control did both: form controls were
+Forms-only, Chip `model()`-only. `hmhaValueAccessor()` (fork 08) now
+optionally takes an existing `WritableSignal` instead of an initial value,
+and reads and writes it, so the slider's own `model()` is the single
+source of truth for both paths. Fork 08's one correctness rule (a Forms
+write never calls `onChange`) stays in one place. Every existing call site
+passes a plain value and is unchanged. `isSignal()` tells the two apart,
+since Angular 20 has no `isWritableSignal()`. Forms writing `null` (a
+`reset()`) maps to `min`, because a range input has no empty state.
+
+**Media-player specifics, all inputs and outputs, no player logic:**
+- `buffered`: a lighter band ahead of the fill, in `value`'s units.
+  It's never drawn behind the fill, since what has played has loaded.
+- `valueText`: sets `aria-valuetext` ("1:23 of 4:56").
+- `valueCommit`: the native `change` event (release, or a finished key
+  press), when a player seeks. `valueChange` (the model's own output)
+  fires continuously.
+- `scrubbingChange` (and a `scrubbing` signal): pointer down to a
+  document-level pointer up or cancel, so a player can pause its
+  `timeupdate` writes during a drag.
+- `orientation` (`HmhaOrientation`, reused from fork 28): vertical via
+  native `writing-mode: vertical-lr; direction: rtl`, bottom = min, with
+  `aria-orientation` set explicitly because CSS orientation is
+  invisible to the accessibility tree.
+
+**A real ordering bug, designed out rather than found later:** a range
+input clamps `value` to whatever `max` it has *at the moment `value` is
+set*. As four host property bindings, `value` could land before a new
+`max` (a timeline whose duration arrives after the playhead), and a
+binding only re-runs when its own expression changes, so the clamped
+value would never be corrected. One `effect()` writes `min`, `max`,
+`step`, then `value`, always in that order, and re-runs when any of
+them changes. Two unit tests cover it, and both were confirmed to fail
+("Expected '100' to be '250'") with the write order deliberately
+reversed, so they catch the bug rather than just passing.
+
+**Shared with Progress Bar: one token, no code.** Progress Bar will be
+the native `<progress>` (a display element, no focus, no CVA, styled
+through entirely different engine pseudo-elements), so a shared base
+would couple a form control to a display element (fork 08's base-class
+rejection again) and share no actual CSS. The real overlap is visual,
+so it lives in the token tier: a new semantic dimension,
+`track.thickness` (`{space.1}`, an existing primitive), which both
+components' thickness tokens point at. Colours reuse existing roles: fill
+and thumb `action` (which already passes 3:1 against `bg`, since `focus`
+is the same blue), buffered `border-strong` (already a checked 3:1 pair),
+and track `border`. No new colour roles, so light/dark parity and the
+contrast script are untouched.
+
+**Styling notes.** Each engine's track and thumb is written twice
+(`::-webkit-slider-*`, `::-moz-range-*`), because an unknown pseudo-element
+in a selector list invalidates the whole rule. Both read tokens declared
+once on `:host`. The fill and buffered band are one gradient driven by
+two internal percentage custom properties set from the component
+(`--_hmha-slider-fill`, `--_hmha-slider-buffered`). The underscore marks
+them as internal, not override API. The host is a full control height
+(density-aware), so a slider lines up in a row with buttons.
+
+**Out of scope, stated:** a two-thumb range slider (no native element),
+tick marks, and a hover-time preview tooltip (player code). The iOS
+caveat (its native range may not jump on a track tap) is documented in
+the README, with an additive fix if Stackfi's Capacitor phase needs it.
+
+---
+
+## Wave 6 progress — the step tracker
+
+**This section is the single source of truth for Wave 6 status**, the
+same way the Wave 2–5 progress sections were for their waves. Update the
+checklist and the CURRENT STEP marker at the end of every step. The
+process rule itself (one step at a time, stop-and-wait between steps,
+the done criteria) lives in `CLAUDE.md`'s "Working through a wave"
+section. This section only tracks where we are.
+
+Component order follows fork 34. Steps 3 and 4 get itemized once the
+user names those components.
+
+**CURRENT STEP: 2A**: Progress Bar, waiting for the go-ahead.
+
+1. [x] **1a.** Propose Slider's foundation. Approved: native
+   `<input type="range">` (Option A), one `model()` shared with Forms, and
+   tokens-only sharing with Progress Bar (`track.thickness`). Asked whether
+   it holds up inside an Electron wrapper: it does, unchanged. Recorded as
+   fork 35.
+2. [x] **1b.** Build Slider + tests: `libs/ui/src/lib/slider/` (`slider.ts`,
+   `slider.css`, `slider.spec.ts`, `README.md`). Built as fork 35 describes.
+   Also: `hmhaValueAccessor()` accepts an external `WritableSignal` (+1
+   test in `value-accessor.spec.ts`); new semantic token `track.thickness`
+   (`npm run tokens`/`tokens:contrast` clean, `reference/tokens.css`
+   re-synced); Slider added to `libs/ui/README.md`'s catalog and Forms
+   list (Select was missing from that list too, now fixed). 24 new slider
+   tests plus 1 accessor test (372/372 in `hmha-ui`, 24/24 in `sandbox`),
+   `build:lib`/`lint:css`/`lint:standalone` clean.
+
+   The spec states which layer verifies what: native keyboard and drag are
+   browser default actions Karma can't perform, so the spec sets `.value`
+   and dispatches `input`/`change` the way the browser would. Real keys
+   and drag, and the engine pseudo-element styling (vertical thumb
+   centring especially), still need a real browser. That's step 1c's
+   job.
+3. [x] **1c.** Story: Slider: `slider.stories.ts` (Playground, Sizes,
+   MediaTimeline, VerticalVolume, Disabled, Invalid, WithFormControl,
+   ChangeAndCommitInteraction, ScrubbingInteraction). Hit the documented
+   `test-run` timeout on the first call: the dev server and its
+   `addon-vitest` process had been running since Oct 20, with no viewer
+   connected. Restarted per `CLAUDE.md` (stop all three, clear
+   `node_modules/.cache/storybook`, start one), which cleared it.
+
+   **One test-authoring bug, caught by `test-run`:** `ScrubbingInteraction`
+   first pressed and released the pointer with two separate
+   `userEvent.pointer()` calls. Each direct call starts from fresh pointer
+   state, so the release had no press to end and fired no `pointerup`.
+   Fixed with one `userEvent.setup()` instance shared by both calls.
+
+   **The real-browser layer, done for real rather than claimed:** a
+   throwaway Playwright script (not committed, per the usual discipline)
+   drove the running stories with real CDP keyboard and mouse input in
+   Chromium. Arrow, Page Up, Home and End all move the value. A real drag
+   sets `data-scrubbing` mid-drag and clears it when released outside the
+   slider. A track click jumps there, and vertical runs bottom-to-top.
+   Screenshots confirmed centred thumbs at all three sizes, the fill,
+   buffered band and track in the timeline, vertical centring, RTL fill
+   from the right, and dark mode. The same stories in Playwright's
+   Firefox matched, which covers the Gecko half of `slider.css`. Two
+   first-run "failures" were the script reading the DOM in the same tick
+   as the input; with a short wait both settled correctly, as zoneless
+   change detection does.
+
+   **Worth knowing:** the event trace showed Chromium's range input
+   implicitly captures the pointer, so `pointerup` targets the slider
+   even when released elsewhere. The document-level listener is still
+   right for engines without implicit capture, and costs nothing here.
+
+   All 9 Slider stories plus the full existing suite (160 stories) pass
+   `test-run` (incl. a11y).
+4. [ ] **2A.** Build Progress Bar + tests.
+5. [ ] **2B.** Story: Progress Bar.
+6. [ ] **3.** Third component (to be named).
+7. [ ] **4.** Fourth component (to be named).
+8. [ ] **5.** Wave 6 gate: a real screen in `apps/sandbox` composing all
+   four.
+9. [ ] **6.** Release: bump `hmha-ui` to 1.2.0 (plus `hmha-tokens`, if
+   the wave added tokens), merge, tag.
+
+---
+
 ## Open items
 
 - **The blue is a placeholder.** Swap the hue in `tokens/primitive/color.json`

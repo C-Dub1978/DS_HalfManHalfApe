@@ -37,6 +37,7 @@ export * from './lib/radio/radio-group';
 export * from './lib/select/select-listbox';
 export * from './lib/select/select-option';
 export * from './lib/select/select-trigger';
+export * from './lib/slider/slider';
 export * from './lib/stepper/step';
 export * from './lib/stepper/step-list';
 export * from './lib/stepper/step-list-context';
