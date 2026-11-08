@@ -2641,7 +2641,36 @@ matching majors, every check green, no console errors).
 the user's request, rather than a PR per component. ~~Four~~ **Six**
 components (the user widened the wave after step 2B). Named so far, in
 order: **Slider**, **Progress Bar**, **Spinner**, **Skeleton**, **Avatar**
-(a person), **Badge** (a status, tag or count). Stackfi (an Angular 22 media-streaming app, the
+(a person), **Badge** (a status, tag or count).
+
+**Widened again after Badge:** **File Upload**, then the rest of what
+Stackfi's planning needs, gathered as one list so the wave has a single
+gate and a single 1.2.0 release rather than a partial set and a
+follow-up (the user has no deadline and wants HMHA finished for a while).
+Checked against the library before being scheduled:
+
+- **Alert** (new): a persistent inline message (info, success, warning,
+  error). Nothing existing covers it: `HmhaToast` disappears, `HmhaField`'s
+  error is per-field. The success "banner" in the Wave 2 sandbox gate was
+  hand-styled app markup, never a library component.
+- **Empty State** (new): icon, heading, text, action.
+- **Segmented Control** (new): one-of-several, always one selected,
+  likely native radios styled as joined buttons (fork 11's ground).
+- **Toggle button: an addition, not a component.** A `pressed` input on
+  `HmhaButton` (`aria-pressed`), which `HmhaIconButton` inherits by
+  stacking on it. `HmhaChip` already has `aria-pressed` but is tag-styled.
+- **Textarea: an addition, not a component.** `HmhaInput` also matches
+  `<textarea>` (it only matched `<input>`), keeping one Forms/Field
+  integration.
+- **Nav List** (new): links with active-item styling keyed off
+  `aria-current="page"`, which `routerLinkActive`'s `ariaCurrentWhenActive`
+  sets, so there's still no `@angular/router` dependency. The app shell
+  itself (top bar, collapsing side nav) stays in Stackfi, consistent with
+  fork 26's "no persistent drawer; consumers lay out their own
+  `<nav>`/`<aside>`".
+
+All additive, so the release stays a minor version. Each still gets its
+own proposal step. Stackfi (an Angular 22 media-streaming app, the
 library's first real consumer) is the driver: Slider becomes its seek
 timeline and volume control, and Progress Bar its upload and transcode
 status.
@@ -3057,6 +3086,67 @@ Avatar's initials are letters, so they're unaffected.
 
 ---
 
+## 41 — File Upload: upload UI only, the consumer owns every byte of transport
+
+**Decided (proposal approved before any code):** the File Upload
+component is upload *UI* and never makes a network request. It owns the
+drop target and the file picker (a native `<input type="file" multiple>`
+underneath, so keyboard, screen readers, mobile pickers and the camera
+work), optional pre-flight checks (accepted types, maximum size, maximum
+count, reported as rejections with reasons), rendering one row per
+file from the wave's own pieces (`HmhaProgressBar`, `HmhaBadge`,
+`HmhaIconButton`), a per-row slot for the consumer's own metadata fields,
+and screen-reader announcements of adds, completions and failures. It
+emits *intents*: files added, cancel, retry, remove, pause and resume.
+
+The consumer (Stackfi, or an engine it chooses) owns everything else:
+the list of uploads and their state, passed in as a read-only array of
+`{ id, name, size, progress, status, error?, metadata? }`; chunking;
+multipart and presigned URLs; retries; concurrency; resume; progress
+throttling; and metadata's schema and storage. That's fork 21's pattern
+again (the component renders and emits intents, the consumer owns the
+state and data), applied to transport.
+
+**Why: it keeps the library transport-agnostic.** The list of uploads is
+the whole integration point, so Uppy, tus, raw S3 multipart or hand-written
+`fetch`/XHR all plug in by keeping that array current. `@uppy/core` is
+headless and its S3 plugin does presigned multipart, which matches
+Stackfi's MinIO plan, so the README will carry an Uppy wiring recipe. That
+means no dependency: `hmha-ui` never imports Uppy. FilePond was assessed
+honestly and doesn't fit the same way: it's chiefly a UI library that
+renders its own drop area and list, so it's an alternative to this
+component, not an engine underneath it.
+
+**Rejected: the component doing transport** (built-in XHR progress, a
+chunker). That would couple the library to one upload strategy and fight
+any consumer using a real engine. The user confirmed the split.
+
+**In scope from the start, by the user's choice given no deadline:**
+- **Folder drops:** a dropped folder adds every file inside it, through
+  the browser's directory-entry API. Stackfi's planning doc lists folder
+  import as a stretch goal.
+- **Thumbnails:** image previews in rows for image files, with their
+  object URLs revoked so memory doesn't leak. Video and audio stay icons.
+- **Paste to upload:** pasted files or screenshots are added, as a
+  keyboard-friendly shortcut.
+
+**Known challenges, named up front:**
+- Drag and drop quirks: enter/leave flicker across child elements, a drop
+  just outside the zone navigating the page (or the whole Electron window),
+  folders needing the directory API, and no drag at all on mobile.
+- Accessibility: drag-only fails WCAG's dragging-alternative rule, so the
+  picker is the primary path. Progress must not flood screen readers, so
+  only start, finish and failure are announced.
+- `fetch` can't report upload progress: that's the transport's problem
+  (XHR, per-chunk progress, or Uppy), documented in the README.
+- Memory: the component holds `File` references only and never reads
+  contents.
+- Testing: Karma can construct a `DataTransfer` and dispatch a drop, but
+  a real drag from the desktop needs Playwright, per `CLAUDE.md`'s
+  which-layer rule.
+
+---
+
 ## Wave 6 progress — the step tracker
 
 **This section is the single source of truth for Wave 6 status**, the
@@ -3068,7 +3158,7 @@ section. This section only tracks where we are.
 
 Component order follows fork 34.
 
-**CURRENT STEP: 7**: Wave 6 gate, waiting for the go-ahead.
+**CURRENT STEP: 7b**: File Upload build, waiting for the go-ahead.
 
 1. [x] **1a.** Propose Slider's foundation. Approved: native
    `<input type="range">` (Option A), one `model()` shared with Forms, and
@@ -3289,9 +3379,24 @@ Component order follows fork 34.
 
     432/432 in `hmha-ui`, 24/24 in `sandbox`; all 6 Badge stories plus the
     full existing suite (191 stories) pass `test-run` (incl. a11y).
-12. [ ] **7.** Wave 6 gate: a real screen in `apps/sandbox` composing all
-    six.
-13. [ ] **8.** Release: bump `hmha-ui` to 1.2.0 and `hmha-tokens` to
+12. [x] **7a.** Propose File Upload's foundation. Approved: upload UI only,
+    the consumer owns all transport and state, with folder drops,
+    thumbnails and paste in scope. Recorded as fork 41.
+12b. [ ] **7b.** Build File Upload + tests. Likely split into sub-steps
+    (dropzone, file list and rows, extras) once it starts.
+12c. [ ] **7c.** Story: File Upload, with a fake upload engine proving the
+    consumer-owned contract, and a real-drag Playwright check.
+13. [ ] **8a–c.** Alert: proposal, build + tests, stories.
+14. [ ] **9a–c.** Empty State: proposal, build + tests, stories.
+15. [ ] **10a–c.** Toggle button (`pressed` on `HmhaButton`): proposal,
+    build + tests, stories.
+16. [ ] **11a–c.** Textarea (`HmhaInput` on `<textarea>`): proposal, build +
+    tests, stories.
+17. [ ] **12a–c.** Segmented Control: proposal, build + tests, stories.
+18. [ ] **13a–c.** Nav List: proposal, build + tests, stories.
+19. [ ] **14.** Wave 6 gate: a real screen in `apps/sandbox` composing every
+    component in the wave.
+20. [ ] **15.** Release: bump `hmha-ui` to 1.2.0 and `hmha-tokens` to
     1.1.0 (the wave added `track.thickness`), merge, tag.
 
 ---
