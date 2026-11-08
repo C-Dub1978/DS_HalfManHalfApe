@@ -3236,6 +3236,84 @@ untouched.
 
 ---
 
+## 42 — Alert: a persistent inline message, announced only when asked
+
+**Decided (proposal approved before code):** `HmhaAlert` is
+`div[hmhaAlert]`, a component on a native `<div>`: a tone icon, the
+consumer's content, an optional `[hmhaAlertActions]` row and an optional
+Dismiss button. It fills the gap Stackfi's planning found. `HmhaToast`
+disappears and `HmhaField`'s error belongs to one input, while an alert
+stays inline for a whole form or page. The Wave 2 sandbox "success banner"
+was hand-styled app markup, never a component.
+
+**Tones:** `HmhaAlertTone` = `info | success | warning | danger`, its own
+small union. `info` reads better than reusing `HmhaTone`'s `primary` ("a
+primary alert"), and uses the same action colours. There's no neutral
+tone: an untoned alert is a Card. Each tone is its `*-subtle` fill with
+its `*-text` foreground (`action` on `action-subtle` for info), four pairs
+already CI-checked at 4.5:1. The icon uses the text colour so it clears
+the same bar. A unit test measures the painted text against the painted
+fill for every tone in both modes.
+
+**Accessibility, the design's centre:**
+- **The tone is spoken.** The icon wrapper is `role="img"` named "Info",
+  "Success", "Warning" or "Error", so colour and shape aren't the only
+  carriers (WCAG 1.4.1).
+- **`announce` is chosen per use, not per tone:** `'none'` (default, for
+  an alert present on load, read in page order), `'polite'` or
+  `'assertive'`. The announcement is "tone: title message" without action
+  labels, once, after first render, through CDK's `LiveAnnouncer` (like
+  the dropzone and upload rows) rather than `role="alert"`/`"status"`,
+  because newly inserted live regions are announced unreliably,
+  especially polite ones. Defaulting to `'none'` designs out the commonest
+  Alert mistake: every error assertive, interrupting on page load.
+- **Dismissing is the consumer's:** `dismissible` adds a button named
+  "Dismiss", and `dismissed` fires. The alert never removes itself (fork
+  21's consumer-owns-state rule). The README covers moving focus after.
+
+**A small structural call:** the title is its own tiny component,
+`HmhaAlertTitle` (`[hmhaAlertTitle]`, any element), purely so it can style
+its own host. The alert's encapsulated styles can't reach projected
+content, and `::ng-deep` is banned (fork 05). The consumer picks
+`<strong>` or a real `<h3>`.
+
+**Two bugs caught before they shipped:**
+- **The icon box had no height.** It was first sized with
+  `var(--hmha-type-body-md-line)`, which is unitless (1.5) and therefore
+  invalid as a length, so the browser silently dropped it. Lint can't see
+  that. Fixed with `1lh` (exactly one line), and pinned by a test that was
+  confirmed to fail ("Expected 20 to be close to 24") with the token
+  swapped back.
+- **The axe check flagged the action button in dark mode.** That was the
+  known `HmhaButton` background-transition timing, not a product bug.
+  Fixed with the same 150ms wait `button.spec.ts`/`pagination.spec.ts`
+  already use.
+
+**Not built, stated:** auto-dismiss (Toast's job), an alert stack, and a
+form-error summary that reads the form itself.
+
+**Found in 8c's real-browser screenshots, not by tests or Storybook's
+axe** (which runs in light mode only):
+- **Links inside a dark-mode alert were unreadable.** They showed the
+  browser's default blue on the dark red. The library has no link style
+  at all (now an open item), and Alert can't reach projected links. The
+  README and the form-error-summary story now use `color: inherit`, so
+  links take the alert's CI-checked text colour.
+- **An `<h3>` title took the global heading face** (fork 30's `h1`–`h6`
+  rule), so it didn't match a `<strong>` title. `HmhaAlertTitle` now sets
+  the body family itself, pinned by a test.
+
+**A stale-bundle false failure:** the upload-failed story first failed on
+focus because my demo used a template reference on a component host,
+which resolves to the component, not the element, so `.nativeElement`
+was undefined. After the `{ read: ElementRef }` fix, `test-run` reported
+the same failure again, with the same live-region id. A direct Playwright
+reproduction showed focus correctly returned, and a re-run passed:
+`addon-vitest` had served the previous bundle once. Worth knowing next to
+`CLAUDE.md`'s other dev-server quirks.
+
+---
+
 ## Wave 6 progress — the step tracker
 
 **This section is the single source of truth for Wave 6 status**, the
@@ -3247,7 +3325,7 @@ section. This section only tracks where we are.
 
 Component order follows fork 34.
 
-**CURRENT STEP: 8a**: Alert foundation proposal, waiting for the go-ahead.
+**CURRENT STEP: 9a**: Empty State foundation proposal, waiting for the go-ahead.
 
 1. [x] **1a.** Propose Slider's foundation. Approved: native
    `<input type="range">` (Option A), one `model()` shared with Forms, and
@@ -3554,7 +3632,24 @@ Component order follows fork 34.
 
     All 10 File Upload stories plus the full existing suite (201 stories)
     pass `test-run` (incl. a11y).
-13. [ ] **8a–c.** Alert: proposal, build + tests, stories.
+13. [x] **8a–c.** Alert:
+    - [x] **8a.** Proposal. Approved: `div[hmhaAlert]`, tones `info |
+      success | warning | danger`, `announce` defaulting to `'none'`,
+      consumer-owned dismissal. Recorded as fork 42.
+    - [x] **8b.** Build + tests: `libs/ui/src/lib/alert/` (`alert.ts` with
+      `HmhaAlert` + `HmhaAlertTitle`, `alert.css`, `alert.spec.ts`,
+      `README.md`), plus the library README's catalog. 11 new unit tests
+      (502/502 in `hmha-ui`, 24/24 in `sandbox`), all checks clean. Two
+      catches recorded in fork 42.
+    - [x] **8c.** Stories: `alert.stories.ts` (Playground, Tones,
+      MessageOnly, FormErrorSummary, DismissibleInteraction,
+      UploadFailedInteraction). The last proves the announcement for real:
+      CDK's live region holds "Error: Upload failed movie.mkv is larger
+      than your remaining storage." with `aria-live="assertive"`, then
+      Dismiss removes the alert through the demo's own `@if` and focus
+      returns to the Upload button. Screenshots (Chromium, Firefox, both
+      modes) found two visual issues, fixed above. 502/502 in `hmha-ui`,
+      24/24 in `sandbox`; all 207 stories pass `test-run` (incl. a11y).
 14. [ ] **9a–c.** Empty State: proposal, build + tests, stories.
 15. [ ] **10a–c.** Toggle button (`pressed` on `HmhaButton`): proposal,
     build + tests, stories.
@@ -3577,6 +3672,12 @@ Component order follows fork 34.
   dense-data rather than dense-chrome, consider 32px controls with 8px padding.
 - **Amber-500 is the one base fill needing dark foreground text.** A small
   asymmetry you could design away by darkening it.
+- **There's no link style.** No link colour role and no link component, so
+  links fall back to the browser's default blue. Found through Alert (Wave
+  6 step 8c): default blue on a dark-mode tone is close to unreadable.
+  Alert's README tells consumers to use `color: inherit`; a real fix is a
+  `link` colour role (with a CI pair against every surface it can sit on)
+  or a small link directive.
 - **High-contrast mode** is a third value on the mode axis, not new machinery.
   The architecture supports it; do the ramp work once real components exist to
   test against.

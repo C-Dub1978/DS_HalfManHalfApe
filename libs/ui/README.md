@@ -1,7 +1,7 @@
 # @halfmanhalfape/hmha-ui
 
 A standalone, signals-based Angular component library for the Half Man
-Half Ape design system — 31 components, zero `NgModule`s, every visual
+Half Ape design system — 32 components, zero `NgModule`s, every visual
 value overridable at runtime through CSS custom properties.
 
 - [Install](#install)
@@ -106,6 +106,7 @@ the full reference.
 
 | Component | Selector | Docs |
 | --- | --- | --- |
+| Alert | `div[hmhaAlert]` (+ `[hmhaAlertTitle]`) | [`src/lib/alert/README.md`](./src/lib/alert/README.md) |
 | Avatar | `span[hmhaAvatar]` | [`src/lib/avatar/README.md`](./src/lib/avatar/README.md) |
 | Badge | `span[hmhaBadge]` | [`src/lib/badge/README.md`](./src/lib/badge/README.md) |
 | Button | `button[hmhaButton]` | [`src/lib/button/README.md`](./src/lib/button/README.md) |
