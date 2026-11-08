@@ -1,0 +1,44 @@
+/* spinner.css — declare the override API, then consume it.
+   Not one literal colour, length or duration in the file. */
+:host {
+  --hmha-spinner-size: var(--hmha-icon-md);
+  /* Whatever text it sits beside: white inside a primary button, the
+     page's text colour on its own. */
+  --hmha-spinner-color: currentColor;
+  --hmha-spinner-duration: calc(var(--hmha-duration-base) * 4);
+
+  display: inline-flex;
+  flex-shrink: 0;
+  inline-size: var(--hmha-spinner-size);
+  block-size: var(--hmha-spinner-size);
+  color: var(--hmha-spinner-color);
+}
+
+:host([data-size="sm"]) { --hmha-spinner-size: var(--hmha-icon-sm); }
+:host([data-size="lg"]) { --hmha-spinner-size: var(--hmha-icon-lg); }
+
+/* The icon in this component's own template, sized through HmhaIcon's
+   documented override token, so any --hmha-spinner-size works (a
+   page-level loader), not only the three icon steps. */
+hmha-icon {
+  --hmha-icon-size: var(--hmha-spinner-size);
+
+  animation: hmha-spinner-rotate var(--hmha-spinner-duration) linear infinite;
+}
+
+/* One full turn: geometry, not a design value. */
+@keyframes hmha-spinner-rotate {
+  to { rotate: 1turn; }
+}
+
+/* No rotation for anyone who's asked for less motion: it pulses in place
+   instead, the same reduced-motion treatment as HmhaProgressBar. */
+@media (prefers-reduced-motion: reduce) {
+  hmha-icon {
+    animation: hmha-spinner-pulse calc(var(--hmha-spinner-duration) * 2) ease-in-out infinite;
+  }
+}
+
+@keyframes hmha-spinner-pulse {
+  50% { opacity: 0.4; }
+}

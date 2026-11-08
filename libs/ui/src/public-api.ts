@@ -2,6 +2,8 @@
  * Public API Surface of hmha-ui
  */
 
+export * from './lib/avatar/avatar';
+export * from './lib/badge/badge';
 export * from './lib/button/button';
 export * from './lib/button/icon-button';
 export * from './lib/card/card';
@@ -32,12 +34,15 @@ export * from './lib/menu/menu-context';
 export * from './lib/menu/menu-item';
 export * from './lib/menu/menu-trigger';
 export * from './lib/pagination/pagination';
+export * from './lib/progress-bar/progress-bar';
 export * from './lib/radio/radio';
 export * from './lib/radio/radio-group';
 export * from './lib/select/select-listbox';
 export * from './lib/select/select-option';
 export * from './lib/select/select-trigger';
+export * from './lib/skeleton/skeleton';
 export * from './lib/slider/slider';
+export * from './lib/spinner/spinner';
 export * from './lib/stepper/step';
 export * from './lib/stepper/step-list';
 export * from './lib/stepper/step-list-context';

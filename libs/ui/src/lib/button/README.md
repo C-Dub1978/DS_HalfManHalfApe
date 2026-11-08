@@ -13,7 +13,7 @@ keyboard behaviour, form submission and `type`.
 | --- | --- | --- | --- |
 | `tone` | `'neutral' \| 'primary' \| 'danger' \| 'warning' \| 'success'` | `'neutral'` | Reflected as `data-tone`. |
 | `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Reflected as `data-size`; drives `--hmha-control-height*`. |
-| `loading` | `boolean` | `false` | Sets `aria-busy` and disables the control. Does not change label content — pair with your own spinner/`aria-live` region if you need one. |
+| `loading` | `boolean` | `false` | Sets `aria-busy` and disables the control. Does not change label content. For a visible spinner, project a `<hmha-spinner decorative size="sm" />` (see `spinner/README.md`); add an `aria-live` region if the outcome needs announcing. |
 | `disabled` | `boolean` | `false` | Sets the native `disabled` attribute. |
 
 ## Component tokens — the override API

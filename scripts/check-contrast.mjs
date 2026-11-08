@@ -30,6 +30,19 @@ const PAIRS = [
   ['success-text',    'success-subtle',  4.5],
   ['border-strong',   'surface',         3.0],  // interface chrome
   ['focus',           'bg',              3.0],  // the focus ring must be visible
+  // A track's fill against the track itself (Slider, Progress Bar): the
+  // fill's end is the information, so it must stand out (fork 36). Amber
+  // (warning) is deliberately absent; it can't reach 3:1 on any light
+  // track until the amber-500 open item is fixed.
+  ['action',          'bg-subtle',       3.0],
+  ['success',         'bg-subtle',       3.0],
+  ['danger',          'bg-subtle',       3.0],
+  // Badge text pairs not already covered above (fork 40): the neutral and
+  // primary subtle badges, and the neutral solid one. Every other
+  // tone/appearance pairing is an existing pair.
+  ['text-muted',      'bg-subtle',       4.5],
+  ['action',          'action-subtle',   4.5],
+  ['surface',         'text-muted',      4.5],
 ];
 
 const css = readFileSync(BUILT_CSS, 'utf8');

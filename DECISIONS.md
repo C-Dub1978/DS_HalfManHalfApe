@@ -2638,9 +2638,10 @@ matching majors, every check green, no console errors).
 
 **Decided:** a sixth wave, released together as one minor version
 (`hmha-ui` 1.2.0) from one branch (`chore/new-components`) and one PR, at
-the user's request, rather than a PR per component. Four components. Two
-are named so far: **Slider**, then **Progress Bar**. The other two get
-named when step 3 arrives. Stackfi (an Angular 22 media-streaming app, the
+the user's request, rather than a PR per component. ~~Four~~ **Six**
+components (the user widened the wave after step 2B). Named so far, in
+order: **Slider**, **Progress Bar**, **Spinner**, **Skeleton**, **Avatar**
+(a person), **Badge** (a status, tag or count). Stackfi (an Angular 22 media-streaming app, the
 library's first real consumer) is the driver: Slider becomes its seek
 timeline and volume control, and Progress Bar its upload and transcode
 status.
@@ -2745,6 +2746,317 @@ the README, with an additive fix if Stackfi's Capacitor phase needs it.
 
 ---
 
+## 36 — Progress Bar: native `<progress>`, three tones, and a lighter shared track
+
+**Decided:** `HmhaProgressBar` is `progress[hmhaProgressBar]`, an
+attribute component on the native `<progress>`. The browser supplies
+`role="progressbar"`, its value semantics and the indeterminate state.
+It's a display element: not focusable, no keyboard input, no
+`ControlValueAccessor`, no `HmhaField` (no required, invalid or hint state
+to wire). Labelled the native ways: `<label for>`, `aria-labelledby` or
+`aria-label`. As fork 35 decided, it shares no code with Slider, only the
+track.
+
+**Indeterminate is `value = null`, bound as an *attribute*.** A
+`<progress>` is indeterminate exactly when it has no `value` attribute.
+Once the `value` *property* has been set, nothing but removing the
+attribute returns it to that state. So `value` is `[attr.value]`, with
+null removing it, and a job can go from 62% back to "queued" (a retry).
+`0` stays a real, empty determinate bar. A unit test pins the round trip,
+and three tests were confirmed to fail with a property binding swapped in.
+
+**Tones, and why the shared track changed colour.** Stackfi wants a red
+"failed" and a green "complete" bar. Before building them, every fill was
+measured against the track it sits on, since the fill's end point is the
+information and WCAG 1.4.11 wants 3:1 for it. On the original track
+(`border`), blue passed in both modes, but green and red failed in dark
+mode (2.65:1) and amber in light (1.85:1). The fix: both components'
+track moved to `bg-subtle`. Blue, green and red then pass in both modes
+(lowest 3.42:1, green and red in dark). The user chose this over
+"primary only" and over keeping the failing track. It also fixes the
+Slider's red `invalid` fill in dark mode, which had the same 2.65:1 gap
+(its thumb, the part that identifies the value, always passed). The
+trade-off, accepted knowingly: the empty track is fainter against the
+page, most visibly in light mode on `bg`. It reads better on a `surface`
+card.
+
+- **Tones are `primary | success | danger`**, a new
+  `HmhaProgressBarTone`, not `HmhaTone`. `neutral` has no fill role, and
+  amber can't reach 3:1 on *any* light track, so `warning` waits on the
+  existing amber-500 open item rather than shipping below the bar.
+- **The guard is now in CI, not just in this decision:**
+  `scripts/check-contrast.mjs` asserts `action`, `success` and `danger`
+  at 3:1 on `bg-subtle` in both modes, so a later retheme can't quietly
+  undo it.
+
+**The indeterminate sweep** is a 40% fill segment painted on the host
+and moved with `background-position`, with each engine's own
+indeterminate bar made transparent so Blink and Gecko draw the same
+thing. It reverses in RTL. Under `prefers-reduced-motion: reduce` it
+doesn't travel: the whole track fills and pulses in opacity instead. Its
+duration is a component token, `calc(var(--hmha-duration-base) * 8)`, so
+no new duration token was needed. The 40% and the keyframe positions are
+sweep geometry, commented as such, not design values.
+
+**Not built, stated:** a `size` input (one thickness token covers
+Stackfi's uses, and `--hmha-progress-bar-thickness` overrides it),
+circular progress, and buffered progress (the Slider's `buffered` already
+covers a media timeline).
+
+---
+
+## 37 — Spinner: a custom element rotating the icon set's own glyph
+
+**Decided:** `HmhaSpinner` is `hmha-spinner`, a custom element whose
+template is one `<hmha-icon name="spinner">` (the Lucide arc already in the
+registry), rotated by CSS. It's a custom tag under `CLAUDE.md`'s "only
+where no native element fits" rule, because no native element draws a
+rotating arc. It joins `hmha-card`, `hmha-field` and `hmha-icon` as the
+library's only custom tags.
+
+**Rejected: `progress[hmhaSpinner]`,** the native `<progress>` drawn as a
+ring. It would have given `role="progressbar"` for free and matched
+Progress Bar (fork 36), but a `<progress>` can't hold the icon, and
+turning a bar into a ring means gradient and mask tricks on each engine's
+pseudo-elements. That's fragile styling to save one ARIA attribute.
+
+**Two accessibility modes:**
+- **Standalone (default):** `role="progressbar"` with no value and an
+  `aria-label` (`label`, default `"Loading"`). That's the standard spinner
+  semantics, and the same thing an `HmhaProgressBar` with no value is.
+- **`decorative`:** no role, no name, `aria-hidden="true"`, for a spinner
+  inside something that already announces it's busy. A loading
+  `HmhaButton` sets `aria-busy`, and an announced progress bar inside it
+  would both repeat that and leak into the button's name ("Save
+  Loading"). A unit test renders exactly that composition and checks it
+  with axe.
+
+**Button integration is composition, not a Button change.** `HmhaButton`'s
+README already told consumers to "pair with your own spinner". It now
+points at `<hmha-spinner decorative size="sm" />` instead. Making
+`loading` render a spinner by itself would change every existing loading
+button's look in a minor release, and would need Button to gain a
+template it has never had.
+
+**Colour and size.** `currentColor` by default, so it matches the text
+beside it (white inside a primary button). Sizes are the icon scale.
+Spinner sizes its glyph by setting `HmhaIcon`'s own documented override
+token (`--hmha-icon-size`) on the `hmha-icon` in its own template, not
+by reaching into the icon's internals, so `--hmha-spinner-size` takes any
+length (a page-level loader). Removing that one declaration was confirmed
+to fail the sizing test (the glyph stayed at 20px for `sm` and `lg`).
+
+**Motion.** One turn per `calc(var(--hmha-duration-base) * 4)`, a
+component token, so no new duration token was needed. Under
+`prefers-reduced-motion: reduce` it pulses in place instead of rotating,
+matching Progress Bar's reduced-motion treatment. The user was offered a
+pure-CSS show-after-a-delay option (to avoid a flash on fast loads) and
+didn't take it. It stays a cheap later addition.
+
+---
+
+## 38 — Skeleton: one block on a native span/div, layout stays the consumer's
+
+**Decided:** `HmhaSkeleton` is `span[hmhaSkeleton], div[hmhaSkeleton]`, a
+template-less attribute component. One block is one placeholder shape
+(`text`, `circle` or `rect`), and the consumer lays blocks out with the
+same markup the real content uses: skeleton cells in their real
+`HmhaTable` rows, skeleton posters in their real poster grid. That's
+`CLAUDE.md`'s native-element preference, and it's what makes "entire
+rows" work: a `<span>` goes inside a `<td>`.
+
+**Rejected: `hmha-skeleton` with built-in presets** (`preset="table-row"`,
+`preset="card"`). That's less markup, but each preset is a guess at
+Stackfi's layouts that breaks the first time a real row doesn't match.
+Fork 21's principle (the consumer owns layout and data) points the same
+way here as it did for the data grid.
+
+**Accessibility: blocks are always `aria-hidden`, the container says it's
+busy.** A placeholder has nothing to read, and a page of announced
+progress bars would be noise. The README's headline instruction is
+`[attr.aria-busy]="loading() || null"` on the container being loaded, plus
+a polite live region for a long wait, which stays page code because only
+the page knows when it's worth saying. No helper directive was built for
+`aria-busy`: one directive to set one attribute would be API without
+substance. A unit test renders the README's own table pattern
+(`<tbody aria-busy>` with skeleton rows) and checks it with axe in both
+modes.
+
+**Text rhythm without margins, after the linter said no.** The first
+draft centred a 1em bar in one line-height with
+`margin-block: calc((1lh - 1em) / 2)`. `lint:css` rejected the `lh`/`em`
+units on a margin property, correctly by the rule as written. Rather than
+work around the linter, the text shape became `display: inline-block`
+(1em tall). An inline box sits in its own line box, one line-height tall,
+so stacked text placeholders get the rhythm of real text from normal
+layout, with no spacing to tune. A test pins it (lines 24px apart at
+`line-height: 24px`), and was confirmed to fail ("Expected 16 to be close
+to 24") with `display: block` swapped back in.
+
+**Colour: a 12% tint of the text colour, after a fixed grey failed in the
+real browser.** A skeleton carries no information, so it has no WCAG
+contrast floor, but it does have to be visible. Step 4b picked `border` by
+measuring it on the page (`bg`) and `surface`, in both modes (1.18:1 to
+1.50:1). Step 4c's dark-mode screenshot of a skeleton inside `HmhaCard`
+showed it invisible: a card sits on `surface-raised`, not `surface`, and
+in dark mode `surface-raised` and `border` are the same neutral.800, so
+1.00:1. The 4b measurement had simply never included the ground a card
+uses. Re-measured on all three grounds in both modes: `border-strong` never
+vanishes, but at 3 to 4.7:1 reads as heavy as real UI chrome, while
+`color-mix(in oklch, var(--hmha-color-text) 12%, transparent)` stays at
+1.27:1 to 1.44:1 everywhere and tracks the text colour, so it holds on any
+surface added later. The user chose the tint (a visual change, so asked
+first). A unit test now composites the fill over all three grounds in
+both modes and requires better than 1.2:1, and was confirmed to fail on
+the old `border` fill ("dark on surface-raised: Expected 1 to be greater
+than 1.2"). It measures through a 1x1 canvas rather than a colour
+library, since `culori` (used by the contrast script) ships no types and
+wasn't worth a new dev dependency for one test.
+
+**Shapes and sizing.** `text` is full width and 1em tall. `circle` is a
+control's height and always square (`aspect-ratio: 1`). `rect` is full
+width at 16:9, a video thumbnail's proportions. `width`/`height` inputs take
+the consumer's own CSS lengths, the same shape as `HmhaDivider`'s
+`length` (fork 28), and an explicit height wins over the 16:9 default.
+
+**Motion: a gentle opacity pulse**, the user's choice over a shimmer
+sweep, and already the library's busy language (Progress Bar's and
+Spinner's reduced-motion fallback). Being a fade rather than movement,
+it keeps running under `prefers-reduced-motion`, at half the speed.
+
+**Not built, stated:** row or card presets, a `lines` input (repeat
+`text` blocks), and fading real content in on arrival.
+
+---
+
+## 39 — Avatar: a span that falls back from photo to initials to icon
+
+**Decided:** `HmhaAvatar` is `span[hmhaAvatar]`, a component on a native
+`<span>` whose template shows the first of three that works: the photo
+(`src`), initials from `name`, or the `user` icon. A `<span>` can hold an
+`<img>` and text alike, so it keeps `CLAUDE.md`'s native-element rule.
+
+**Rejected: `img[hmhaAvatar]`.** That's the most native option, but an
+`<img>` can't contain anything, so there would be nowhere to show
+initials when the photo is missing or broken. For Stackfi's user uploads,
+that's the common case, not the edge case.
+
+**Fallback mechanics.** A failed photo (404, expired signed URL) is
+caught by the image's own `error` event, with no timers, into an
+`imageFailed` `linkedSignal` keyed on `src`, so a new URL gets a fresh
+attempt automatically: the first `linkedSignal` in the library, and a
+textbook fit for "derived state the user can also write". Initials take
+the first letter or digit of the first and last words, read as whole
+code points (`Array.from` plus `\p{L}\p{N}`), so accented, CJK and
+punctuation-led names work and emoji are skipped. The logic is exported
+as `hmhaInitials()` and pinned by 10 cases.
+
+**Accessibility: the same two modes as Spinner (fork 37).** By default
+it's `role="img"`, named by `name` ("User" when there isn't one): an
+unnamed picture of a person is worse than a repeated name. `decorative`
+removes it from the accessibility tree, for an avatar beside the visible
+name. The inner `<img>` always has `alt=""`, so photo, initials and icon
+read identically.
+
+**Colour: one calm neutral, the user's choice over a per-person palette,**
+which would need about 6 new categorical, text-safe colour roles in both
+modes. That's real token work, addable later without an API change.
+Measured before writing CSS, with fork 38's lesson in hand: every fixed
+neutral fill vanishes on some ground (in light mode none clears 1.10:1
+against any surface). So the background is fork 38's tint,
+`color-mix(in oklch, var(--hmha-color-text) 12%, transparent)`, with
+`text-muted` initials. That has a useful side effect: a circle skeleton
+and a real initials avatar look alike, so loading to loaded doesn't
+jump. Initials are text, so a unit test composites the tint over page,
+surface and card in both modes and requires the circle above 1.2:1 and
+the initials at 4.5:1. It was confirmed to fail with a fixed `bg-subtle`
+fill (four grounds, down to 1.00:1 on a dark surface).
+`check-contrast.mjs` can't resolve `color-mix()`, so this pair lives in
+the unit test rather than CI's token script. The canvas-based colour
+helpers it uses moved from the Skeleton spec into
+`core/testing/paint.ts`, test-only and confirmed absent from `dist`.
+
+**Size.** `sm`/`md`/`lg` are the control heights (32, 40 and 48px), so an
+avatar lines up with a button beside it and shrinks with compact
+density like table rows do. `--hmha-avatar-size` takes any length.
+Initials scale at 40% of the size. Always a circle.
+
+**Not built, stated:** a status dot (Badge's territory, decided there),
+overlapping avatar groups, and photo cropping or upload.
+
+**Addendum (step 6c): a `label` input, found through Badge's status-dot
+pattern.** The README's first avatar-with-status pattern put the status
+in the name (`name="Chris Wilson (online)"`) so the hidden dot's meaning
+would be spoken. Its screenshot drew "CO": initials take the last word,
+and the last word was "(online)". `label` (optional) now overrides the
+accessible name while initials still come from `name`:
+`name="Chris Wilson" label="Chris Wilson, online"`. That's additive, and
+Avatar hadn't shipped. A unit test and the Badge story both pin "CW".
+
+---
+
+## 40 — Badge: never-interactive status and counts, split cleanly from Chip
+
+**Decided:** `HmhaBadge` is `span[hmhaBadge]`, a never-interactive
+component on a native `<span>` for what the app tells someone: a status
+("New", "Processing", "Failed") or a count. It has three forms: projected
+text, `count` (capped at `max`, default 99, as "99+"; a zero count hides
+the badge unless `showZero`), and `dot` (a small circle, no text).
+
+**The split from `HmhaChip`, approved as the rule of thumb for the
+README:** if someone can click it or chose it, it's a Chip; if the app is
+telling them something, it's a Badge. The display Chip already covered
+"a tag", so Badge doesn't duplicate it. Chip stays neutral, control-sized
+and optionally a real `<button>`, and Badge is toned, small and never
+interactive. A genre tag on a title is a Chip; "Processing" on an upload
+is a Badge.
+
+**Look: `tone` (the existing `HmhaTone`) times `appearance`
+(`subtle` | `solid`), `subtle` by default.** The user first answered
+"solid sounds best", which was built as "solid only" for a moment before
+they stopped it. They'd meant both appearances. No code had been written,
+so nothing needed undoing. All ten pairings are 4.5:1 text pairs in
+`check-contrast.mjs`, in both modes. Seven already existed (the four
+`text-on-*` solids, the three `*-text` on `*-subtle`), and three were
+added: neutral subtle (`text-muted` on `bg-subtle`, 7.42:1 / 10.95:1),
+primary subtle (`action` on `action-subtle`, 4.54:1 / 4.77:1) and neutral
+solid (`surface` on `text-muted`, 8.14:1 / 10.95:1). **Warning is in,
+unlike Progress Bar (fork 36):** that gap was amber as a thin fill against
+a track, while here amber is behind dark text (`text-on-warning`), a pair
+that already passes. A unit test measures the *painted* text against the
+painted fill for all ten pairings in both modes, so it checks the CSS
+wiring, not just the tokens. It was confirmed to fail (2.28:1, and axe
+agreed) with white text on the solid amber. Each tone's four colours are
+internal `--_hmha-badge-*` properties; `--hmha-badge-bg`/`-fg` are the
+override API.
+
+**A dot is always the tone's strong colour, whatever the appearance.** A
+subtle tint at 8px would barely show. A dot is `aria-hidden`, because
+colour alone can't carry meaning (WCAG 1.4.1), so whatever it says must be
+text elsewhere. The README's avatar status pattern puts it in the avatar's
+own name ("Chris Wilson (online)"). That settles the status dot fork 39
+left to Badge: plain consumer CSS pins a dot to an avatar's corner, with
+no positioning API.
+
+**Accessibility otherwise.** Text badges are plain text, deliberately not
+live regions (a list of badges each announcing itself would be noise);
+counts read as text inside their surrounding name ("Notifications 12").
+
+**Sizing with no new tokens.** The proposal flagged that a new spacing
+token might be needed. It wasn't: the badge is an inline icon's height
+(`--hmha-icon-md`, so it lines up with an icon in the same row) and at
+least as wide, so a single-digit count is round. Side padding is 0.75 of
+the density-aware control gap, and a dot is half the small icon. Text uses
+`label-sm`, its first consumer since fork 31 added it.
+
+**Addendum (step 6c): lining figures.** The counts screenshot showed
+Raleway's default old-style digits, sitting at different heights ("42"
+descends, "3" drops), which is wrong for a count. The badge now sets
+`font-variant-numeric: lining-nums tabular-nums`, pinned by a unit test.
+Avatar's initials are letters, so they're unaffected.
+
+---
+
 ## Wave 6 progress — the step tracker
 
 **This section is the single source of truth for Wave 6 status**, the
@@ -2754,10 +3066,9 @@ process rule itself (one step at a time, stop-and-wait between steps,
 the done criteria) lives in `CLAUDE.md`'s "Working through a wave"
 section. This section only tracks where we are.
 
-Component order follows fork 34. Steps 3 and 4 get itemized once the
-user names those components.
+Component order follows fork 34.
 
-**CURRENT STEP: 2A**: Progress Bar, waiting for the go-ahead.
+**CURRENT STEP: 7**: Wave 6 gate, waiting for the go-ahead.
 
 1. [x] **1a.** Propose Slider's foundation. Approved: native
    `<input type="range">` (Option A), one `model()` shared with Forms, and
@@ -2815,14 +3126,173 @@ user names those components.
 
    All 9 Slider stories plus the full existing suite (160 stories) pass
    `test-run` (incl. a11y).
-4. [ ] **2A.** Build Progress Bar + tests.
-5. [ ] **2B.** Story: Progress Bar.
-6. [ ] **3.** Third component (to be named).
-7. [ ] **4.** Fourth component (to be named).
-8. [ ] **5.** Wave 6 gate: a real screen in `apps/sandbox` composing all
-   four.
-9. [ ] **6.** Release: bump `hmha-ui` to 1.2.0 (plus `hmha-tokens`, if
-   the wave added tokens), merge, tag.
+4. [x] **2A.** Build Progress Bar + tests: `libs/ui/src/lib/progress-bar/`
+   (`progress-bar.ts`, `progress-bar.css`, `progress-bar.spec.ts`,
+   `README.md`). Recorded as fork 36. Measuring each fill against the
+   track before writing any tone CSS showed green, red and amber failing
+   3:1 somewhere. Asked the user (a visual change): chose tones plus a
+   lighter `bg-subtle` track shared with Slider, `warning` left out. Three
+   fill-on-track pairs added to `check-contrast.mjs`. Slider's track token
+   and README updated to match, and its 9 stories re-run green. 11 new
+   unit tests (383/383 in `hmha-ui`, 24/24 in `sandbox`),
+   `build:lib`/`lint:css`/`lint:standalone`/`tokens:contrast` clean.
+5. [x] **2B.** Story: Progress Bar: `progress-bar.stories.ts` (Playground,
+   Tones, Indeterminate, UploadWithValueText, EmptyNotIndeterminate,
+   RetryReturnsToQueueInteraction). The retry story uses a small local
+   `TranscodeJobDemo` host (a signal-backed job card, the same approach as
+   `ToastDemo`/`DataGridDemo`), so the determinate-to-indeterminate round
+   trip fork 36 designed for is driven by a real click, not set by hand.
+   Hit the documented brand-new-component styleUrl error on the first
+   `test-run`. The user had Storybook open in Chrome, so the restart
+   waited for their go-ahead (`CLAUDE.md`'s rule), then cleared it as usual.
+
+   Real-browser check (a throwaway Playwright script, Chromium and
+   Firefox): tones render identically in both engines and modes; the
+   indeterminate segment really travels (background-position moved
+   roughly 55% to 145% in half a second); RTL reverses it; and with reduced
+   motion emulated, both engines switch to the full-width pulse. The
+   keyframe name came out scoped (`_ngcontent-…_hmha-progress-bar-pulse`),
+   confirming emulated encapsulation scopes `@keyframes` too. One cosmetic
+   difference, left as is: the sweeping segment has square ends while a
+   determinate fill is rounded. Rounding a background-painted segment would
+   need gradient tricks for little gain, and Material's bar does the same.
+
+   All 6 Progress Bar stories plus the full existing suite (166 stories)
+   pass `test-run` (incl. a11y).
+6. [x] **3a.** Propose Spinner's foundation. Approved: Option A
+   (`hmha-spinner` rotating the existing `spinner` icon), standalone and
+   decorative modes, composition with `HmhaButton` rather than a Button
+   change, no show-after-delay option. Recorded as fork 37.
+7. [x] **3b.** Build Spinner + tests: `libs/ui/src/lib/spinner/`
+   (`spinner.ts`, `spinner.css`, `spinner.spec.ts`, `README.md`), plus
+   `HmhaButton`'s README now points at it and the library README lists it
+   (catalog and custom-element list). 9 new unit tests, including a
+   decorative spinner inside a loading `HmhaButton` checked with axe
+   (392/392 in `hmha-ui`, 24/24 in `sandbox`), `build:lib`/`lint:css`/
+   `lint:standalone`/`tokens:contrast` clean. No new tokens.
+8. [x] **3c.** Story: Spinner: `spinner.stories.ts` (Playground, Sizes,
+   SpecificLabel, Decorative, PageLoader, InLoadingButtonInteraction). The
+   interaction uses a local `SavingButtonDemo` (signal-backed), so clicking
+   Save really puts `HmhaButton` into `loading` with a decorative spinner
+   inside, and the play function confirms the button's accessible name
+   stays "Save". Hit the brand-new-component styleUrl error again on the
+   first `test-run`. This time only the Storybook MCP client was connected
+   (no user browser), so the restart went ahead without asking, per
+   `CLAUDE.md`.
+
+   Real-browser check (a throwaway Playwright script, Chromium and
+   Firefox): the glyph really rotates (about 90° in 200ms in both), reduced
+   motion switches both engines to the pulse, and screenshots show the
+   three sizes, a white spinner inside a primary loading button, and a
+   large page loader in dark mode. Two script-side mistakes were fixed
+   along the way, neither a component issue: a bare `button` selector
+   matched Storybook's own hidden preview buttons, and the story's play
+   function had already clicked Save by the time the script tried to.
+
+   All 6 Spinner stories plus the full existing suite (172 stories) pass
+   `test-run` (incl. a11y).
+9. [x] **4a.** Propose Skeleton's foundation. Approved: Option A
+   (`[hmhaSkeleton]` on a native span/div, layout stays the consumer's),
+   always `aria-hidden` with `aria-busy` on the container, and the gentle
+   opacity pulse (the user's pick over a shimmer). Recorded as fork 38.
+9b. [x] **4b.** Build Skeleton + tests: `libs/ui/src/lib/skeleton/`
+   (`skeleton.ts`, `skeleton.css`, `skeleton.spec.ts`, `README.md`), plus
+   the library README's catalog. `lint:css` rejected the first draft's
+   `lh`/`em` margin; reworked to `inline-block` rather than worked around
+   (fork 38). 8 new unit tests, including the README's own loading-table
+   pattern checked with axe (400/400 in `hmha-ui`, 24/24 in `sandbox`),
+   `build:lib`/`lint:css`/`lint:standalone`/`tokens:contrast` clean. No
+   new tokens.
+9c. [x] **4c.** Story: Skeleton: `skeleton.stories.ts` (Playground, Shapes,
+   Paragraph, MediaCard, PosterRow, LoadingTableRowsInteraction). The
+   interaction uses a local `LibraryTableDemo`: a real `HmhaTable` whose
+   `aria-busy` body holds skeleton rows until "Finish loading" swaps in
+   real rows and clears the busy state, the README pattern end to end.
+   Brand-new-component restart again; the user had Storybook open, so it
+   waited for their go-ahead.
+
+   **A real bug the real-browser check caught, not the unit tests or
+   axe:** in a dark-mode screenshot, skeletons inside `HmhaCard` were
+   invisible. A card sits on `surface-raised`, which in dark mode is the
+   same neutral.800 as the `border` fill picked in 4b (1.00:1), a ground
+   4b's measurement never included. Re-measured every candidate on page,
+   surface and card in both modes. The user chose a 12% tint of the text
+   colour (1.27:1 to 1.44:1 everywhere). A new unit test now guards it
+   across all three grounds, confirmed to fail on the old fill. Full
+   write-up in fork 38. The rest of the Playwright check (Chromium and
+   Firefox): the pulse really breathes (opacity sampled from about 0.84
+   down to 0.50 and back), reduced motion doubles its duration (1.6s to
+   3.2s), and poster rows hold 2:3.
+
+   9 Skeleton unit tests (401/401 in `hmha-ui`, 24/24 in `sandbox`); all
+   6 Skeleton stories plus the full existing suite (178 stories) pass
+   `test-run` (incl. a11y).
+10. [x] **5a.** Propose Avatar's foundation. Approved: Option A
+    (`span[hmhaAvatar]`, photo to initials to icon), named by default with
+    a `decorative` mode, one neutral colour (no per-person palette yet).
+    Recorded as fork 39.
+10b. [x] **5b.** Build Avatar + tests: `libs/ui/src/lib/avatar/`
+    (`avatar.ts`, `avatar.css`, `avatar.spec.ts`, `README.md`), plus the
+    library README's catalog. Colour measured before writing CSS; every
+    fixed fill failed somewhere, so it reuses Skeleton's tint (fork 39).
+    The canvas colour helpers moved to `core/testing/paint.ts`, shared
+    with the Skeleton spec. 20 new unit tests (10 `hmhaInitials` cases, 10
+    component; 421/421 in `hmha-ui`, 24/24 in `sandbox`),
+    `build:lib`/`lint:css`/`lint:standalone`/`tokens:contrast` clean. No
+    new tokens.
+10c. [x] **5c.** Story: Avatar: `avatar.stories.ts` (Playground,
+    FallbackOrder, Sizes, BrokenPhotoFallsBack, DecorativeBesideName,
+    InAButton, MatchesSkeleton). Photos are an inlined SVG data URI, so no
+    story touches the network. `BrokenPhotoFallsBack` points `src` at a
+    data URI that isn't an image, so the browser fires a genuine load
+    `error`, real-browser proof of the fallback the Karma spec can only
+    simulate by dispatching the event. Nobody was connected to Storybook
+    this time, so the new-component restart went ahead before the first
+    `test-run`, saving a round trip.
+
+    Real-browser check (a throwaway Playwright script, Chromium and
+    Firefox): both engines fire the real image error and fall back to
+    initials; screenshots show the fallback order, the control-height
+    sizes plus a 96px profile header with scaled initials, and, in dark
+    mode, a circle skeleton and the initials avatar that replaces it at
+    the same tint and size, as fork 39 claimed. No bugs found.
+
+    All 7 Avatar stories plus the full existing suite (185 stories) pass
+    `test-run` (incl. a11y).
+11. [x] **6a.** Propose Badge's foundation. Approved: the Chip/Badge split
+    as recommended, `span[hmhaBadge]` with text, count and dot forms, and
+    both `subtle` and `solid` appearances (subtle default), after a brief
+    "solid only" misreading the user caught before any code was written.
+    Recorded as fork 40.
+11b. [x] **6b.** Build Badge + tests: `libs/ui/src/lib/badge/` (`badge.ts`,
+    `badge.css`, `badge.spec.ts`, `README.md`), plus the library README's
+    catalog and a pointer from the Avatar README to the status-dot
+    pattern. Three new contrast pairs in `check-contrast.mjs`. 10 new unit
+    tests (431/431 in `hmha-ui`, 24/24 in `sandbox`),
+    `build:lib`/`lint:css`/`lint:standalone`/`tokens:contrast` clean. No
+    new tokens.
+11c. [x] **6c.** Story: Badge: `badge.stories.ts` (Playground,
+    TonesAndAppearances, Counts, Dots, AvatarStatusDot,
+    MarkAllReadInteraction). The interaction's local `NotificationsDemo`
+    proves a count reads inside its button's name ("Notifications 12")
+    and that zeroing it hides the badge and drops the number from the
+    name. The user had Storybook open, so the new-component restart
+    waited for their go-ahead.
+
+    **Two real findings from the screenshots, neither visible to unit
+    tests or axe:** the README's avatar status-dot pattern drew "CO" (the
+    status was in the avatar's `name`), fixed with a new optional
+    `HmhaAvatar` `label` input (fork 39 addendum); and counts rendered in
+    Raleway's old-style figures, fixed with `lining-nums` (fork 40
+    addendum). Both re-screenshotted in Chromium and Firefox after the
+    fix; Avatar's 7 stories re-run green too.
+
+    432/432 in `hmha-ui`, 24/24 in `sandbox`; all 6 Badge stories plus the
+    full existing suite (191 stories) pass `test-run` (incl. a11y).
+12. [ ] **7.** Wave 6 gate: a real screen in `apps/sandbox` composing all
+    six.
+13. [ ] **8.** Release: bump `hmha-ui` to 1.2.0 and `hmha-tokens` to
+    1.1.0 (the wave added `track.thickness`), merge, tag.
 
 ---
 

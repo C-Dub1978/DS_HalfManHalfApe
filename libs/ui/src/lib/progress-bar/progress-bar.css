@@ -1,0 +1,90 @@
+/* progress-bar.css — declare the override API, then consume it.
+   Not one literal colour, length or duration in the file.
+
+   Like the slider, <progress> has no children to style: its track and fill
+   are engine pseudo-elements, written once per engine (an unknown
+   pseudo-element in a selector list invalidates the whole rule), all
+   reading tokens declared once on :host. */
+:host {
+  /* The same track as HmhaSlider: one semantic thickness, one colour
+     every fill is CI-checked against at 3:1 (forks 35 and 36). */
+  --hmha-progress-bar-track-bg: var(--hmha-color-bg-subtle);
+  --hmha-progress-bar-fill-bg: var(--hmha-color-action);
+  --hmha-progress-bar-thickness: var(--hmha-track-thickness);
+  --hmha-progress-bar-indeterminate-duration: calc(var(--hmha-duration-base) * 8);
+
+  appearance: none;
+  display: block;
+  box-sizing: border-box;
+  inline-size: 100%;
+  block-size: var(--hmha-progress-bar-thickness);
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--hmha-radius-pill);
+  overflow: hidden;
+  /* Gecko paints the track from the host itself. */
+  background-color: var(--hmha-progress-bar-track-bg);
+}
+
+/* ── Blink / WebKit ────────────────────────────────────────────────────── */
+:host::-webkit-progress-bar {
+  border-radius: var(--hmha-radius-pill);
+  background-color: var(--hmha-progress-bar-track-bg);
+}
+
+:host::-webkit-progress-value {
+  border-radius: var(--hmha-radius-pill);
+  background-color: var(--hmha-progress-bar-fill-bg);
+  transition: inline-size var(--hmha-duration-base) var(--hmha-easing-standard);
+}
+
+/* ── Gecko ─────────────────────────────────────────────────────────────── */
+:host::-moz-progress-bar {
+  border-radius: var(--hmha-radius-pill);
+  background-color: var(--hmha-progress-bar-fill-bg);
+}
+
+/* ── Tones ─────────────────────────────────────────────────────────────── */
+:host([data-tone="success"]) { --hmha-progress-bar-fill-bg: var(--hmha-color-success); }
+:host([data-tone="danger"]) { --hmha-progress-bar-fill-bg: var(--hmha-color-danger); }
+
+/* ── Indeterminate ─────────────────────────────────────────────────────── */
+/* No value attribute: a fill segment sweeps across the track. It's painted
+   on the host itself, with each engine's own (absent or full-width)
+   indeterminate bar made transparent, so both engines draw the same thing.
+   The 40% segment and the keyframe positions are geometry, not design
+   values: a 40%-wide background travels from fully off the start edge
+   (-70%) to fully off the end edge (170%). */
+:host(:indeterminate) {
+  background-image: linear-gradient(var(--hmha-progress-bar-fill-bg), var(--hmha-progress-bar-fill-bg));
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: hmha-progress-bar-sweep var(--hmha-progress-bar-indeterminate-duration)
+    var(--hmha-easing-standard) infinite;
+}
+:host(:indeterminate)::-webkit-progress-bar { background-color: transparent; }
+:host(:indeterminate)::-moz-progress-bar { background-color: transparent; }
+
+/* The sweep follows the reading direction. */
+:host(:indeterminate:dir(rtl)) { animation-direction: reverse; }
+
+@keyframes hmha-progress-bar-sweep {
+  from { background-position: -70% 0; }
+  to { background-position: 170% 0; }
+}
+
+/* No travel for anyone who's asked for less motion: the whole track fills
+   and gently pulses instead, so "busy" still reads without anything moving
+   across the screen. */
+@media (prefers-reduced-motion: reduce) {
+  :host(:indeterminate) {
+    background-size: 100% 100%;
+    animation-name: hmha-progress-bar-pulse;
+    animation-timing-function: ease-in-out;
+  }
+}
+
+@keyframes hmha-progress-bar-pulse {
+  50% { opacity: 0.4; }
+}

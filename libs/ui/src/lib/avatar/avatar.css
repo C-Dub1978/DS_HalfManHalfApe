@@ -1,0 +1,46 @@
+/* avatar.css — declare the override API, then consume it.
+   Not one literal colour, length or font value in the file. */
+:host {
+  --hmha-avatar-size: var(--hmha-control-height);
+  /* The same tint as HmhaSkeleton: visible on the page, a surface and a
+     card in both modes, where every fixed neutral fill vanishes somewhere.
+     It also means a circle skeleton and a real initials avatar look alike,
+     so the swap from loading to loaded is seamless (fork 39). */
+  --hmha-avatar-bg: color-mix(in oklch, var(--hmha-color-text) 12%, transparent);
+  --hmha-avatar-fg: var(--hmha-color-text-muted);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  inline-size: var(--hmha-avatar-size);
+  block-size: var(--hmha-avatar-size);
+  border-radius: var(--hmha-radius-pill);
+  overflow: hidden;
+  vertical-align: middle;
+  background-color: var(--hmha-avatar-bg);
+  color: var(--hmha-avatar-fg);
+  font-family: var(--hmha-font-family);
+  font-weight: var(--hmha-type-label-md-weight);
+  /* Initials scale with the avatar, so they fit at any size. */
+  font-size: calc(var(--hmha-avatar-size) * 0.4);
+  line-height: 1;
+  user-select: none;
+}
+
+/* The control heights, so an avatar lines up with buttons beside it and
+   shrinks with compact density the way table rows do. */
+:host([data-size="sm"]) { --hmha-avatar-size: var(--hmha-control-height-sm); }
+:host([data-size="lg"]) { --hmha-avatar-size: var(--hmha-control-height-lg); }
+
+img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+hmha-icon {
+  --hmha-icon-size: calc(var(--hmha-avatar-size) * 0.6);
+}

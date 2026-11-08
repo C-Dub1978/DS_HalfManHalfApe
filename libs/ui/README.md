@@ -1,7 +1,7 @@
 # @halfmanhalfape/hmha-ui
 
 A standalone, signals-based Angular component library for the Half Man
-Half Ape design system — 25 components, zero `NgModule`s, every visual
+Half Ape design system — 30 components, zero `NgModule`s, every visual
 value overridable at runtime through CSS custom properties.
 
 - [Install](#install)
@@ -106,6 +106,8 @@ the full reference.
 
 | Component | Selector | Docs |
 | --- | --- | --- |
+| Avatar | `span[hmhaAvatar]` | [`src/lib/avatar/README.md`](./src/lib/avatar/README.md) |
+| Badge | `span[hmhaBadge]` | [`src/lib/badge/README.md`](./src/lib/badge/README.md) |
 | Button | `button[hmhaButton]` | [`src/lib/button/README.md`](./src/lib/button/README.md) |
 | IconButton | `button[hmhaButton][hmhaIconButton]` | [`src/lib/button/README.md`](./src/lib/button/README.md) |
 | Card | `hmha-card` | [`src/lib/card/README.md`](./src/lib/card/README.md) |
@@ -122,9 +124,12 @@ the full reference.
 | Input | `input[hmhaInput]` | [`src/lib/input/README.md`](./src/lib/input/README.md) |
 | Menu | `div[hmhaMenu]`, `button[hmhaMenuTrigger]`, `button[hmhaMenuItem]` | [`src/lib/menu/README.md`](./src/lib/menu/README.md) |
 | Pagination | `nav[hmhaPagination]` | [`src/lib/pagination/README.md`](./src/lib/pagination/README.md) |
+| Progress Bar | `progress[hmhaProgressBar]` | [`src/lib/progress-bar/README.md`](./src/lib/progress-bar/README.md) |
 | Radio / RadioGroup | `input[hmhaRadio]`, `fieldset[hmhaRadioGroup]` | [`src/lib/radio/README.md`](./src/lib/radio/README.md) |
 | Select | `button[hmhaSelectTrigger]`, `div[hmhaSelectListbox]`, `div[hmhaSelectOption]` | [`src/lib/select/README.md`](./src/lib/select/README.md) |
+| Skeleton | `span[hmhaSkeleton]`, `div[hmhaSkeleton]` | [`src/lib/skeleton/README.md`](./src/lib/skeleton/README.md) |
 | Slider | `input[hmhaSlider]` | [`src/lib/slider/README.md`](./src/lib/slider/README.md) |
+| Spinner | `hmha-spinner` | [`src/lib/spinner/README.md`](./src/lib/spinner/README.md) |
 | Stepper | `div[hmhaStepper]`, `div[hmhaStepList]`, `button[hmhaStep]`, `div[hmhaStepPanel]` | [`src/lib/stepper/README.md`](./src/lib/stepper/README.md) |
 | Switch | `button[hmhaSwitch]` | [`src/lib/switch/README.md`](./src/lib/switch/README.md) |
 | Table | `table[hmhaTable]`, `tr[hmhaTableRow]`, `th[hmhaTableHeaderCell]`, `td[hmhaTableCell]` | [`src/lib/table/README.md`](./src/lib/table/README.md) |
@@ -136,8 +141,8 @@ Prefer a native-element attribute selector over a custom tag wherever
 one fits (`button[hmhaButton]`, not `<hmha-button>`) — you keep real
 keyboard behaviour, form submission and semantics for free. A custom
 tag name only shows up where no native element fits (Dialog aside,
-which is a real `<dialog>`; `hmha-card`, `hmha-field`, `hmha-icon` are
-the only true custom elements in the library).
+which is a real `<dialog>`; `hmha-card`, `hmha-field`, `hmha-icon` and
+`hmha-spinner` are the only true custom elements in the library).
 
 ## Forms
 

@@ -1,0 +1,54 @@
+/* skeleton.css — declare the override API, then consume it.
+   Not one literal colour, length or duration in the file. */
+:host {
+  /* A light tint of the text colour, not a fixed grey: it reads at 1.27:1
+     to 1.44:1 on the page, a surface and a card, in both modes, and keeps
+     doing so on any surface added later. No fixed role managed that:
+     `border` equals a card's surface-raised in dark mode (fork 38). */
+  --hmha-skeleton-bg: color-mix(in oklch, var(--hmha-color-text) 12%, transparent);
+  --hmha-skeleton-radius: var(--hmha-radius-control);
+  --hmha-skeleton-duration: calc(var(--hmha-duration-base) * 8);
+
+  /* A text line: an inline-block bar one em tall. Being inline, each one
+     sits in its own line box, one line-height tall, so a stack of them
+     has the same vertical rhythm as the text it stands in for, with no
+     margins to tune. */
+  display: inline-block;
+  vertical-align: middle;
+  box-sizing: border-box;
+  inline-size: 100%;
+  block-size: 1em;
+  border-radius: var(--hmha-skeleton-radius);
+  background-color: var(--hmha-skeleton-bg);
+  animation: hmha-skeleton-pulse var(--hmha-skeleton-duration) ease-in-out infinite;
+}
+
+:host([data-shape="circle"]) {
+  --hmha-skeleton-radius: var(--hmha-radius-pill);
+
+  /* An avatar: a control's height by default, always square. */
+  display: block;
+  inline-size: var(--hmha-control-height);
+  block-size: auto;
+  aspect-ratio: 1;
+}
+
+:host([data-shape="rect"]) {
+  --hmha-skeleton-radius: var(--hmha-radius-surface);
+
+  /* A video thumbnail's proportions unless a height is given: geometry,
+     not a design value. An explicit block-size always wins over it. */
+  display: block;
+  block-size: auto;
+  aspect-ratio: 16 / 9;
+}
+
+@keyframes hmha-skeleton-pulse {
+  50% { opacity: 0.5; }
+}
+
+/* The pulse is a fade, not movement, so it stays for reduced motion, just
+   slower. */
+@media (prefers-reduced-motion: reduce) {
+  :host { animation-duration: calc(var(--hmha-skeleton-duration) * 2); }
+}

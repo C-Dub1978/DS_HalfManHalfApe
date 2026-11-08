@@ -7,7 +7,7 @@
    selector list), so each part is written twice, both reading the same
    tokens declared once on :host. */
 :host {
-  --hmha-slider-track-bg: var(--hmha-color-border);
+  --hmha-slider-track-bg: var(--hmha-color-bg-subtle);
   --hmha-slider-buffered-bg: var(--hmha-color-border-strong);
   --hmha-slider-fill-bg: var(--hmha-color-action);
   --hmha-slider-thumb-bg: var(--hmha-color-action);
