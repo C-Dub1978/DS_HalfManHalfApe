@@ -56,7 +56,7 @@ label or `valueText` too, since colour alone doesn't reach everyone.
 
 | Token | Default | Notes |
 | --- | --- | --- |
-| `--hmha-progress-bar-track-bg` | `var(--hmha-color-bg-subtle)` | The same track colour as `HmhaSlider`. |
+| `--hmha-progress-bar-track-bg` | `var(--hmha-color-surface-sunken)` | The same track colour as `HmhaSlider`: recessed in both modes, so it shows on surfaces and cards. On a bare dark page background it matches the page; override it there if needed. |
 | `--hmha-progress-bar-fill-bg` | `var(--hmha-color-action)` | Re-pointed per `data-tone`. |
 | `--hmha-progress-bar-thickness` | `var(--hmha-track-thickness)` | The semantic track role, shared with `HmhaSlider`. |
 | `--hmha-progress-bar-indeterminate-duration` | `calc(var(--hmha-duration-base) * 8)` | One sweep across the track. |

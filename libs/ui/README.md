@@ -1,7 +1,7 @@
 # @halfmanhalfape/hmha-ui
 
 A standalone, signals-based Angular component library for the Half Man
-Half Ape design system — 30 components, zero `NgModule`s, every visual
+Half Ape design system — 31 components, zero `NgModule`s, every visual
 value overridable at runtime through CSS custom properties.
 
 - [Install](#install)
@@ -120,6 +120,7 @@ the full reference.
 | Divider | `hr[hmhaDivider]` | [`src/lib/divider/README.md`](./src/lib/divider/README.md) |
 | Expansion Panel / Accordion | `details[hmhaExpansionPanel]`, `div[hmhaAccordion]` | [`src/lib/expansion-panel/README.md`](./src/lib/expansion-panel/README.md) |
 | Field | `hmha-field` | [`src/lib/field/README.md`](./src/lib/field/README.md) |
+| File Upload | `label[hmhaFileDropzone]`, `ul[hmhaUploadList]`, `li[hmhaUploadItem]` | [`src/lib/file-upload/README.md`](./src/lib/file-upload/README.md) |
 | Icon | `hmha-icon` | [`src/lib/icon/README.md`](./src/lib/icon/README.md) |
 | Input | `input[hmhaInput]` | [`src/lib/input/README.md`](./src/lib/input/README.md) |
 | Menu | `div[hmhaMenu]`, `button[hmhaMenuTrigger]`, `button[hmhaMenuItem]` | [`src/lib/menu/README.md`](./src/lib/menu/README.md) |

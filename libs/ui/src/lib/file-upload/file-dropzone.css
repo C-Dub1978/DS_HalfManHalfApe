@@ -1,0 +1,66 @@
+/* file-dropzone.css — declare the override API, then consume it.
+   Not one literal colour, length or duration in the file. */
+:host {
+  /* border-strong is CI-checked at 3:1 against the surface, so the dashed
+     edge of the zone is always visible. */
+  --hmha-file-dropzone-border: var(--hmha-color-border-strong);
+  --hmha-file-dropzone-bg: transparent;
+  --hmha-file-dropzone-fg: var(--hmha-color-text-muted);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hmha-control-gap);
+  box-sizing: border-box;
+  padding: var(--hmha-space-stack);
+  border: calc(var(--hmha-border-width) * 2) dashed var(--hmha-file-dropzone-border);
+  border-radius: var(--hmha-radius-surface);
+  background-color: var(--hmha-file-dropzone-bg);
+  color: var(--hmha-file-dropzone-fg);
+  font-family: var(--hmha-font-family);
+  font-size: var(--hmha-type-body-md-size);
+  line-height: var(--hmha-type-body-md-line);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color var(--hmha-duration-fast) var(--hmha-easing-standard),
+    border-color var(--hmha-duration-fast) var(--hmha-easing-standard);
+}
+
+/* The real file input: covering the zone, so its focus and bounds are the
+   zone's; invisible and click-through, so the label forwards clicks to it.
+   It stays in the accessibility tree, unlike display: none. */
+.hmha-file-dropzone-input {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+:host(:hover:not([data-disabled])) {
+  --hmha-file-dropzone-border: var(--hmha-color-action);
+}
+
+/* Files are being dragged over: action-on-action-subtle is a CI-checked
+   4.5:1 text pair. */
+:host([data-dragging]) {
+  --hmha-file-dropzone-border: var(--hmha-color-action);
+  --hmha-file-dropzone-bg: var(--hmha-color-action-subtle);
+  --hmha-file-dropzone-fg: var(--hmha-color-action);
+}
+
+/* The keyboard lands on the hidden input; the ring shows on the zone. */
+:host(:has(.hmha-file-dropzone-input:focus-visible)) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}
+
+:host([data-disabled]) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

@@ -5,7 +5,7 @@
      data-tone below. Every pairing (on-tint over tint, on-strong over
      strong) is a 4.5:1 text pair checked by check-contrast.mjs in both
      modes (fork 40). */
-  --_hmha-badge-tint: var(--hmha-color-bg-subtle);
+  --_hmha-badge-tint: var(--hmha-color-surface-sunken);
   --_hmha-badge-on-tint: var(--hmha-color-text-muted);
   --_hmha-badge-strong: var(--hmha-color-text-muted);
   --_hmha-badge-on-strong: var(--hmha-color-surface);

@@ -91,7 +91,7 @@ Volume works the same way, usually with `orientation="vertical"`,
 
 | Token | Default | Notes |
 | --- | --- | --- |
-| `--hmha-slider-track-bg` | `var(--hmha-color-bg-subtle)` | The unfilled, unbuffered track. Shared with Progress Bar; every fill colour is CI-checked at 3:1 against it (fork 36). |
+| `--hmha-slider-track-bg` | `var(--hmha-color-surface-sunken)` | The unfilled, unbuffered track. Shared with Progress Bar; every fill colour is CI-checked at 3:1 against it (fork 36). Shows on surfaces and cards in both modes; on a bare dark page background it matches the page. |
 | `--hmha-slider-buffered-bg` | `var(--hmha-color-border-strong)` | The buffered band. |
 | `--hmha-slider-fill-bg` | `var(--hmha-color-action)` | Re-pointed to `danger` when invalid. |
 | `--hmha-slider-thumb-bg` | `var(--hmha-color-action)` | Hover, scrubbing and invalid each re-point it. |

@@ -8,7 +8,7 @@
 :host {
   /* The same track as HmhaSlider: one semantic thickness, one colour
      every fill is CI-checked against at 3:1 (forks 35 and 36). */
-  --hmha-progress-bar-track-bg: var(--hmha-color-bg-subtle);
+  --hmha-progress-bar-track-bg: var(--hmha-color-surface-sunken);
   --hmha-progress-bar-fill-bg: var(--hmha-color-action);
   --hmha-progress-bar-thickness: var(--hmha-track-thickness);
   --hmha-progress-bar-indeterminate-duration: calc(var(--hmha-duration-base) * 8);

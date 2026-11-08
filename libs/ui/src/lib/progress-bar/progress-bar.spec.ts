@@ -123,12 +123,12 @@ describe('HmhaProgressBar', () => {
     }
   });
 
-  it('shares the slider’s track: the semantic thickness and the bg-subtle colour', () => {
+  it('shares the slider’s track: the semantic thickness and the surface-sunken colour', () => {
     const style = getComputedStyle(bar);
     const thickness = getComputedStyle(document.documentElement).getPropertyValue('--hmha-track-thickness').trim();
     expect(thickness).toBeTruthy();
     expect(style.getPropertyValue('--hmha-progress-bar-thickness').trim()).toBe(thickness);
-    expect(style.getPropertyValue('--hmha-progress-bar-track-bg').trim()).toBe(role('bg-subtle'));
+    expect(style.getPropertyValue('--hmha-progress-bar-track-bg').trim()).toBe(role('surface-sunken'));
   });
 
   it('sets aria-valuetext only when valueText is given', async () => {

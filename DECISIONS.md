@@ -2832,6 +2832,24 @@ Stackfi's uses, and `--hmha-progress-bar-thickness` overrides it),
 circular progress, and buffered progress (the Slider's `buffered` already
 covers a media timeline).
 
+**Amendment (Wave 6 step 7c): the shared track is `surface-sunken`, not
+`bg-subtle`.** Step 7c's dark-mode screenshots of upload rows showed
+progress tracks and neutral badge pills invisible: in dark mode
+`bg-subtle` is the same neutral.900 as `surface`, so 1.00:1 inside any
+row or panel on a surface. This decision had measured the track against
+the page and the fills, never against `surface`. Candidates were measured
+on all three grounds (page, surface, card) in both modes. A text-colour
+tint shows everywhere, but pulls the dark track toward the fills (about
+2:1). A darker shade can't go below the near-black dark page. In dark mode
+the three grounds span a range that any single track colour matches one
+of, so one ground had to give. `surface-sunken` (light neutral.100, dark
+neutral.950) reads as recessed in both modes, shows on surfaces and cards,
+and keeps every fill at 3.98:1 or better. The ground it gives up is the
+bare dark page background, the least likely place for a player control or
+upload row. The user chose it. The neutral *subtle* badge fill moved with
+it, for the same reason. CI's fill-on-track pairs and the neutral badge's
+text pair now point at `surface-sunken`, and all pass in both modes.
+
 ---
 
 ## 37 — Spinner: a custom element rotating the icon set's own glyph
@@ -3145,6 +3163,77 @@ any consumer using a real engine. The user confirmed the split.
   a real drag from the desktop needs Playwright, per `CLAUDE.md`'s
   which-layer rule.
 
+**Amendment (after 7b-i, from Stackfi's planning review):**
+- **Folders are rejected, not traversed:** a new rejection reason,
+  `'directory'`, detected through `DataTransferItem.webkitGetAsEntry()`.
+  This replaces the "folder drops" extra approved above; traversal is a
+  possible later feature. Without it, browsers hand a dropped folder over
+  as an unreadable zero-byte "file".
+- **`maxFiles` is per selection** (one pick, drop or paste), never a total.
+  The dropzone can't see what an engine like Uppy already has queued, so
+  the overall cap is the consumer's (`restrictions.maxNumberOfFiles`).
+- **Unset checks mean no checks:** with `accept`, `maxSize` and
+  `maxFiles` unset, every file passes untouched. Consumers whose upload
+  library validates should leave them unset, so there's one source of
+  truth.
+- **The window guard, pinned by tests:** it acts only on drags carrying
+  files, never stops propagation (a later window listener still sees the
+  drop), and lives exactly as long as at least one dropzone is mounted.
+  Each instance's listener is removed with it, and several cooperate
+  through `defaultPrevented` rather than a reference count, which gives
+  the same lifetime with no shared state.
+- **Repeat announcements:** CDK's `LiveAnnouncer` clears its live region
+  before every message (confirmed in its source), so an identical message
+  is spoken again. A test pins that the dropzone itself never
+  de-duplicates.
+- **`hmhaFormatBytes` stays decimal** (1 kB = 1000 B), documented with the
+  Windows Explorer difference (it divides by 1024 but still writes "GB").
+- **Rows will show the whole journey, not just the upload** (built in
+  7b-ii): after the bytes arrive, Stackfi transcodes, so a row's status
+  must reach `processing` (an indeterminate progress bar), then `ready` or
+  `failed`. Rows take inputs only and emit actions; each action button's
+  accessible name includes the file name ("Cancel upload of movie.mkv").
+
+**Rows, as built (7b-ii).** `HmhaUploadItem` (`li[hmhaUploadItem]`)
+inside `HmhaUploadList` (`ul[hmhaUploadList]`, with `role="list"` stated
+because Safari drops list semantics once bullets are styled away). A row
+takes inputs only (`name`, `size`, `progress` 0–100 or `null`, `status`,
+`statusLabel`, `error`, `pausable`) and emits payload-free outputs
+(`cancel`, `retry`, `pause`, `resume`, `remove`). The consumer's `@for`
+already knows which upload a row is. `HmhaUploadStatus` is `queued |
+uploading | paused | processing | ready | failed`, the user's "whole
+journey". `processing` always draws an indeterminate bar whatever
+`progress` says, confirmed by a deliberate break. Actions per status are
+the approved table, pinned by a table-driven test across every status,
+with and without `pausable`. Built from the wave's own pieces:
+`HmhaProgressBar`, `HmhaBadge`, `HmhaIconButton` (every action named with
+its file: "Cancel upload of movie.mkv"). A failed row's error is tied to
+Retry with `aria-describedby`, and its red text on the surface is a new
+CI pair (7.48:1 / 8.32:1). Announcements fire on a status change only,
+for `processing`, `ready` and `failed`, never per percent and never on
+first render. Two small bugs were caught in review, both pinned by
+tests: the failure announcement doubled a full stop when the consumer's
+error already ended with one (now "movie.mkv failed. Unsupported
+codec."), and the README's interpolated `statusLabel` would have blanked
+the badge, since `{{ null }}` becomes `''` (the fallback is now `||`, not
+`??`). The README carries an Uppy wiring sketch against Uppy's core API,
+flagged to check against the installed version. `hmha-ui` imports
+nothing from Uppy.
+
+**Thumbnails and paste, as built (7b-iii).** A row's `preview` input
+takes a `Blob`/`File` or a URL string. An image Blob gets an object URL
+created in an `effect` whose cleanup revokes it, on the next change and
+on destroy. A test pins both revocations and fails with the cleanup
+removed. Video and audio keep the file icon: a frame would mean decoding
+in the browser, which is the server's job. A URL string is used as it
+is, which suits a server-generated poster after `processing`. A broken
+preview falls back to the icon through a `linkedSignal`, like
+`HmhaAvatar`. Thumbnail and icon share one control-height box so rows
+align. Paste lives on the dropzone and only while it has focus, since a
+page-wide listener would hijack every paste, text fields included.
+Pasted files take the same checks and announcements, and a text paste is
+untouched.
+
 ---
 
 ## Wave 6 progress — the step tracker
@@ -3158,7 +3247,7 @@ section. This section only tracks where we are.
 
 Component order follows fork 34.
 
-**CURRENT STEP: 7b**: File Upload build, waiting for the go-ahead.
+**CURRENT STEP: 8a**: Alert foundation proposal, waiting for the go-ahead.
 
 1. [x] **1a.** Propose Slider's foundation. Approved: native
    `<input type="range">` (Option A), one `model()` shared with Forms, and
@@ -3382,10 +3471,89 @@ Component order follows fork 34.
 12. [x] **7a.** Propose File Upload's foundation. Approved: upload UI only,
     the consumer owns all transport and state, with folder drops,
     thumbnails and paste in scope. Recorded as fork 41.
-12b. [ ] **7b.** Build File Upload + tests. Likely split into sub-steps
-    (dropzone, file list and rows, extras) once it starts.
-12c. [ ] **7c.** Story: File Upload, with a fake upload engine proving the
-    consumer-owned contract, and a real-drag Playwright check.
+12b. [x] **7b.** Build File Upload + tests, in three sub-steps:
+    - [x] **7b-i.** `HmhaFileDropzone` (`label[hmhaFileDropzone]` around a
+      native file input) plus the pure helpers `hmhaFileMatchesAccept`,
+      `hmhaCheckFiles` and `hmhaFormatBytes` (`file-checks.ts`,
+      `format-bytes.ts`). The input stays in the accessibility tree,
+      covering the zone, invisible and click-through, so its focus and
+      bounds are the zone's with no visually-hidden pixel tricks. Drag
+      handling counts enter/leave depth (no flicker), ignores non-file
+      drags, and while mounted stops a file dropped outside the zone from
+      navigating the page. Checks also apply to drops, which bypass native
+      `accept`. Adds and rejections are announced politely through CDK's
+      `LiveAnnouncer`, in English for now. 26 new unit tests: 13 for the
+      helpers, 13 for the dropzone, driving real `DataTransfer`s with real
+      `File`s through its handlers. Two were confirmed to fail on purpose:
+      the flicker test with naive leave handling, and three tests when
+      drops skip the checks. 458/458 in `hmha-ui`, 24/24 in `sandbox`,
+      `build:lib`/`lint:css`/`lint:standalone`/`tokens:contrast` clean.
+      **Follow-up round (Stackfi review):** `'directory'` rejection, the
+      window guard's lifetime and manners, the unset pass-through, disabled
+      drags, repeat announcements and same-file re-picks, each now pinned by
+      a test (fork 41 amendment). Two confirmed to fail on purpose: the
+      reset test without `input.value = ''`, and the folder test with
+      folders passed through. One test-only mistake fixed (reusing a single
+      `FileList` across two picks, which no browser does). 467/467 in
+      `hmha-ui`, 24/24 in `sandbox`, all checks clean.
+    - [x] **7b-ii.** `HmhaUploadList` + `HmhaUploadItem` (`upload-list.ts`,
+      `upload-item.ts`/`.css`/`.spec.ts`), the README's rows section and
+      Uppy recipe, one new CI contrast pair (`danger-text` on `surface`).
+      16 new unit tests (483/483 in `hmha-ui`, 24/24 in `sandbox`), all
+      checks clean. Details in fork 41's "Rows, as built".
+    - [x] **7b-iii.** Thumbnails (`preview` on `HmhaUploadItem`) and paste
+      (on `HmhaFileDropzone`). Folder traversal moved out: folders are
+      rejected with `'directory'` instead (fork 41 amendment). 8 new unit
+      tests (491/491 in `hmha-ui`, 24/24 in `sandbox`), all checks clean.
+      Details in fork 41's "Thumbnails and paste, as built".
+12c. [x] **7c.** Story: File Upload: `file-dropzone.stories.ts` (Playground,
+    PickInteraction, ChecksAndRejectionsInteraction, PasteInteraction,
+    Disabled, CustomContentAndBrowseButton) and `upload-item.stories.ts`
+    (Playground, WholeJourney, LongName, FakeEngineJourneyInteraction). The
+    last drives a story-local fake upload engine purely through the
+    components' public inputs and outputs: two dropped files upload, one
+    fails at 60%, the other transcodes to ready, retry finishes the first,
+    and remove clears it. The user had Storybook open, so the restart
+    waited for their go-ahead.
+
+    **A test-authoring trap, caught by `test-run`:** Testing Library's
+    `fireEvent.drop(el, { dataTransfer })` builds a fresh, empty
+    DataTransfer (copying only the passed object's own enumerable
+    properties, and a real one has none), so no files arrived. That also
+    meant the Disabled story's "nothing added" was passing for the wrong
+    reason. Fixed with a story-local `dropFiles()` dispatching a real
+    `DragEvent`, as the Karma specs already did.
+
+    **Real-browser check (Playwright, Chromium and Firefox), stated
+    precisely:** Tab reaches the hidden input with the focus ring on the
+    zone; Space and a real click each open the browser's own file picker
+    (`multiple`); files chosen through that picker run the full journey to
+    `ready`; and in Chromium, a real Ctrl+V of a PNG written to the real
+    clipboard reaches the dropzone and its checks. A drag that starts on
+    the desktop can't be automated by any tool (it begins outside the
+    browser), so that remains a manual check. The story comment was
+    corrected to say exactly that, after first overclaiming.
+
+    **An open issue the dark-mode screenshots found (not caused by File
+    Upload, surfaced by it):** on a dark *surface*, the shared track
+    (`bg-subtle`, fork 36) and the neutral subtle badge fill are both the
+    surface's own colour (1.00:1), so progress tracks and neutral badge
+    pills vanish inside upload rows. The text and fills stay readable.
+    Measured candidates on all three grounds in both modes: a text-colour
+    tint shows everywhere but drops dark fills to about 2:1 against the
+    track; a darker shade can't go below the near-black dark page.
+    `surface-sunken` (light neutral.100, dark neutral.950) shows on
+    surfaces and cards in both modes and keeps every fill at 3.98:1 or
+    better, vanishing only on the bare dark page background. **The user
+    chose `surface-sunken`** (fork 36 amendment): Slider's and Progress
+    Bar's track and the neutral subtle badge moved to it, along with CI's
+    pairs, the Progress Bar spec and both READMEs. Re-screenshotted in
+    Chromium and Firefox: tracks and neutral pills are back in dark upload
+    rows. 491/491 in `hmha-ui`, 24/24 in `sandbox`; the affected Slider,
+    Progress Bar, Badge and File Upload stories re-run green.
+
+    All 10 File Upload stories plus the full existing suite (201 stories)
+    pass `test-run` (incl. a11y).
 13. [ ] **8a–c.** Alert: proposal, build + tests, stories.
 14. [ ] **9a–c.** Empty State: proposal, build + tests, stories.
 15. [ ] **10a–c.** Toggle button (`pressed` on `HmhaButton`): proposal,
