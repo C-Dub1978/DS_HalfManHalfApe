@@ -456,6 +456,25 @@ deliberately doesn't. The whole point is demonstrating that any
 consumer can already override this library's semantic color/type tokens
 at runtime, with zero new token work.
 
+**Wave 6 is done, released as `hmha-ui` 1.2.0 and `hmha-tokens` 1.1.0.**
+Built for Stackfi, a media-streaming app and the library's first real
+consumer: `HmhaSlider` (a native range input; one `model()` that Forms
+also reads, fork 35), `HmhaProgressBar`, `HmhaSpinner`, `HmhaSkeleton`,
+`HmhaAvatar`, `HmhaBadge`, File Upload (dropzone and upload rows, UI only,
+never transport, fork 41), `HmhaAlert`, `HmhaEmptyState`,
+`HmhaSegmentedControl`/`HmhaSegment` (native radios, fork 48) and
+`HmhaNavList`/`HmhaNavItem`/`HmhaNavGroup` (native links, current page
+from `aria-current`, disclosure groups, fork 49), plus additions to
+existing components: `pressed` on `HmhaButton` (fork 45), `HmhaInput` on
+`<textarea>` with `autoGrow` (fork 46) and a soft-limit character
+counter shown by `HmhaField` (fork 47). Proven together in a "Media
+library" screen in `apps/sandbox` (`media-library/`). The gate found
+three bugs that shipped in 1.0 and 1.1 (Tab Panel and Step Panel showing
+every panel, Drawer's end placement and height), fixed in 1.2.0; read
+fork 50 and the `[hidden]` note above before giving any component a
+`display`. Forks 33–50 cover the wave; `DECISIONS.md`'s **Wave 6
+progress** section has the step-by-step write-up.
+
 **`HmhaDivider` is done** (`hr[hmhaDivider]`, `libs/ui/src/lib/divider/`)
 — horizontal/vertical, a real `length` input (your own runtime CSS
 length, not a token), a real `color` input that forwards into the

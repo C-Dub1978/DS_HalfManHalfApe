@@ -3735,7 +3735,7 @@ section. This section only tracks where we are.
 
 Component order follows fork 34.
 
-**CURRENT STEP: 15**: Release (hmha-ui 1.2.0, hmha-tokens 1.1.0), waiting for the go-ahead.
+**CURRENT STEP: 15**: Release prepared; waiting on the user to merge and tag `v1.2.0`.
 
 1. [x] **1a.** Propose Slider's foundation. Approved: native
    `<input type="range">` (Option A), one `model()` shared with Forms, and
@@ -4238,6 +4238,18 @@ Component order follows fork 34.
       `test-run`; build and lint clean.
 20. [ ] **15.** Release: bump `hmha-ui` to 1.2.0 and `hmha-tokens` to
     1.1.0 (the wave added `track.thickness`), merge, tag.
+    - [x] **Prepared:** `hmha-ui` 1.2.0, `hmha-tokens` 1.1.0, and
+      `hmha-ui`'s peer range on tokens raised to `^1.1.0`. `track.thickness`
+      is the only token change since v1.1.0, and Slider and Progress Bar
+      depend on it, so 1.2.0 with tokens 1.0.x would draw broken tracks.
+      The hmha-ui README (peer range, `textarea[hmhaInput]`), the root
+      README's status and `CLAUDE.md`'s current state updated. The install
+      matrix passes on Angular 20, 21 and 22 with the 1.2.0/1.1.0
+      tarballs, and `npm run ci` (the publish job's own gate) passes:
+      576/576 and 37/37.
+    - [ ] **The user:** commit, PR `chore/new-components` into `main`,
+      merge, then `git tag v1.2.0 && git push origin v1.2.0`. The publish
+      workflow publishes tokens 1.1.0 first, then hmha-ui 1.2.0.
 
 ---
 
@@ -4249,6 +4261,15 @@ Component order follows fork 34.
   dense-data rather than dense-chrome, consider 32px controls with 8px padding.
 - **Amber-500 is the one base fill needing dark foreground text.** A small
   asymmetry you could design away by darkening it.
+- **`kitchen-sink.ts` imports `'@halfmanhalfape/hmha-ui'` by name,**
+  which resolves to `dist/`, while every other file in `libs/ui` imports
+  source. `kitchen-sink.spec.ts` therefore loads a second copy of the
+  library next to the source one, and the hmha-ui suite logs 8 `NG0912`
+  duplicate-component-ID warnings (Select trigger/listbox/option, Icon).
+  Test-only and pre-existing (since Kitchen Sink v1); the Kitchen Sink
+  isn't in the published package. It also means that spec tests whatever
+  was last built into `dist/`. Fix: import from the source paths. Found
+  while preparing 1.2.0.
 - **There's no link style.** No link colour role and no link component, so
   links fall back to the browser's default blue. Found through Alert (Wave
   6 step 8c): default blue on a dark-mode tone is close to unreadable.

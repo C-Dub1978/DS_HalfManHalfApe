@@ -60,9 +60,12 @@ npm run ci                 # everything above, in CI order
 verified by the CI install matrix (`scripts/verify-install-matrix.sh`).
 
 Phases 1 and 2 (the token foundation, the zoneless workspace and the install
-matrix) and five component waves are done: Icon, Button/IconButton, Card,
-Field, Input, Checkbox, Radio, Switch, Dialog/Drawer, Menu, Tooltip, Toast,
+matrix) and six component waves are done: Icon, Button/IconButton (with a
+pressed toggle state), Card, Field, Input/Textarea (with a character
+counter), Checkbox, Radio, Switch, Dialog/Drawer, Menu, Tooltip, Toast,
 Tabs, Select, Combobox, Pagination, Table, Data Grid, Chip, Expansion
-Panel/Accordion, Stepper and Divider. `libs/ui/README.md` has the full
+Panel/Accordion, Stepper, Divider, Slider, Progress Bar, Spinner,
+Skeleton, Avatar, Badge, File Upload, Alert, Empty State, Segmented
+Control and Nav List. `libs/ui/README.md` has the full
 consumer-facing catalog; `DECISIONS.md` has each wave's step tracker and the
 reasoning behind every component.

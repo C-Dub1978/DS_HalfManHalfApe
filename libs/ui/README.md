@@ -23,7 +23,7 @@ the design tokens (CSS custom properties + TypeScript types) they all
 consume. `hmha-ui` has no visual styling at all without `hmha-tokens`'
 CSS loaded somewhere on the page.
 
-`hmha-tokens` is declared as a **peer dependency** of `hmha-ui` (`^1.0.0`),
+`hmha-tokens` is declared as a **peer dependency** of `hmha-ui` (`^1.1.0`),
 so npm 7+ installs it automatically and warns on a version mismatch. List
 it explicitly anyway, as above: you reference its CSS file directly in
 `angular.json` (see [Quickstart](#quickstart)), so it belongs in your own
@@ -124,7 +124,7 @@ the full reference.
 | Field | `hmha-field` | [`src/lib/field/README.md`](./src/lib/field/README.md) |
 | File Upload | `label[hmhaFileDropzone]`, `ul[hmhaUploadList]`, `li[hmhaUploadItem]` | [`src/lib/file-upload/README.md`](./src/lib/file-upload/README.md) |
 | Icon | `hmha-icon` | [`src/lib/icon/README.md`](./src/lib/icon/README.md) |
-| Input | `input[hmhaInput]` | [`src/lib/input/README.md`](./src/lib/input/README.md) |
+| Input | `input[hmhaInput]`, `textarea[hmhaInput]` | [`src/lib/input/README.md`](./src/lib/input/README.md) |
 | Menu | `div[hmhaMenu]`, `button[hmhaMenuTrigger]`, `button[hmhaMenuItem]` | [`src/lib/menu/README.md`](./src/lib/menu/README.md) |
 | Nav List | `ul[hmhaNavList]`, `a[hmhaNavItem]`, `li[hmhaNavGroup]` | [`src/lib/nav-list/README.md`](./src/lib/nav-list/README.md) |
 | Pagination | `nav[hmhaPagination]` | [`src/lib/pagination/README.md`](./src/lib/pagination/README.md) |
