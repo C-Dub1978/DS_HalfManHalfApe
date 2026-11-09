@@ -66,6 +66,18 @@ describe('HmhaTabPanel', () => {
     expect(panels[1].hidden).toBe(false);
   });
 
+  // Rendered, not just attributed: :host's display once beat the browser's
+  // [hidden] rule, so every panel showed at once while this file's attribute
+  // checks all passed (found by the Wave 6 gate).
+  it('actually removes a hidden panel from the page, and shows the selected one', () => {
+    expect(getComputedStyle(panels[0]).display).toBe('block');
+    expect(getComputedStyle(panels[1]).display).toBe('none');
+    fixture.componentInstance.active.set('billing');
+    fixture.detectChanges();
+    expect(getComputedStyle(panels[0]).display).toBe('none');
+    expect(getComputedStyle(panels[1]).display).toBe('block');
+  });
+
   it('is axe-clean across both modes', async () => {
     for (const mode of ['light', 'dark'] as const) {
       document.documentElement.setAttribute('data-hmha-mode', mode);

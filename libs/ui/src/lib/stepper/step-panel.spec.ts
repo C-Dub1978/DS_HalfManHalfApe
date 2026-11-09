@@ -53,4 +53,17 @@ describe('HmhaStepPanel', () => {
     expect(panels[0].hidden).toBe(true);
     expect(panels[1].hidden).toBe(false);
   });
+
+  // Rendered, not just attributed: :host's display once beat the browser's
+  // [hidden] rule, so every step's panel showed at once while the attribute
+  // checks above all passed (found by the Wave 6 gate).
+  it('actually removes a hidden panel from the page, and shows the current one', () => {
+    const { fixture, panels } = create();
+    expect(getComputedStyle(panels[0]).display).toBe('block');
+    expect(getComputedStyle(panels[1]).display).toBe('none');
+    fixture.componentInstance.active.set('shipping');
+    fixture.detectChanges();
+    expect(getComputedStyle(panels[0]).display).toBe('none');
+    expect(getComputedStyle(panels[1]).display).toBe('block');
+  });
 });

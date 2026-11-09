@@ -3679,6 +3679,51 @@ labelled `<nav>`s or the consumer's own headings), and the app shell.
 
 ---
 
+## 50 — Wave 6 gate findings: test what renders, not the attribute that should cause it
+
+**Found by the Wave 6 gate**, when a new screen sat below the Wave 5 one
+for the first time and real-browser screenshots showed another screen's
+controls bleeding into it. Three library bugs, all shipped in 1.0 and
+1.1, and two sandbox bugs, all of one kind: **the attribute was right and
+the rendering wasn't**, and every test checked the attribute.
+
+**Library (fixed for 1.2.0):**
+- **`HmhaTabPanel` and `HmhaStepPanel` showed every panel at once.**
+  Both bind `hidden`, and both give `:host` a `display: block`. An
+  author-origin `display` beats the browser's own `[hidden] { display:
+  none }` whatever its specificity, so a hidden panel rendered anyway.
+  Their specs and stories asserted `panel.hidden` and
+  `toHaveAttribute('hidden')`, which were true. Each now has `:host([hidden])
+  { display: none }`, as `HmhaBadge` and `HmhaNavList` already did, with a
+  test of the computed `display` that fails without it, and the Tabs and
+  Stepper stories check `display` beside the attribute.
+- **`HmhaDrawer` with `placement="end"` opened at the start edge.** The
+  browser's dialog styles set both inline insets to 0; the drawer set the
+  end one but never released the start one, and with a fixed width the
+  start side wins. `data-placement="end"` was correct, which is all the
+  tests checked. Each placement now sets the opposite inset to `auto`.
+- **`HmhaDrawer` wasn't full height,** for two reasons that hid each
+  other: the browser caps a modal dialog's `max-height` short of the
+  viewport (the drawer cleared `max-width` but not `max-height`), and
+  under that cap, content-box sizing made `height: 100%` plus padding and
+  border overflow anyway. The drawer now sets `max-height: 100%` and
+  `box-sizing: border-box`. Four new tests measure the drawer against the
+  viewport for each placement in LTR and RTL; removing any one of the
+  three fixes fails them.
+
+**Sandbox (the Wave 5 gate's own CSS):** `.project-drawer { display: flex }`
+beat `dialog:not([open])`, so the closed drawer sat on the page with its
+controls in the Tab order, and `.project-step-panel { display: flex }`
+beat `[hidden]` (the same trap as the panels above). Both now apply only
+when open or not hidden, with computed-`display` checks in `app.spec.ts`.
+
+**The rule going forward** (now in `CLAUDE.md`): any component that binds
+`hidden` or relies on `dialog:not([open])` and sets a `display` must also
+restore `display: none` for that state, and its tests must check what
+renders (computed style, measured geometry), not only the attribute.
+
+---
+
 ## Wave 6 progress — the step tracker
 
 **This section is the single source of truth for Wave 6 status**, the
@@ -3690,7 +3735,7 @@ section. This section only tracks where we are.
 
 Component order follows fork 34.
 
-**CURRENT STEP: 14**: Wave 6 gate, a real sandbox screen composing the wave, waiting for the go-ahead.
+**CURRENT STEP: 15**: Release (hmha-ui 1.2.0, hmha-tokens 1.1.0), waiting for the go-ahead.
 
 1. [x] **1a.** Propose Slider's foundation. Approved: native
    `<input type="range">` (Option A), one `model()` shared with Forms, and
@@ -4166,8 +4211,31 @@ Component order follows fork 34.
       Screenshots found the indent in the amendment above, fixed with a
       new test. 570/570 in `hmha-ui`, 24/24 in `sandbox`; all 238 stories
       pass `test-run` (incl. a11y).
-19. [ ] **14.** Wave 6 gate: a real screen in `apps/sandbox` composing every
-    component in the wave.
+19. [x] **14.** Wave 6 gate: a real screen in `apps/sandbox` composing every
+    component in the wave. A "Media library" screen, its own component
+    (`apps/sandbox/src/app/media-library/`) rather than more of the
+    400-line `app.ts`: a Nav List with an expandable Library group and an
+    Uploads count Badge; a Grid/List Segmented Control; Refresh with a
+    busy Button, a Spinner and Skeleton rows; titles with status Badges;
+    an Avatar; an Empty State for Music whose action goes to Uploads; a
+    File Dropzone whose rejections raise a warning Alert; Upload Items
+    with Progress Bars on a fake engine (queued, uploading, transcoding,
+    ready), where a "corrupt" file fails once, raising a danger Alert
+    whose "Retry failed" recovers it; a player with a Play/Pause action,
+    Shuffle and Mute pressed toggles and Seek/Volume Sliders; and an edit
+    form with a required Input, a counted auto-grow Textarea and a
+    quality Segmented Control on Forms, saving to a Toast. All state lives
+    in the app. 13 tests in `media-library.spec.ts` drive it end to end,
+    axe-clean in both modes. Driven for real in Chromium and Firefox with
+    the real timer engine; no console errors in either.
+    - **The gate found five bugs, three in the library** (fork 50): Tab
+      Panel and Step Panel showing every panel, Drawer's end placement
+      opening at the start, and Drawer stopping short of full height; plus
+      the Wave 5 sandbox drawer and step panels rendering while closed or
+      hidden. All fixed, each with a test of what renders that fails
+      without its fix.
+    - 576/576 in `hmha-ui`, 37/37 in `sandbox`; all 238 stories pass
+      `test-run`; build and lint clean.
 20. [ ] **15.** Release: bump `hmha-ui` to 1.2.0 and `hmha-tokens` to
     1.1.0 (the wave added `track.thickness`), merge, tag.
 

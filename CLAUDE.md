@@ -168,6 +168,16 @@ preference works until an app pins a mode and then gets out of the way.
   44). Never `inject(LiveAnnouncer)` directly in `libs/ui`: use the
   internal `hmhaLiveAnnouncer()` from `core/live-announcer.ts`, which loads
   CDK's styles first.
+- **An author `display` beats the browser's own `[hidden]` and
+  `dialog:not([open])` rules, whatever its specificity.** `:host {
+  display: block }` on a component that binds `hidden` renders the
+  "hidden" element anyway, and so does a consumer's `.panel { display:
+  flex }`. `HmhaTabPanel` and `HmhaStepPanel` shipped in 1.0 showing every
+  panel at once, and the Wave 5 sandbox drawer sat on the page while
+  closed; every test checked the attribute, which was right (fork 50).
+  Pair any `display` with `:host([hidden]) { display: none }` (or a
+  `[open]`/`:not([hidden])` guard), and test the computed `display` or
+  the measured geometry, not only the attribute.
 - **A `<colgroup>` with explicit column widths silently wins over
   `HmhaDataGridResizeHandle`'s own `th.style.width` mutation under
   `table-layout: fixed`** — confirmed in the Wave 4 gate

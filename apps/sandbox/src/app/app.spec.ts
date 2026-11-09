@@ -372,14 +372,24 @@ describe('App', () => {
 
     it('opens on the Details step, closed by default beforehand', () => {
       expect(projectDrawer().open).toBe(false);
+      // Not just closed but gone: a display rule on the drawer's class once
+      // beat the browser's dialog:not([open]) rule, leaving the closed
+      // drawer on the page over the Wave 6 screen (found by its gate).
+      expect(getComputedStyle(projectDrawer()).display).toBe('none');
 
       clickButton(el, 'New project');
       fixture.detectChanges();
 
       expect(projectDrawer().open).toBe(true);
+      expect(getComputedStyle(projectDrawer()).display).toBe('flex');
       expect(projectDrawer().getAttribute('data-placement')).toBe('end');
       expect(stepPanel('details').hidden).toBe(false);
       expect(stepPanel('tags').hidden).toBe(true);
+      // Rendered, not just attributed: a display rule on the panels' class
+      // once beat [hidden] and every step showed at once.
+      expect(getComputedStyle(stepPanel('tags')).display).toBe('none');
+      expect(getComputedStyle(stepPanel('review')).display).toBe('none');
+      expect(getComputedStyle(stepPanel('details')).display).toBe('flex');
     });
 
     it('Stepper: Next is disabled on Details until a name is entered, then advances to Tags', () => {

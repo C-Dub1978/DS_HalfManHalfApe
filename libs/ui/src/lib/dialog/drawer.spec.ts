@@ -53,6 +53,37 @@ describe('HmhaDrawer', () => {
     expect(dialog.getAttribute('data-placement')).toBe('end');
   });
 
+  // Measured, not read from attributes: data-placement="end" was set
+  // correctly while the drawer actually opened at the start edge, and it
+  // stopped short of the viewport's bottom (found by the Wave 6 gate).
+  for (const [placement, dir, edge] of [
+    ['start', 'ltr', 'left'],
+    ['end', 'ltr', 'right'],
+    ['start', 'rtl', 'right'],
+    ['end', 'rtl', 'left'],
+  ] as const) {
+    it(`sits against the ${edge} edge, full height, for ${placement} in ${dir}`, () => {
+      document.documentElement.setAttribute('dir', dir);
+      try {
+        const { fixture, dialog } = create({ placement });
+        fixture.componentInstance.isOpen.set(true);
+        fixture.detectChanges();
+        // The viewport as a fixed box sees it, scrollbars excluded (Karma
+        // shows one, on the left in right-to-left).
+        const probe = document.body.appendChild(Object.assign(document.createElement('div'), { style: 'position:fixed; inset:0' }));
+        const viewport = probe.getBoundingClientRect();
+        probe.remove();
+        const rect = dialog.getBoundingClientRect();
+        expect(rect[edge]).withContext(`${edge} edge`).toBeCloseTo(viewport[edge], 0);
+        expect(rect.top).withContext('top').toBeCloseTo(viewport.top, 0);
+        expect(rect.bottom).withContext('bottom').toBeCloseTo(viewport.bottom, 0);
+        dialog.close();
+      } finally {
+        document.documentElement.removeAttribute('dir');
+      }
+    });
+  }
+
   it("still opens as a real modal — all of HmhaDialog's own behavior comes along unchanged", () => {
     const { fixture, dialog } = create();
     fixture.componentInstance.isOpen.set(true);

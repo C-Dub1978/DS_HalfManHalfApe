@@ -1,0 +1,175 @@
+<div class="library">
+  <nav aria-label="Library" class="library-nav">
+    <ul hmhaNavList>
+      <li hmhaNavGroup [(expanded)]="libraryOpen">
+        <a hmhaNavItem href="/library" [attr.aria-current]="section() === 'uploads' ? null : 'true'" (click)="go('movies', $event)">
+          <hmha-icon name="folder-open" /> Library
+        </a>
+        <ul hmhaNavList>
+          <li><a hmhaNavItem href="/library/movies" [attr.aria-current]="currentOf('movies')" (click)="go('movies', $event)">Movies</a></li>
+          <li><a hmhaNavItem href="/library/shows" [attr.aria-current]="currentOf('shows')" (click)="go('shows', $event)">Shows</a></li>
+          <li><a hmhaNavItem href="/library/music" [attr.aria-current]="currentOf('music')" (click)="go('music', $event)">Music</a></li>
+        </ul>
+      </li>
+      <li>
+        <a hmhaNavItem href="/uploads" [attr.aria-current]="currentOf('uploads')" (click)="go('uploads', $event)">
+          <hmha-icon name="upload" /> Uploads
+          @if (activeUploads()) {
+            <span hmhaBadge hmhaNavItemEnd tone="primary">{{ activeUploads() }} in progress</span>
+          }
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="library-main">
+    <header class="library-header">
+      <h3 class="library-title">{{ sectionName() }}</h3>
+      @if (section() !== 'uploads') {
+        <fieldset hmhaSegmentedControl aria-label="View" size="sm" [(value)]="view">
+          <label hmhaSegment value="grid" label="Grid"><hmha-icon name="layout-grid" /></label>
+          <label hmhaSegment value="list" label="List"><hmha-icon name="list" /></label>
+        </fieldset>
+        <button hmhaButton size="sm" [loading]="loading()" (click)="refresh()">
+          @if (loading()) { <hmha-spinner decorative size="sm" /> } @else { <hmha-icon name="refresh-cw" size="sm" /> }
+          Refresh
+        </button>
+      }
+      <span hmhaAvatar name="Ada Lovelace" size="sm" class="library-avatar"></span>
+    </header>
+
+    @switch (section()) {
+      @case ('uploads') {
+        <label
+          hmhaFileDropzone
+          accept="video/*,audio/*,.mkv,.flac"
+          [maxSize]="20e9"
+          (filesAdded)="rejections.set([]); addFiles($event)"
+          (filesRejected)="rejections.set($event)"
+        ></label>
+
+        @if (rejections().length) {
+          <div hmhaAlert tone="warning" announce="polite" dismissible (dismissed)="rejections.set([])">
+            <p hmhaAlertTitle>{{ rejections().length }} {{ rejections().length === 1 ? 'file was' : 'files were' }} not added</p>
+            @for (r of rejections(); track r.file) {
+              {{ r.file.name }}: {{ r.reason === 'type' ? 'not a video or audio file' : r.reason }}.
+            }
+          </div>
+        }
+
+        @if (failedUploads().length) {
+          <div hmhaAlert tone="danger" announce="assertive">
+            <p hmhaAlertTitle>{{ failedUploads().length }} {{ failedUploads().length === 1 ? 'upload' : 'uploads' }} failed</p>
+            Your other uploads are still going.
+            <button hmhaButton size="sm" hmhaAlertActions (click)="retryAllFailed()">Retry failed</button>
+          </div>
+        }
+
+        @if (uploads().length) {
+          <ul hmhaUploadList aria-label="Uploads">
+            @for (upload of uploads(); track upload.id) {
+              <li
+                hmhaUploadItem
+                [name]="upload.file.name"
+                [size]="upload.file.size"
+                [progress]="upload.progress"
+                [status]="upload.status"
+                [error]="upload.error"
+                [statusLabel]="upload.status === 'processing' ? 'Transcoding' : null"
+                (cancel)="removeUpload(upload.id)"
+                (retry)="retry(upload.id)"
+                (remove)="removeUpload(upload.id)"
+              ></li>
+            }
+          </ul>
+        }
+      }
+      @default {
+        @if (loading()) {
+          <ul class="titles" [attr.data-view]="view()" aria-busy="true" aria-label="Loading titles">
+            @for (n of [1, 2, 3]; track n) {
+              <li class="title">
+                <div hmhaSkeleton shape="rect" class="poster"></div>
+                <span hmhaSkeleton width="70%"></span>
+              </li>
+            }
+          </ul>
+        } @else if (titles().length) {
+          <ul class="titles" [attr.data-view]="view()" [attr.aria-label]="sectionName()">
+            @for (title of titles(); track title.id) {
+              <li class="title">
+                <div class="poster" aria-hidden="true"><hmha-icon name="image" /></div>
+                <span>{{ title.name }} <span class="muted">({{ title.year }})</span></span>
+                @if (title.status === 'new') { <span hmhaBadge tone="success">New</span> }
+                @if (title.status === 'processing') { <span hmhaBadge tone="warning">Processing</span> }
+              </li>
+            }
+          </ul>
+        } @else {
+          <div hmhaEmptyState icon="list-music">
+            <h4 hmhaEmptyStateTitle>No {{ sectionName().toLowerCase() }} yet</h4>
+            Upload an album or a playlist to start your collection.
+            <button hmhaButton tone="primary" hmhaEmptyStateActions (click)="go('uploads')">Upload {{ sectionName().toLowerCase() }}</button>
+          </div>
+        }
+      }
+    }
+
+    <section class="player" aria-label="Player">
+      <div class="player-controls">
+        <button hmhaButton hmhaIconButton size="sm" [label]="playing() ? 'Pause' : 'Play'" (click)="togglePlay()">
+          <hmha-icon [name]="playing() ? 'pause' : 'play'" />
+        </button>
+        <button hmhaButton hmhaIconButton size="sm" label="Shuffle" [pressed]="shuffle()" (click)="shuffle.set(!shuffle())">
+          <hmha-icon name="shuffle" />
+        </button>
+        <button hmhaButton hmhaIconButton size="sm" label="Mute" [pressed]="muted()" (click)="muted.set(!muted())">
+          <hmha-icon [name]="muted() ? 'volume-x' : 'volume-2'" />
+        </button>
+      </div>
+      <input
+        hmhaSlider
+        class="player-timeline"
+        aria-label="Seek"
+        [max]="duration"
+        [buffered]="duration * 0.6"
+        [valueText]="positionText()"
+        [(value)]="position"
+      />
+      <span class="muted player-time" aria-hidden="true">{{ positionText() }}</span>
+      <input
+        hmhaSlider
+        class="player-volume"
+        aria-label="Volume"
+        size="sm"
+        [disabled]="muted()"
+        [valueText]="'Volume ' + volume() + '%'"
+        [(value)]="volume"
+      />
+    </section>
+
+    <form class="details" [formGroup]="details" (ngSubmit)="save()" aria-labelledby="details-title">
+      <h4 id="details-title">Edit details</h4>
+      <hmha-field
+        label="Title"
+        required
+        [error]="details.controls.title.touched && details.controls.title.invalid ? 'Give the title a name.' : undefined"
+      >
+        <input hmhaInput formControlName="title" />
+      </hmha-field>
+      <hmha-field label="Description" hint="Shown on the title's page.">
+        <textarea hmhaInput autoGrow [maxCharacters]="120" formControlName="description"></textarea>
+      </hmha-field>
+      <hmha-field label="Playback quality" hint="Higher uses more data.">
+        <fieldset hmhaSegmentedControl formControlName="quality">
+          <label hmhaSegment value="720p">720p</label>
+          <label hmhaSegment value="1080p">1080p</label>
+          <label hmhaSegment value="4k">4K</label>
+        </fieldset>
+      </hmha-field>
+      <div class="row">
+        <button hmhaButton tone="primary" type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+</div>

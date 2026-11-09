@@ -124,15 +124,21 @@ export const NavigationInteraction: Story = {
     const shippingPanel = canvasElement.querySelector('[value="shipping"][hmhasteppanel]') as HTMLElement;
 
     await expect(accountPanel).toHaveAttribute('hidden');
+
+    await expect(accountPanel).toHaveStyle({ display: 'none' }); // rendered, not just attributed
     await expect(shippingPanel).not.toHaveAttribute('hidden');
+    await expect(shippingPanel).not.toHaveStyle({ display: 'none' });
 
     await userEvent.click(account);
     await expect(accountPanel).not.toHaveAttribute('hidden');
+    await expect(accountPanel).not.toHaveStyle({ display: 'none' });
     await expect(shippingPanel).toHaveAttribute('hidden');
+    await expect(shippingPanel).toHaveStyle({ display: 'none' }); // rendered, not just attributed
 
     // Payment is upcoming relative to the now-active "account" step, so
     // it's natively disabled — a real click fires nothing at all.
     await userEvent.click(payment);
     await expect(shippingPanel).toHaveAttribute('hidden');
+    await expect(shippingPanel).toHaveStyle({ display: 'none' }); // rendered, not just attributed
   },
 };
