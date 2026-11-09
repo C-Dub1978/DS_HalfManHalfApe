@@ -1,7 +1,7 @@
 # @halfmanhalfape/hmha-ui
 
 A standalone, signals-based Angular component library for the Half Man
-Half Ape design system — 24 components, zero `NgModule`s, every visual
+Half Ape design system — 33 components, zero `NgModule`s, every visual
 value overridable at runtime through CSS custom properties.
 
 - [Install](#install)
@@ -23,7 +23,7 @@ the design tokens (CSS custom properties + TypeScript types) they all
 consume. `hmha-ui` has no visual styling at all without `hmha-tokens`'
 CSS loaded somewhere on the page.
 
-`hmha-tokens` is declared as a **peer dependency** of `hmha-ui` (`^1.0.0`),
+`hmha-tokens` is declared as a **peer dependency** of `hmha-ui` (`^1.1.0`),
 so npm 7+ installs it automatically and warns on a version mismatch. List
 it explicitly anyway, as above: you reference its CSS file directly in
 `angular.json` (see [Quickstart](#quickstart)), so it belongs in your own
@@ -106,6 +106,9 @@ the full reference.
 
 | Component | Selector | Docs |
 | --- | --- | --- |
+| Alert | `div[hmhaAlert]` (+ `[hmhaAlertTitle]`) | [`src/lib/alert/README.md`](./src/lib/alert/README.md) |
+| Avatar | `span[hmhaAvatar]` | [`src/lib/avatar/README.md`](./src/lib/avatar/README.md) |
+| Badge | `span[hmhaBadge]` | [`src/lib/badge/README.md`](./src/lib/badge/README.md) |
 | Button | `button[hmhaButton]` | [`src/lib/button/README.md`](./src/lib/button/README.md) |
 | IconButton | `button[hmhaButton][hmhaIconButton]` | [`src/lib/button/README.md`](./src/lib/button/README.md) |
 | Card | `hmha-card` | [`src/lib/card/README.md`](./src/lib/card/README.md) |
@@ -116,14 +119,22 @@ the full reference.
 | Dialog | `dialog[hmhaDialog]` | [`src/lib/dialog/README.md`](./src/lib/dialog/README.md) |
 | Drawer | `dialog[hmhaDialog][hmhaDrawer]` | [`src/lib/dialog/README.md`](./src/lib/dialog/README.md) |
 | Divider | `hr[hmhaDivider]` | [`src/lib/divider/README.md`](./src/lib/divider/README.md) |
+| Empty State | `div[hmhaEmptyState]` (+ `[hmhaEmptyStateTitle]`) | [`src/lib/empty-state/README.md`](./src/lib/empty-state/README.md) |
 | Expansion Panel / Accordion | `details[hmhaExpansionPanel]`, `div[hmhaAccordion]` | [`src/lib/expansion-panel/README.md`](./src/lib/expansion-panel/README.md) |
 | Field | `hmha-field` | [`src/lib/field/README.md`](./src/lib/field/README.md) |
+| File Upload | `label[hmhaFileDropzone]`, `ul[hmhaUploadList]`, `li[hmhaUploadItem]` | [`src/lib/file-upload/README.md`](./src/lib/file-upload/README.md) |
 | Icon | `hmha-icon` | [`src/lib/icon/README.md`](./src/lib/icon/README.md) |
-| Input | `input[hmhaInput]` | [`src/lib/input/README.md`](./src/lib/input/README.md) |
+| Input | `input[hmhaInput]`, `textarea[hmhaInput]` | [`src/lib/input/README.md`](./src/lib/input/README.md) |
 | Menu | `div[hmhaMenu]`, `button[hmhaMenuTrigger]`, `button[hmhaMenuItem]` | [`src/lib/menu/README.md`](./src/lib/menu/README.md) |
+| Nav List | `ul[hmhaNavList]`, `a[hmhaNavItem]`, `li[hmhaNavGroup]` | [`src/lib/nav-list/README.md`](./src/lib/nav-list/README.md) |
 | Pagination | `nav[hmhaPagination]` | [`src/lib/pagination/README.md`](./src/lib/pagination/README.md) |
+| Progress Bar | `progress[hmhaProgressBar]` | [`src/lib/progress-bar/README.md`](./src/lib/progress-bar/README.md) |
 | Radio / RadioGroup | `input[hmhaRadio]`, `fieldset[hmhaRadioGroup]` | [`src/lib/radio/README.md`](./src/lib/radio/README.md) |
+| Segmented Control | `fieldset[hmhaSegmentedControl]`, `label[hmhaSegment]` | [`src/lib/segmented-control/README.md`](./src/lib/segmented-control/README.md) |
 | Select | `button[hmhaSelectTrigger]`, `div[hmhaSelectListbox]`, `div[hmhaSelectOption]` | [`src/lib/select/README.md`](./src/lib/select/README.md) |
+| Skeleton | `span[hmhaSkeleton]`, `div[hmhaSkeleton]` | [`src/lib/skeleton/README.md`](./src/lib/skeleton/README.md) |
+| Slider | `input[hmhaSlider]` | [`src/lib/slider/README.md`](./src/lib/slider/README.md) |
+| Spinner | `hmha-spinner` | [`src/lib/spinner/README.md`](./src/lib/spinner/README.md) |
 | Stepper | `div[hmhaStepper]`, `div[hmhaStepList]`, `button[hmhaStep]`, `div[hmhaStepPanel]` | [`src/lib/stepper/README.md`](./src/lib/stepper/README.md) |
 | Switch | `button[hmhaSwitch]` | [`src/lib/switch/README.md`](./src/lib/switch/README.md) |
 | Table | `table[hmhaTable]`, `tr[hmhaTableRow]`, `th[hmhaTableHeaderCell]`, `td[hmhaTableCell]` | [`src/lib/table/README.md`](./src/lib/table/README.md) |
@@ -135,13 +146,14 @@ Prefer a native-element attribute selector over a custom tag wherever
 one fits (`button[hmhaButton]`, not `<hmha-button>`) — you keep real
 keyboard behaviour, form submission and semantics for free. A custom
 tag name only shows up where no native element fits (Dialog aside,
-which is a real `<dialog>`; `hmha-card`, `hmha-field`, `hmha-icon` are
-the only true custom elements in the library).
+which is a real `<dialog>`; `hmha-card`, `hmha-field`, `hmha-icon` and
+`hmha-spinner` are the only true custom elements in the library).
 
 ## Forms
 
 Every form control (`Checkbox`, `Input`, `Radio`/`RadioGroup`,
-`Switch`, `Combobox`) implements Angular's `ControlValueAccessor` — use
+`SegmentedControl`, `Switch`, `Combobox`, `Select`, `Slider`) implements Angular's
+`ControlValueAccessor` — use
 them with `formControlName`, `[formControl]`, or `[(ngModel)]` exactly
 like a native form element:
 

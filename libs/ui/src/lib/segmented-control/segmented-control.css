@@ -1,0 +1,37 @@
+/* segmented-control.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-segmented-control-bg: var(--hmha-color-surface-sunken);
+  /* Outlines the track. In dark mode surface-sunken is the page colour
+     itself, so without an edge the control would vanish on the page and
+     its unselected segments read as loose text. Decorative: the selected
+     segment's own border carries the meaning. */
+  --hmha-segmented-control-border: var(--hmha-color-border);
+  /* The gap between the track's edge and the segments: half the control's
+     vertical padding, so it follows density. */
+  --hmha-segmented-control-inset: calc(var(--hmha-control-padding-y) / 2);
+  /* The whole control is a control height tall, so it lines up with
+     buttons and inputs beside it. Read by each segment. */
+  --hmha-segmented-control-height: var(--hmha-control-height);
+
+  /* Grid, not flex: 1fr columns in a content-sized grid all come out as
+     wide as the widest segment, and share a set width equally. */
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--hmha-segmented-control-inset);
+  box-sizing: border-box;
+  /* Never narrower than its content: a squeezing flex row would otherwise
+     shrink it until segments overlap whatever sits beside it, and below
+     max-content the 1fr columns stop being equal. Too many segments for
+     the space is a Select, not a squeeze. */
+  min-inline-size: max-content;
+  margin: 0;
+  padding: var(--hmha-segmented-control-inset);
+  border: var(--hmha-border-width) solid var(--hmha-segmented-control-border);
+  border-radius: var(--hmha-radius-control);
+  background: var(--hmha-segmented-control-bg);
+}
+
+:host([data-size="sm"]) { --hmha-segmented-control-height: var(--hmha-control-height-sm); }
+:host([data-size="lg"]) { --hmha-segmented-control-height: var(--hmha-control-height-lg); }

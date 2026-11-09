@@ -40,7 +40,9 @@ export const Playground: Story = {
     await expect(generalPanel).toHaveAttribute('role', 'tabpanel');
     await expect(generalPanel).toHaveAttribute('aria-labelledby', generalTab.id);
     await expect(generalPanel).not.toHaveAttribute('hidden');
+    await expect(generalPanel).not.toHaveStyle({ display: 'none' });
     await expect(billingPanel).toHaveAttribute('hidden');
+    await expect(billingPanel).toHaveStyle({ display: 'none' }); // rendered, not just attributed
   },
 };
 
@@ -52,6 +54,8 @@ export const VisibilitySwitchInteraction: Story = {
     const generalPanel = canvasElement.querySelector('[value="general"][hmhatabpanel]') as HTMLElement;
     const billingPanel = canvasElement.querySelector('[value="billing"][hmhatabpanel]') as HTMLElement;
     await expect(generalPanel).toHaveAttribute('hidden');
+    await expect(generalPanel).toHaveStyle({ display: 'none' }); // rendered, not just attributed
     await expect(billingPanel).not.toHaveAttribute('hidden');
+    await expect(billingPanel).not.toHaveStyle({ display: 'none' });
   },
 };

@@ -1,0 +1,89 @@
+/* badge.css — declare the override API, then consume it.
+   Not one literal colour, length or font value in the file. */
+:host {
+  /* Internal, not override API: each tone's four colours, re-pointed per
+     data-tone below. Every pairing (on-tint over tint, on-strong over
+     strong) is a 4.5:1 text pair checked by check-contrast.mjs in both
+     modes (fork 40). */
+  --_hmha-badge-tint: var(--hmha-color-surface-sunken);
+  --_hmha-badge-on-tint: var(--hmha-color-text-muted);
+  --_hmha-badge-strong: var(--hmha-color-text-muted);
+  --_hmha-badge-on-strong: var(--hmha-color-surface);
+
+  /* The override API: subtle by default. */
+  --hmha-badge-bg: var(--_hmha-badge-tint);
+  --hmha-badge-fg: var(--_hmha-badge-on-tint);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  /* An inline icon's height, so a badge lines up with an icon in the same
+     row; a single-digit count comes out round. */
+  min-inline-size: var(--hmha-icon-md);
+  min-block-size: var(--hmha-icon-md);
+  padding-inline: calc(var(--hmha-control-gap) * 0.75);
+  border-radius: var(--hmha-radius-pill);
+  vertical-align: middle;
+  white-space: nowrap;
+  background-color: var(--hmha-badge-bg);
+  color: var(--hmha-badge-fg);
+  font-family: var(--hmha-font-family);
+  font-size: var(--hmha-type-label-sm-size);
+  font-weight: var(--hmha-type-label-sm-weight);
+  line-height: var(--hmha-type-label-sm-line);
+  /* Lining figures: Raleway's default old-style digits sit at different
+     heights ("42" descends), wrong for a count. Tabular, so a count that
+     changes in place doesn't shift its neighbours. */
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* ── Tones ─────────────────────────────────────────────────────────────── */
+:host([data-tone="primary"]) {
+  --_hmha-badge-tint: var(--hmha-color-action-subtle);
+  --_hmha-badge-on-tint: var(--hmha-color-action);
+  --_hmha-badge-strong: var(--hmha-color-action);
+  --_hmha-badge-on-strong: var(--hmha-color-text-on-action);
+}
+:host([data-tone="success"]) {
+  --_hmha-badge-tint: var(--hmha-color-success-subtle);
+  --_hmha-badge-on-tint: var(--hmha-color-success-text);
+  --_hmha-badge-strong: var(--hmha-color-success);
+  --_hmha-badge-on-strong: var(--hmha-color-text-on-success);
+}
+:host([data-tone="warning"]) {
+  --_hmha-badge-tint: var(--hmha-color-warning-subtle);
+  --_hmha-badge-on-tint: var(--hmha-color-warning-text);
+  --_hmha-badge-strong: var(--hmha-color-warning);
+  --_hmha-badge-on-strong: var(--hmha-color-text-on-warning);
+}
+:host([data-tone="danger"]) {
+  --_hmha-badge-tint: var(--hmha-color-danger-subtle);
+  --_hmha-badge-on-tint: var(--hmha-color-danger-text);
+  --_hmha-badge-strong: var(--hmha-color-danger);
+  --_hmha-badge-on-strong: var(--hmha-color-text-on-danger);
+}
+
+/* ── Appearance ────────────────────────────────────────────────────────── */
+:host([data-appearance="solid"]) {
+  --hmha-badge-bg: var(--_hmha-badge-strong);
+  --hmha-badge-fg: var(--_hmha-badge-on-strong);
+}
+
+/* ── Dot ───────────────────────────────────────────────────────────────── */
+/* Always the tone's strong colour, whatever the appearance: a subtle tint
+   at this size would barely show. Half the small icon size. */
+:host([data-dot]) {
+  --hmha-badge-bg: var(--_hmha-badge-strong);
+
+  min-inline-size: 0;
+  min-block-size: 0;
+  inline-size: calc(var(--hmha-icon-sm) / 2);
+  block-size: calc(var(--hmha-icon-sm) / 2);
+  padding: 0;
+}
+
+/* The hidden attribute (a zero count) would otherwise lose to display above. */
+:host([hidden]) {
+  display: none;
+}

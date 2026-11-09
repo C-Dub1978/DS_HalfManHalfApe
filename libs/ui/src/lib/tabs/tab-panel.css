@@ -6,6 +6,13 @@
   padding-block: var(--hmha-control-padding-y);
 }
 
+/* An unselected panel. An author display, :host's above included, beats
+   the browser's own [hidden] rule whatever its specificity, so without
+   this every panel showed at once (found by the Wave 6 gate). */
+:host([hidden]) {
+  display: none;
+}
+
 :host(:focus-visible) {
   outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
   outline-offset: var(--hmha-focus-offset);

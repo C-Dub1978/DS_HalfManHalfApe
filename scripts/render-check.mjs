@@ -77,6 +77,24 @@ try {
   }
   console.log('✓ field label associated with input');
 
+  // Alert — announced through CDK's live region, which must be visually
+  // hidden. This page has no Tooltip yet, so nothing but hmha-ui's own
+  // style loading (an @angular/cdk/private underscore API) can have hidden
+  // it: if a new CDK major drops that API, the text shows and this fails.
+  await page.waitForFunction(
+    () => document.querySelector('.cdk-live-announcer-element')?.textContent?.includes('Info: Smoke alert'),
+    null,
+    { timeout: 5000 },
+  );
+  const liveRegion = await page.$eval('.cdk-live-announcer-element', (el) => ({
+    position: getComputedStyle(el).position,
+    width: el.getBoundingClientRect().width,
+  }));
+  if (liveRegion.position !== 'absolute' || liveRegion.width > 1) {
+    throw new Error(`Live announcer region is visible on the page: ${JSON.stringify(liveRegion)}`);
+  }
+  console.log('✓ alert announced, live region hidden');
+
   // Tooltip — AriaDescriber describes the host, and hovering opens the overlay.
   const describedBy = await page.getAttribute('[data-testid="smoke-button"]', 'aria-describedby');
   if (!describedBy) throw new Error('Tooltip host has no aria-describedby');

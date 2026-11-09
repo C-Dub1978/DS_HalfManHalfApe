@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { hmhaValueAccessor } from './value-accessor';
 
 describe('hmhaValueAccessor', () => {
@@ -62,5 +63,25 @@ describe('hmhaValueAccessor', () => {
 
     expect(a.value()).toBe('changed');
     expect(b.value()).toBe('b');
+  });
+
+  it('reads and writes an external signal when given one, instead of owning its own', () => {
+    const external = signal(10);
+    const accessor = hmhaValueAccessor(external);
+    const onChange = jasmine.createSpy('onChange');
+    accessor.registerOnChange(onChange);
+
+    expect(accessor.value()).toBe(10);
+
+    accessor.writeValue(20);
+    expect(external()).toBe(20);
+    expect(onChange).not.toHaveBeenCalled();
+
+    accessor.setValue(30);
+    expect(external()).toBe(30);
+    expect(onChange).toHaveBeenCalledWith(30);
+
+    external.set(40);
+    expect(accessor.value()).toBe(40);
   });
 });

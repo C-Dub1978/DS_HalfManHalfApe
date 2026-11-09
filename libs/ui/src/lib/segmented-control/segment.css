@@ -1,0 +1,69 @@
+/* segment.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-segment-bg: transparent;
+  --hmha-segment-bg-hover: var(--hmha-color-surface-raised);
+  --hmha-segment-fg: var(--hmha-color-text);
+  --hmha-segment-border: transparent;
+
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hmha-control-gap);
+  box-sizing: border-box;
+  /* Fills the control's height, less the track's border and inset on
+     both sides. */
+  min-height: calc(
+    var(--hmha-segmented-control-height) - 2 * var(--hmha-segmented-control-inset) - 2 * var(--hmha-border-width)
+  );
+  padding-inline: var(--hmha-control-padding-x);
+  border: var(--hmha-border-width) solid var(--hmha-segment-border);
+  /* Nested inside the track's rounding, so it sits concentric with it. */
+  border-radius: calc(var(--hmha-radius-control) - var(--hmha-segmented-control-inset) - var(--hmha-border-width));
+  background: var(--hmha-segment-bg);
+  color: var(--hmha-segment-fg);
+  font-family: var(--hmha-font-family);
+  font-size: var(--hmha-type-label-md-size);
+  font-weight: var(--hmha-type-label-md-weight);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--hmha-duration-fast) var(--hmha-easing-standard);
+}
+
+:host(:hover:not(:has(.hmha-segment-radio:disabled))) { background: var(--hmha-segment-bg-hover); }
+
+/* Selected: the pressed-button look (fork 45, chosen in fork 48). action
+   on action-subtle is a CI-checked pair, and the action border against the
+   sunken track is too, so "selected" isn't told by hue alone. */
+:host([data-selected]) {
+  --hmha-segment-bg: var(--hmha-color-action-subtle);
+  --hmha-segment-bg-hover: var(--hmha-color-action-subtle);
+  --hmha-segment-fg: var(--hmha-color-action);
+  --hmha-segment-border: var(--hmha-color-action);
+}
+
+/* The real radio, covering the whole segment but invisible: a touch screen
+   reader finds it exactly where the segment is drawn, which the 1px
+   visually-hidden clip wouldn't give. */
+.hmha-segment-radio {
+  position: absolute;
+  /* Out over the border too, so it covers the segment exactly. */
+  inset: calc(-1 * var(--hmha-border-width));
+  margin: 0;
+  opacity: 0;
+  appearance: none;
+  cursor: inherit;
+}
+
+:host(:has(.hmha-segment-radio:focus-visible)) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}
+
+/* Its own disabled, or the whole control's (the fieldset cascades to the
+   radio, which :disabled sees). */
+:host(:has(.hmha-segment-radio:disabled)) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

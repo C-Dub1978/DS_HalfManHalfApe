@@ -13,8 +13,41 @@ keyboard behaviour, form submission and `type`.
 | --- | --- | --- | --- |
 | `tone` | `'neutral' \| 'primary' \| 'danger' \| 'warning' \| 'success'` | `'neutral'` | Reflected as `data-tone`. |
 | `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Reflected as `data-size`; drives `--hmha-control-height*`. |
-| `loading` | `boolean` | `false` | Sets `aria-busy` and disables the control. Does not change label content — pair with your own spinner/`aria-live` region if you need one. |
+| `loading` | `boolean` | `false` | Sets `aria-busy` and disables the control. Does not change label content. For a visible spinner, project a `<hmha-spinner decorative size="sm" />` (see `spinner/README.md`); add an `aria-live` region if the outcome needs announcing. |
 | `disabled` | `boolean` | `false` | Sets the native `disabled` attribute. |
+| `pressed` | `boolean \| null` | `null` | `null` is an ordinary button. `true`/`false` makes it a toggle button (`aria-pressed`), with a visible pressed style. See below. |
+
+## Toggle buttons (`pressed`)
+
+```html
+<button hmhaButton hmhaIconButton label="Mute" [pressed]="muted()" (click)="toggleMute()">
+  <hmha-icon name="volume-x" />
+</button>
+```
+
+Set `pressed` to `true` or `false` and the button becomes a toggle: a
+screen reader hears "Mute, toggle button, pressed". Left at `null` (the
+default) it's an ordinary button, exactly as before. `HmhaIconButton`
+gets it too, since it sits on `HmhaButton`.
+
+**The button never flips itself.** Your click handler changes your
+state, and `[pressed]` reflects it. For a media player that matters:
+the player's real state is the truth, so if an action is blocked or
+fails, the button doesn't claim otherwise.
+
+**Keep the label the same in both states.** The pressed state already
+says on or off; a label that also changes ("Mute" becoming "Unmute"
+while pressed) makes people hear a contradiction. Which controls use it:
+
+| Control | Use |
+| --- | --- |
+| Mute, Shuffle, Repeat, Favourite, Captions | `pressed`, and a label that never changes. They're settings that are on or off. |
+| **Play/Pause** | **No `pressed`.** Swap the label and icon instead ("Play" ↔ "Pause"). It's an action that changes, not a setting. |
+
+Pressed looks different in more than colour: a neutral button takes the
+action tint with an action border (a checked 4.5:1 text pair), the
+filled tones darken (primary) or gain a ring (danger, warning, success).
+For a favourite, swapping the icon helps too.
 
 ## Component tokens — the override API
 

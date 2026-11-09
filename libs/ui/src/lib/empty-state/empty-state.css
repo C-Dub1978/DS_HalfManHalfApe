@@ -1,0 +1,69 @@
+/* empty-state.css — declare the override API, then consume it.
+   Not one literal colour, length or font value in the file. */
+:host {
+  --hmha-empty-state-icon-size: calc(var(--hmha-icon-lg) * 2);
+  /* text-subtle: decorative, so its CI-checked 3:1 against the surface is
+     enough. The heading and message carry the meaning. */
+  --hmha-empty-state-icon-color: var(--hmha-color-text-subtle);
+  --hmha-empty-state-padding: calc(var(--hmha-space-stack) * 2);
+  /* Read by HmhaEmptyStateTitle, so the heading follows the size. */
+  --hmha-empty-state-title-size: var(--hmha-type-heading-sm-size);
+  --hmha-empty-state-title-weight: var(--hmha-type-heading-sm-weight);
+  --hmha-empty-state-title-line: var(--hmha-type-heading-sm-line);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--hmha-space-stack);
+  box-sizing: border-box;
+  padding: var(--hmha-empty-state-padding);
+  text-align: center;
+  font-family: var(--hmha-font-family);
+}
+
+:host([data-size="sm"]) {
+  --hmha-empty-state-icon-size: var(--hmha-icon-lg);
+  --hmha-empty-state-padding: var(--hmha-space-stack);
+  --hmha-empty-state-title-size: var(--hmha-type-label-md-size);
+  --hmha-empty-state-title-weight: var(--hmha-type-label-md-weight);
+  --hmha-empty-state-title-line: var(--hmha-type-label-md-line);
+
+  gap: var(--hmha-control-gap);
+}
+
+.hmha-empty-state-icon {
+  display: inline-flex;
+  color: var(--hmha-empty-state-icon-color);
+}
+
+.hmha-empty-state-icon hmha-icon {
+  --hmha-icon-size: var(--hmha-empty-state-icon-size);
+}
+
+.hmha-empty-state-body {
+  display: grid;
+  gap: var(--hmha-control-gap);
+}
+
+.hmha-empty-state-message {
+  color: var(--hmha-color-text-muted);
+  font-size: var(--hmha-type-body-md-size);
+  line-height: var(--hmha-type-body-md-line);
+}
+
+:host([data-size="sm"]) .hmha-empty-state-message {
+  font-size: var(--hmha-type-body-sm-size);
+  line-height: var(--hmha-type-body-sm-line);
+}
+
+.hmha-empty-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--hmha-control-gap);
+}
+
+/* No actions projected: no empty row of spacing. */
+.hmha-empty-state-actions:empty {
+  display: none;
+}

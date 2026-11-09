@@ -1,0 +1,8 @@
+/* upload-list.css — not one literal value in the file. */
+:host {
+  display: grid;
+  gap: var(--hmha-control-gap);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

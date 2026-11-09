@@ -1,0 +1,67 @@
+/* nav-item.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-nav-item-bg: transparent;
+  --hmha-nav-item-bg-hover: var(--hmha-color-bg-subtle);
+  --hmha-nav-item-fg: var(--hmha-color-text);
+  --hmha-nav-item-indicator: transparent;
+  /* The current page's bar on the leading edge. */
+  --hmha-nav-item-indicator-width: calc(var(--hmha-border-width) * 3);
+
+  position: relative;
+  display: flex;
+  /* In a group's row (a flex row), the link takes the space and the
+     toggle sits after it. In a plain <li> this does nothing. */
+  flex: 1;
+  min-inline-size: 0;
+  align-items: center;
+  gap: var(--hmha-control-gap);
+  box-sizing: border-box;
+  min-height: var(--hmha-control-height);
+  padding-block: var(--hmha-control-padding-y);
+  padding-inline: var(--hmha-control-padding-x);
+  border-radius: var(--hmha-radius-control);
+  background: var(--hmha-nav-item-bg);
+  color: var(--hmha-nav-item-fg);
+  font-family: var(--hmha-font-family);
+  font-size: var(--hmha-type-label-md-size);
+  font-weight: var(--hmha-type-label-md-weight);
+  line-height: var(--hmha-type-label-md-line);
+  text-decoration: none;
+  transition: background var(--hmha-duration-fast) var(--hmha-easing-standard);
+}
+
+:host(:hover) { background: var(--hmha-nav-item-bg-hover); }
+
+:host(:focus-visible) {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}
+
+/* Any aria-current but "false": "page" for the page itself, "true" for a
+   section whose child page is open. The fill's lightness and the bar both
+   change, so it isn't told by hue alone (look B, fork 49). action on
+   action-subtle is the CI-checked pair pressed buttons and segments use. */
+:host([aria-current]:not([aria-current="false"])) {
+  --hmha-nav-item-bg: var(--hmha-color-action-subtle);
+  --hmha-nav-item-bg-hover: var(--hmha-color-action-subtle);
+  --hmha-nav-item-fg: var(--hmha-color-action);
+  --hmha-nav-item-indicator: var(--hmha-color-action);
+}
+
+/* inset-inline-start flips to the right edge in right-to-left layout. */
+:host::before {
+  content: "";
+  position: absolute;
+  inset-block: 20%;
+  inset-inline-start: 0;
+  inline-size: var(--hmha-nav-item-indicator-width);
+  border-radius: var(--hmha-radius-full);
+  background: var(--hmha-nav-item-indicator);
+}
+
+.hmha-nav-item-text {
+  flex: 1;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}

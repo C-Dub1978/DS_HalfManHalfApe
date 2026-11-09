@@ -1,0 +1,45 @@
+/* nav-group.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-nav-group-toggle-size: var(--hmha-control-height);
+
+  display: block;
+}
+
+.hmha-nav-group-row {
+  display: flex;
+  align-items: center;
+  gap: var(--hmha-control-gap);
+}
+
+.hmha-nav-group-toggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--hmha-nav-group-toggle-size);
+  block-size: var(--hmha-nav-group-toggle-size);
+  padding: 0;
+  border: none;
+  border-radius: var(--hmha-radius-control);
+  background: transparent;
+  color: var(--hmha-color-text-muted);
+  cursor: pointer;
+  transition: background var(--hmha-duration-fast) var(--hmha-easing-standard);
+}
+
+.hmha-nav-group-toggle:hover { background: var(--hmha-color-bg-subtle); }
+
+.hmha-nav-group-toggle:focus-visible {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}
+
+.hmha-nav-group-toggle hmha-icon {
+  transition: transform var(--hmha-duration-fast) var(--hmha-easing-standard);
+}
+
+/* The same chevron turn as Expansion Panel's trigger. */
+:host([data-expanded]) .hmha-nav-group-toggle hmha-icon {
+  transform: rotate(180deg);
+}

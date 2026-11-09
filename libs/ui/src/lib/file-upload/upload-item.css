@@ -1,0 +1,81 @@
+/* upload-item.css — declare the override API, then consume it.
+   Not one literal colour, length or font value in the file. */
+:host {
+  --hmha-upload-item-bg: var(--hmha-color-surface);
+  --hmha-upload-item-border: var(--hmha-color-border);
+
+  display: grid;
+  gap: var(--hmha-control-gap);
+  box-sizing: border-box;
+  padding: var(--hmha-control-padding-y) var(--hmha-control-padding-x);
+  border: var(--hmha-border-width) solid var(--hmha-upload-item-border);
+  border-radius: var(--hmha-radius-control);
+  background-color: var(--hmha-upload-item-bg);
+  color: var(--hmha-color-text);
+  font-family: var(--hmha-font-family);
+}
+
+.hmha-upload-item-main {
+  display: flex;
+  align-items: center;
+  gap: var(--hmha-control-gap);
+}
+
+/* Thumbnail and icon share one control-height box, so rows line up
+   whether or not a file has a preview. */
+.hmha-upload-item-thumb {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--hmha-control-height);
+  block-size: var(--hmha-control-height);
+  overflow: hidden;
+  border-radius: var(--hmha-radius-control);
+  color: var(--hmha-color-text-muted);
+}
+
+.hmha-upload-item-thumb img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.hmha-upload-item-info {
+  display: grid;
+  flex: 1;
+  min-inline-size: 0;
+}
+
+/* Long names wrap rather than truncate: an ellipsis would hide the one
+   part of "My Vacation 2026 - final - v3.mkv" that tells files apart. */
+.hmha-upload-item-name {
+  overflow-wrap: anywhere;
+  font-size: var(--hmha-type-label-md-size);
+  font-weight: var(--hmha-type-label-md-weight);
+  line-height: var(--hmha-type-label-md-line);
+}
+
+.hmha-upload-item-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--hmha-control-gap);
+  color: var(--hmha-color-text-muted);
+  font-size: var(--hmha-type-body-sm-size);
+  line-height: var(--hmha-type-body-sm-line);
+}
+
+.hmha-upload-item-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--hmha-control-gap);
+}
+
+.hmha-upload-item-error {
+  margin: 0;
+  color: var(--hmha-color-danger-text);
+  font-size: var(--hmha-type-body-sm-size);
+  line-height: var(--hmha-type-body-sm-line);
+}

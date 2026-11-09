@@ -35,16 +35,28 @@
   position: fixed;
   inset-block: 0;
   margin: 0;
+  /* So height: 100% includes the padding and border, rather than running
+     past the bottom of the viewport by both. */
+  box-sizing: border-box;
   width: var(--hmha-drawer-width);
   max-width: var(--hmha-drawer-width);
   height: 100%;
+  /* The browser caps a modal <dialog>'s max-height at the viewport less a
+     margin; without this the drawer stops short of the bottom edge. */
+  max-height: 100%;
   border-radius: 0;
 }
 
+/* Each placement also releases the opposite side. The browser's own dialog
+   styles set both inline insets to 0, and with a fixed width the start
+   side wins, so an end drawer opened at the start (found by the Wave 6
+   gate; the tests had only checked data-placement). */
 :host([data-placement='start']) {
   inset-inline-start: 0;
+  inset-inline-end: auto;
 }
 
 :host([data-placement='end']) {
+  inset-inline-start: auto;
   inset-inline-end: 0;
 }

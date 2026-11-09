@@ -50,6 +50,7 @@ import {
   HmhaTooltip,
   type HmhaSortDirection,
 } from '@halfmanhalfape/hmha-ui';
+import { MediaLibrary } from './media-library/media-library';
 
 interface TeamMember {
   readonly id: string;
@@ -76,6 +77,7 @@ function createPerson(id: string, name: string, email: string, role: string): Di
 @Component({
   selector: 'sandbox-root',
   imports: [
+    MediaLibrary,
     HmhaButton,
     HmhaCard,
     HmhaCheckbox,

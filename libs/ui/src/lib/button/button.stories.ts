@@ -13,16 +13,18 @@ const meta: Meta<HmhaButton> = {
     size: { control: 'inline-radio', options: ['sm', 'md', 'lg'] },
     loading: { control: 'boolean' },
     disabled: { control: 'boolean' },
+    pressed: { control: 'select', options: [null, false, true], description: 'null: an ordinary button. true/false: a toggle button.' },
   },
   args: {
     tone: 'neutral',
     size: 'md',
     loading: false,
     disabled: false,
+    pressed: null,
   },
   render: (args) => ({
     props: args,
-    template: `<button hmhaButton [tone]="tone" [size]="size" [loading]="loading" [disabled]="disabled">Button</button>`,
+    template: `<button hmhaButton [tone]="tone" [size]="size" [loading]="loading" [disabled]="disabled" [pressed]="pressed">Button</button>`,
   }),
 };
 export default meta;
@@ -125,5 +127,33 @@ export const ClickInteraction: Story = {
     const button = canvas.getByRole('button', { name: 'Click me' });
     await userEvent.click(button);
     await expect(args['onClick']).toHaveBeenCalled();
+  },
+};
+
+/**
+ * Toggle buttons (`pressed`, fork 45): each tone not pressed, then pressed.
+ * The state shows in more than colour: a neutral button gains the action
+ * tint and border, primary darkens, the status tones gain a ring.
+ */
+export const Pressed: Story = {
+  render: () => ({
+    template: `
+      <div style="display:grid; gap: var(--hmha-control-gap);">
+        @for (pressed of [false, true]; track pressed) {
+          <div style="display:flex; gap: var(--hmha-control-gap); flex-wrap: wrap;">
+            <button hmhaButton tone="neutral" [pressed]="pressed">Neutral</button>
+            <button hmhaButton tone="primary" [pressed]="pressed">Primary</button>
+            <button hmhaButton tone="danger" [pressed]="pressed">Danger</button>
+            <button hmhaButton tone="warning" [pressed]="pressed">Warning</button>
+            <button hmhaButton tone="success" [pressed]="pressed">Success</button>
+          </div>
+        }
+      </div>
+    `,
+  }),
+  play: async ({ canvas }) => {
+    const [off, on] = canvas.getAllByRole('button', { name: 'Neutral' });
+    await expect(off).toHaveAttribute('aria-pressed', 'false');
+    await expect(on).toHaveAttribute('aria-pressed', 'true');
   },
 };

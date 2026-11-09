@@ -154,6 +154,30 @@ preference works until an app pins a mode and then gets out of the way.
   the body rows. No error or warning hints at this — the only way to
   catch it is to actually measure rendered widths, which is exactly what
   the first attempt here skipped before this fix.
+- **`TestBed.createComponent(X)` for an attribute-selector component
+  (`button[hmhaButton]`) renders its host as a `<div id="root…">`, not
+  the native element.** Anything that depends on the real element (ARIA
+  attributes allowed only on it, native `disabled`, form behaviour) is
+  then tested on a div: axe flags valid ARIA, and some checks pass
+  vacuously. Use a host component whose template has the real element
+  (fork 45).
+- **CDK's `LiveAnnouncer` never loads the CSS that hides its own live
+  region** (unlike `AriaDescriber`/`FocusTrapFactory`), so on a page
+  where nothing else loaded `.cdk-visually-hidden`, announcements show as
+  visible text. Unit tests and axe can't see it; a screenshot did (fork
+  44). Never `inject(LiveAnnouncer)` directly in `libs/ui`: use the
+  internal `hmhaLiveAnnouncer()` from `core/live-announcer.ts`, which loads
+  CDK's styles first.
+- **An author `display` beats the browser's own `[hidden]` and
+  `dialog:not([open])` rules, whatever its specificity.** `:host {
+  display: block }` on a component that binds `hidden` renders the
+  "hidden" element anyway, and so does a consumer's `.panel { display:
+  flex }`. `HmhaTabPanel` and `HmhaStepPanel` shipped in 1.0 showing every
+  panel at once, and the Wave 5 sandbox drawer sat on the page while
+  closed; every test checked the attribute, which was right (fork 50).
+  Pair any `display` with `:host([hidden]) { display: none }` (or a
+  `[open]`/`:not([hidden])` guard), and test the computed `display` or
+  the measured geometry, not only the attribute.
 - **A `<colgroup>` with explicit column widths silently wins over
   `HmhaDataGridResizeHandle`'s own `th.style.width` mutation under
   `table-layout: fixed`** — confirmed in the Wave 4 gate
@@ -296,6 +320,12 @@ The component library lives in `libs/ui`, and its Storybook config is in `libs/u
   rather than the main dev server being down. Same fix still works
   (restart everything, clearing the cache); `lsof -i :6006` alone won't
   show this one, since the main server is still bound and answering.
+- **A new third-party import in `libs/ui` (a new `@angular/cdk/*` entry
+  point, say) can make Vite re-optimise its dependencies under a running
+  `addon-vitest`**, after which most stories fail with "Failed to fetch
+  dynamically imported module …/sb-vitest/deps/axe-core.js". That's not a
+  test result: restart the dev server with
+  `node_modules/.cache/storybook` cleared, then re-run.
 - **A `*.stories.ts` file Storybook's glob matches but that has no real CSF
   export (no `export default meta`) breaks the entire index** — every
   Storybook MCP call fails with `Unable to index <path>`, not just that
@@ -425,6 +455,25 @@ page does, or should, add any new theming feature to `tokens/` — it
 deliberately doesn't. The whole point is demonstrating that any
 consumer can already override this library's semantic color/type tokens
 at runtime, with zero new token work.
+
+**Wave 6 is done, released as `hmha-ui` 1.2.0 and `hmha-tokens` 1.1.0.**
+Built for Stackfi, a media-streaming app and the library's first real
+consumer: `HmhaSlider` (a native range input; one `model()` that Forms
+also reads, fork 35), `HmhaProgressBar`, `HmhaSpinner`, `HmhaSkeleton`,
+`HmhaAvatar`, `HmhaBadge`, File Upload (dropzone and upload rows, UI only,
+never transport, fork 41), `HmhaAlert`, `HmhaEmptyState`,
+`HmhaSegmentedControl`/`HmhaSegment` (native radios, fork 48) and
+`HmhaNavList`/`HmhaNavItem`/`HmhaNavGroup` (native links, current page
+from `aria-current`, disclosure groups, fork 49), plus additions to
+existing components: `pressed` on `HmhaButton` (fork 45), `HmhaInput` on
+`<textarea>` with `autoGrow` (fork 46) and a soft-limit character
+counter shown by `HmhaField` (fork 47). Proven together in a "Media
+library" screen in `apps/sandbox` (`media-library/`). The gate found
+three bugs that shipped in 1.0 and 1.1 (Tab Panel and Step Panel showing
+every panel, Drawer's end placement and height), fixed in 1.2.0; read
+fork 50 and the `[hidden]` note above before giving any component a
+`display`. Forks 33–50 cover the wave; `DECISIONS.md`'s **Wave 6
+progress** section has the step-by-step write-up.
 
 **`HmhaDivider` is done** (`hr[hmhaDivider]`, `libs/ui/src/lib/divider/`)
 — horizontal/vertical, a real `length` input (your own runtime CSS

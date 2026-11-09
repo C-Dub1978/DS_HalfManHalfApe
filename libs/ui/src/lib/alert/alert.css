@@ -1,0 +1,71 @@
+/* alert.css — declare the override API, then consume it.
+   Not one literal colour, length or font value in the file. */
+:host {
+  /* Each tone is a tinted fill with its own dark text: four 4.5:1 pairs
+     already checked by check-contrast.mjs in both modes (fork 42). The
+     icon uses the text colour too, so it clears the same bar. */
+  --hmha-alert-bg: var(--hmha-color-action-subtle);
+  --hmha-alert-fg: var(--hmha-color-action);
+  --hmha-alert-border: var(--hmha-color-action);
+
+  display: flex;
+  align-items: flex-start;
+  gap: var(--hmha-control-gap);
+  box-sizing: border-box;
+  padding: var(--hmha-control-padding-y) var(--hmha-control-padding-x);
+  border: var(--hmha-border-width) solid var(--hmha-alert-border);
+  border-radius: var(--hmha-radius-control);
+  background-color: var(--hmha-alert-bg);
+  color: var(--hmha-alert-fg);
+  font-family: var(--hmha-font-family);
+  font-size: var(--hmha-type-body-md-size);
+  line-height: var(--hmha-type-body-md-line);
+}
+
+:host([data-tone="success"]) {
+  --hmha-alert-bg: var(--hmha-color-success-subtle);
+  --hmha-alert-fg: var(--hmha-color-success-text);
+  --hmha-alert-border: var(--hmha-color-success);
+}
+:host([data-tone="warning"]) {
+  --hmha-alert-bg: var(--hmha-color-warning-subtle);
+  --hmha-alert-fg: var(--hmha-color-warning-text);
+  --hmha-alert-border: var(--hmha-color-warning);
+}
+:host([data-tone="danger"]) {
+  --hmha-alert-bg: var(--hmha-color-danger-subtle);
+  --hmha-alert-fg: var(--hmha-color-danger-text);
+  --hmha-alert-border: var(--hmha-color-danger);
+}
+
+/* Centred on the first line of text: exactly one line tall (1lh). The
+   line-height token is unitless (1.5), so it can't size a box itself. */
+.hmha-alert-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  block-size: 1lh;
+}
+
+.hmha-alert-body {
+  display: grid;
+  flex: 1;
+  gap: calc(var(--hmha-control-gap) / 2);
+  min-inline-size: 0;
+}
+
+.hmha-alert-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--hmha-control-gap);
+  margin-block-start: calc(var(--hmha-control-gap) / 2);
+}
+
+/* No actions projected: no empty row of spacing. */
+.hmha-alert-actions:empty {
+  display: none;
+}
+
+.hmha-alert-dismiss {
+  flex-shrink: 0;
+}

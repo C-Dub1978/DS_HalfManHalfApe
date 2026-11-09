@@ -1,0 +1,111 @@
+.library {
+  display: grid;
+  grid-template-columns: minmax(12rem, 14rem) 1fr;
+  gap: var(--hmha-space-stack);
+  align-items: start;
+}
+
+@media (max-width: 40rem) {
+  .library { grid-template-columns: 1fr; }
+}
+
+.library-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hmha-space-stack);
+  min-width: 0;
+}
+
+.library-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--hmha-control-gap);
+}
+
+.library-title {
+  margin: 0;
+  margin-inline-end: auto;
+  font-size: var(--hmha-type-heading-sm-size);
+  line-height: var(--hmha-type-heading-sm-line);
+  font-weight: var(--hmha-type-heading-sm-weight);
+}
+
+.titles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: var(--hmha-space-stack);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.titles[data-view="list"] {
+  grid-template-columns: 1fr;
+}
+
+.title {
+  display: grid;
+  gap: var(--hmha-control-gap);
+  justify-items: start;
+}
+
+.titles[data-view="list"] .title {
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+}
+
+.poster {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--hmha-radius-control);
+  background: var(--hmha-color-surface-sunken);
+  color: var(--hmha-color-text-subtle);
+}
+
+.titles[data-view="list"] .poster {
+  width: var(--hmha-control-height);
+}
+
+.muted {
+  color: var(--hmha-color-text-muted);
+}
+
+.player {
+  display: grid;
+  grid-template-columns: auto 1fr auto 4rem;
+  align-items: center;
+  gap: var(--hmha-control-gap);
+  padding: var(--hmha-control-padding-y) var(--hmha-control-padding-x);
+  border: var(--hmha-border-width) solid var(--hmha-color-border);
+  border-radius: var(--hmha-radius-surface);
+  background: var(--hmha-color-surface);
+}
+
+.player-controls {
+  display: flex;
+  gap: var(--hmha-control-gap);
+}
+
+.player-time {
+  font-size: var(--hmha-type-body-sm-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hmha-space-stack);
+  max-width: 40ch;
+}
+
+.details h4 {
+  margin: 0;
+}
+
+.row {
+  display: flex;
+  gap: var(--hmha-control-gap);
+}

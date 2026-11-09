@@ -36,3 +36,15 @@
   line-height: var(--hmha-type-label-md-line);
   color: var(--hmha-field-error-fg);
 }
+
+/* The character count (fork 47): muted while within the limit, the error
+   colour once over it, with the words saying so too ("too many"). */
+.hmha-field-counter {
+  font-size: var(--hmha-type-label-md-size);
+  line-height: var(--hmha-type-label-md-line);
+  color: var(--hmha-field-hint-fg);
+}
+
+.hmha-field-counter[data-over] {
+  color: var(--hmha-field-error-fg);
+}

@@ -93,7 +93,11 @@ h2 {
   justify-content: flex-end;
 }
 
-.project-drawer {
+/* [open] only: a class setting display on a <dialog> beats the browser's
+   own dialog:not([open]) { display: none }, and a closed drawer would sit
+   on the page, overlapping whatever follows, with its controls in the Tab
+   order (found by the Wave 6 gate). */
+.project-drawer[open] {
   display: flex;
   flex-direction: column;
   gap: var(--hmha-space-stack);
@@ -105,7 +109,9 @@ h2 {
   gap: var(--hmha-space-stack);
 }
 
-.project-step-panel {
+/* :not([hidden]): the same trap as the drawer above. A class setting
+   display beats the browser's [hidden] rule, and every step showed at once. */
+.project-step-panel:not([hidden]) {
   display: flex;
   flex-direction: column;
   gap: var(--hmha-space-stack);

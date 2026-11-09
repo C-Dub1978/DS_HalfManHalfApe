@@ -1,9 +1,9 @@
-import { type Signal, signal } from '@angular/core';
+import { type Signal, type WritableSignal, isSignal, signal } from '@angular/core';
 import type { ControlValueAccessor } from '@angular/forms';
 
 /**
  * Shared ControlValueAccessor plumbing for hmha-ui's form controls (Input,
- * Checkbox, Switch, and RadioGroup). Not exported from public-api.ts — it's
+ * Checkbox, Switch, RadioGroup and Slider). Not exported from public-api.ts — it's
  * an internal implementation detail, not part of the published API surface.
  *
  * `writeValue` (Forms → component) deliberately does not call `onChange`;
@@ -18,8 +18,16 @@ export interface HmhaValueAccessor<T> extends ControlValueAccessor {
   markTouched(): void;
 }
 
-export function hmhaValueAccessor<T>(initial: T): HmhaValueAccessor<T> {
-  const value = signal(initial);
+/**
+ * Pass a plain initial value, and the accessor owns its own signal. Pass a
+ * `WritableSignal` (a component's own two-way `model()`, as Slider does),
+ * and the accessor reads and writes that signal instead, so Forms and the
+ * model binding share one source of truth (fork 35). A control's value is
+ * never itself a signal, so `isSignal()` tells the two apart; Angular 20
+ * (the floor) has no `isWritableSignal()` to be stricter with.
+ */
+export function hmhaValueAccessor<T>(initial: T | WritableSignal<T>): HmhaValueAccessor<T> {
+  const value: WritableSignal<T> = isSignal(initial) ? (initial as WritableSignal<T>) : signal(initial);
   const disabled = signal(false);
   let onChange: (value: T) => void = () => {};
   let onTouched: () => void = () => {};

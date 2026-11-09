@@ -99,6 +99,7 @@
   --hmha-icon-md: var(--hmha-space-5);
   --hmha-icon-lg: var(--hmha-space-6);
   --hmha-layout-drawer-width: var(--hmha-space-80);
+  --hmha-track-thickness: var(--hmha-space-1);
   --hmha-type-heading-lg-size: var(--hmha-font-size-3xl);
   --hmha-type-heading-lg-line: var(--hmha-line-height-tight);
   --hmha-type-heading-lg-weight: var(--hmha-font-weight-bold);

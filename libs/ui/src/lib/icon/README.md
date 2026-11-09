@@ -13,7 +13,7 @@ request, and the file is not checked in (see below).
 
 | Input | Type | Default | Notes |
 | --- | --- | --- | --- |
-| `name` | `HmhaIconName` (required) | — | One of ~120 curated icon names — see `scripts/icons/allowlist.json` for the full list. |
+| `name` | `HmhaIconName` (required) | — | One of ~130 curated icon names — see `scripts/icons/allowlist.json` for the full list. |
 | `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Reflected as `data-size`; drives `--hmha-icon-size`. |
 
 ## Component tokens — the override API

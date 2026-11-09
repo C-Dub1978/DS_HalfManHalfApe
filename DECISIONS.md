@@ -2634,6 +2634,1625 @@ matching majors, every check green, no console errors).
 
 ---
 
+## 34 — Wave 6 scope: Slider, Progress Bar, and two more — for Stackfi's media player
+
+**Decided:** a sixth wave, released together as one minor version
+(`hmha-ui` 1.2.0) from one branch (`chore/new-components`) and one PR, at
+the user's request, rather than a PR per component. ~~Four~~ **Six**
+components (the user widened the wave after step 2B). Named so far, in
+order: **Slider**, **Progress Bar**, **Spinner**, **Skeleton**, **Avatar**
+(a person), **Badge** (a status, tag or count).
+
+**Widened again after Badge:** **File Upload**, then the rest of what
+Stackfi's planning needs, gathered as one list so the wave has a single
+gate and a single 1.2.0 release rather than a partial set and a
+follow-up (the user has no deadline and wants HMHA finished for a while).
+Checked against the library before being scheduled:
+
+- **Alert** (new): a persistent inline message (info, success, warning,
+  error). Nothing existing covers it: `HmhaToast` disappears, `HmhaField`'s
+  error is per-field. The success "banner" in the Wave 2 sandbox gate was
+  hand-styled app markup, never a library component.
+- **Empty State** (new): icon, heading, text, action.
+- **Segmented Control** (new): one-of-several, always one selected,
+  likely native radios styled as joined buttons (fork 11's ground).
+- **Toggle button: an addition, not a component.** A `pressed` input on
+  `HmhaButton` (`aria-pressed`), which `HmhaIconButton` inherits by
+  stacking on it. `HmhaChip` already has `aria-pressed` but is tag-styled.
+- **Textarea: an addition, not a component.** `HmhaInput` also matches
+  `<textarea>` (it only matched `<input>`), keeping one Forms/Field
+  integration.
+- **Nav List** (new): links with active-item styling keyed off
+  `aria-current="page"`, which `routerLinkActive`'s `ariaCurrentWhenActive`
+  sets, so there's still no `@angular/router` dependency. The app shell
+  itself (top bar, collapsing side nav) stays in Stackfi, consistent with
+  fork 26's "no persistent drawer; consumers lay out their own
+  `<nav>`/`<aside>`".
+
+All additive, so the release stays a minor version. Each still gets its
+own proposal step. Stackfi (an Angular 22 media-streaming app, the
+library's first real consumer) is the driver: Slider becomes its seek
+timeline and volume control, and Progress Bar its upload and transcode
+status.
+
+**Order breaks the usual smallest-first rule, on purpose.** Slider is the
+most complex piece in the wave and goes first anyway, for two reasons:
+Stackfi needs it most, and Progress Bar's visual design (track, fill)
+should follow whatever Slider settles, not the other way round. Whether
+the two share code is a real question, answered in Slider's foundation
+proposal (step 1a), not assumed here.
+
+**Out of scope, stated rather than left implicit:** the media player
+itself. Play/pause, timestamps and the player shell are Stackfi's own
+code, per its planning doc. The library ships the generic controls they
+are built from.
+
+---
+
+## 35 — Slider: native `<input type="range">`, one signal for `[(value)]` and Forms
+
+**Decided:** `HmhaSlider` is `input[hmhaSlider]`, an attribute component
+on the native range input. It sets `type="range"` itself, the way
+`HmhaCheckbox` sets `type="checkbox"`. The browser supplies `role="slider"`,
+`aria-valuenow`/`-min`/`-max`, arrow, Page Up/Down, Home and End keys,
+pointer and touch drag, track-click-to-jump, RTL and form submission,
+none of it hand-written. Angular Material's own slider has been built on
+the same element since v15.
+
+**Rejected: a custom `div[role="slider"]`** with a templated track and
+thumb. It gives total visual freedom, at the cost of re-implementing
+every behaviour above, which is the same trade forks 10, 14 and 25 turned
+down. The CDK has no slider primitive to lean on either. Electron
+(raised as Stackfi's likely desktop wrapper) strengthens the native case:
+it's always Chromium, so the one real cost, two engine-specific styling
+paths, halves there.
+
+**The value: one `model()` that Forms also reads and writes.** A media
+player needs `[(value)]` without Forms (a playhead written from
+`timeupdate` several times a second), and a settings page needs
+`[formControl]`. No existing control did both: form controls were
+Forms-only, Chip `model()`-only. `hmhaValueAccessor()` (fork 08) now
+optionally takes an existing `WritableSignal` instead of an initial value,
+and reads and writes it, so the slider's own `model()` is the single
+source of truth for both paths. Fork 08's one correctness rule (a Forms
+write never calls `onChange`) stays in one place. Every existing call site
+passes a plain value and is unchanged. `isSignal()` tells the two apart,
+since Angular 20 has no `isWritableSignal()`. Forms writing `null` (a
+`reset()`) maps to `min`, because a range input has no empty state.
+
+**Media-player specifics, all inputs and outputs, no player logic:**
+- `buffered`: a lighter band ahead of the fill, in `value`'s units.
+  It's never drawn behind the fill, since what has played has loaded.
+- `valueText`: sets `aria-valuetext` ("1:23 of 4:56").
+- `valueCommit`: the native `change` event (release, or a finished key
+  press), when a player seeks. `valueChange` (the model's own output)
+  fires continuously.
+- `scrubbingChange` (and a `scrubbing` signal): pointer down to a
+  document-level pointer up or cancel, so a player can pause its
+  `timeupdate` writes during a drag.
+- `orientation` (`HmhaOrientation`, reused from fork 28): vertical via
+  native `writing-mode: vertical-lr; direction: rtl`, bottom = min, with
+  `aria-orientation` set explicitly because CSS orientation is
+  invisible to the accessibility tree.
+
+**A real ordering bug, designed out rather than found later:** a range
+input clamps `value` to whatever `max` it has *at the moment `value` is
+set*. As four host property bindings, `value` could land before a new
+`max` (a timeline whose duration arrives after the playhead), and a
+binding only re-runs when its own expression changes, so the clamped
+value would never be corrected. One `effect()` writes `min`, `max`,
+`step`, then `value`, always in that order, and re-runs when any of
+them changes. Two unit tests cover it, and both were confirmed to fail
+("Expected '100' to be '250'") with the write order deliberately
+reversed, so they catch the bug rather than just passing.
+
+**Shared with Progress Bar: one token, no code.** Progress Bar will be
+the native `<progress>` (a display element, no focus, no CVA, styled
+through entirely different engine pseudo-elements), so a shared base
+would couple a form control to a display element (fork 08's base-class
+rejection again) and share no actual CSS. The real overlap is visual,
+so it lives in the token tier: a new semantic dimension,
+`track.thickness` (`{space.1}`, an existing primitive), which both
+components' thickness tokens point at. Colours reuse existing roles: fill
+and thumb `action` (which already passes 3:1 against `bg`, since `focus`
+is the same blue), buffered `border-strong` (already a checked 3:1 pair),
+and track `border`. No new colour roles, so light/dark parity and the
+contrast script are untouched.
+
+**Styling notes.** Each engine's track and thumb is written twice
+(`::-webkit-slider-*`, `::-moz-range-*`), because an unknown pseudo-element
+in a selector list invalidates the whole rule. Both read tokens declared
+once on `:host`. The fill and buffered band are one gradient driven by
+two internal percentage custom properties set from the component
+(`--_hmha-slider-fill`, `--_hmha-slider-buffered`). The underscore marks
+them as internal, not override API. The host is a full control height
+(density-aware), so a slider lines up in a row with buttons.
+
+**Out of scope, stated:** a two-thumb range slider (no native element),
+tick marks, and a hover-time preview tooltip (player code). The iOS
+caveat (its native range may not jump on a track tap) is documented in
+the README, with an additive fix if Stackfi's Capacitor phase needs it.
+
+---
+
+## 36 — Progress Bar: native `<progress>`, three tones, and a lighter shared track
+
+**Decided:** `HmhaProgressBar` is `progress[hmhaProgressBar]`, an
+attribute component on the native `<progress>`. The browser supplies
+`role="progressbar"`, its value semantics and the indeterminate state.
+It's a display element: not focusable, no keyboard input, no
+`ControlValueAccessor`, no `HmhaField` (no required, invalid or hint state
+to wire). Labelled the native ways: `<label for>`, `aria-labelledby` or
+`aria-label`. As fork 35 decided, it shares no code with Slider, only the
+track.
+
+**Indeterminate is `value = null`, bound as an *attribute*.** A
+`<progress>` is indeterminate exactly when it has no `value` attribute.
+Once the `value` *property* has been set, nothing but removing the
+attribute returns it to that state. So `value` is `[attr.value]`, with
+null removing it, and a job can go from 62% back to "queued" (a retry).
+`0` stays a real, empty determinate bar. A unit test pins the round trip,
+and three tests were confirmed to fail with a property binding swapped in.
+
+**Tones, and why the shared track changed colour.** Stackfi wants a red
+"failed" and a green "complete" bar. Before building them, every fill was
+measured against the track it sits on, since the fill's end point is the
+information and WCAG 1.4.11 wants 3:1 for it. On the original track
+(`border`), blue passed in both modes, but green and red failed in dark
+mode (2.65:1) and amber in light (1.85:1). The fix: both components'
+track moved to `bg-subtle`. Blue, green and red then pass in both modes
+(lowest 3.42:1, green and red in dark). The user chose this over
+"primary only" and over keeping the failing track. It also fixes the
+Slider's red `invalid` fill in dark mode, which had the same 2.65:1 gap
+(its thumb, the part that identifies the value, always passed). The
+trade-off, accepted knowingly: the empty track is fainter against the
+page, most visibly in light mode on `bg`. It reads better on a `surface`
+card.
+
+- **Tones are `primary | success | danger`**, a new
+  `HmhaProgressBarTone`, not `HmhaTone`. `neutral` has no fill role, and
+  amber can't reach 3:1 on *any* light track, so `warning` waits on the
+  existing amber-500 open item rather than shipping below the bar.
+- **The guard is now in CI, not just in this decision:**
+  `scripts/check-contrast.mjs` asserts `action`, `success` and `danger`
+  at 3:1 on `bg-subtle` in both modes, so a later retheme can't quietly
+  undo it.
+
+**The indeterminate sweep** is a 40% fill segment painted on the host
+and moved with `background-position`, with each engine's own
+indeterminate bar made transparent so Blink and Gecko draw the same
+thing. It reverses in RTL. Under `prefers-reduced-motion: reduce` it
+doesn't travel: the whole track fills and pulses in opacity instead. Its
+duration is a component token, `calc(var(--hmha-duration-base) * 8)`, so
+no new duration token was needed. The 40% and the keyframe positions are
+sweep geometry, commented as such, not design values.
+
+**Not built, stated:** a `size` input (one thickness token covers
+Stackfi's uses, and `--hmha-progress-bar-thickness` overrides it),
+circular progress, and buffered progress (the Slider's `buffered` already
+covers a media timeline).
+
+**Amendment (Wave 6 step 7c): the shared track is `surface-sunken`, not
+`bg-subtle`.** Step 7c's dark-mode screenshots of upload rows showed
+progress tracks and neutral badge pills invisible: in dark mode
+`bg-subtle` is the same neutral.900 as `surface`, so 1.00:1 inside any
+row or panel on a surface. This decision had measured the track against
+the page and the fills, never against `surface`. Candidates were measured
+on all three grounds (page, surface, card) in both modes. A text-colour
+tint shows everywhere, but pulls the dark track toward the fills (about
+2:1). A darker shade can't go below the near-black dark page. In dark mode
+the three grounds span a range that any single track colour matches one
+of, so one ground had to give. `surface-sunken` (light neutral.100, dark
+neutral.950) reads as recessed in both modes, shows on surfaces and cards,
+and keeps every fill at 3.98:1 or better. The ground it gives up is the
+bare dark page background, the least likely place for a player control or
+upload row. The user chose it. The neutral *subtle* badge fill moved with
+it, for the same reason. CI's fill-on-track pairs and the neutral badge's
+text pair now point at `surface-sunken`, and all pass in both modes.
+
+---
+
+## 37 — Spinner: a custom element rotating the icon set's own glyph
+
+**Decided:** `HmhaSpinner` is `hmha-spinner`, a custom element whose
+template is one `<hmha-icon name="spinner">` (the Lucide arc already in the
+registry), rotated by CSS. It's a custom tag under `CLAUDE.md`'s "only
+where no native element fits" rule, because no native element draws a
+rotating arc. It joins `hmha-card`, `hmha-field` and `hmha-icon` as the
+library's only custom tags.
+
+**Rejected: `progress[hmhaSpinner]`,** the native `<progress>` drawn as a
+ring. It would have given `role="progressbar"` for free and matched
+Progress Bar (fork 36), but a `<progress>` can't hold the icon, and
+turning a bar into a ring means gradient and mask tricks on each engine's
+pseudo-elements. That's fragile styling to save one ARIA attribute.
+
+**Two accessibility modes:**
+- **Standalone (default):** `role="progressbar"` with no value and an
+  `aria-label` (`label`, default `"Loading"`). That's the standard spinner
+  semantics, and the same thing an `HmhaProgressBar` with no value is.
+- **`decorative`:** no role, no name, `aria-hidden="true"`, for a spinner
+  inside something that already announces it's busy. A loading
+  `HmhaButton` sets `aria-busy`, and an announced progress bar inside it
+  would both repeat that and leak into the button's name ("Save
+  Loading"). A unit test renders exactly that composition and checks it
+  with axe.
+
+**Button integration is composition, not a Button change.** `HmhaButton`'s
+README already told consumers to "pair with your own spinner". It now
+points at `<hmha-spinner decorative size="sm" />` instead. Making
+`loading` render a spinner by itself would change every existing loading
+button's look in a minor release, and would need Button to gain a
+template it has never had.
+
+**Colour and size.** `currentColor` by default, so it matches the text
+beside it (white inside a primary button). Sizes are the icon scale.
+Spinner sizes its glyph by setting `HmhaIcon`'s own documented override
+token (`--hmha-icon-size`) on the `hmha-icon` in its own template, not
+by reaching into the icon's internals, so `--hmha-spinner-size` takes any
+length (a page-level loader). Removing that one declaration was confirmed
+to fail the sizing test (the glyph stayed at 20px for `sm` and `lg`).
+
+**Motion.** One turn per `calc(var(--hmha-duration-base) * 4)`, a
+component token, so no new duration token was needed. Under
+`prefers-reduced-motion: reduce` it pulses in place instead of rotating,
+matching Progress Bar's reduced-motion treatment. The user was offered a
+pure-CSS show-after-a-delay option (to avoid a flash on fast loads) and
+didn't take it. It stays a cheap later addition.
+
+---
+
+## 38 — Skeleton: one block on a native span/div, layout stays the consumer's
+
+**Decided:** `HmhaSkeleton` is `span[hmhaSkeleton], div[hmhaSkeleton]`, a
+template-less attribute component. One block is one placeholder shape
+(`text`, `circle` or `rect`), and the consumer lays blocks out with the
+same markup the real content uses: skeleton cells in their real
+`HmhaTable` rows, skeleton posters in their real poster grid. That's
+`CLAUDE.md`'s native-element preference, and it's what makes "entire
+rows" work: a `<span>` goes inside a `<td>`.
+
+**Rejected: `hmha-skeleton` with built-in presets** (`preset="table-row"`,
+`preset="card"`). That's less markup, but each preset is a guess at
+Stackfi's layouts that breaks the first time a real row doesn't match.
+Fork 21's principle (the consumer owns layout and data) points the same
+way here as it did for the data grid.
+
+**Accessibility: blocks are always `aria-hidden`, the container says it's
+busy.** A placeholder has nothing to read, and a page of announced
+progress bars would be noise. The README's headline instruction is
+`[attr.aria-busy]="loading() || null"` on the container being loaded, plus
+a polite live region for a long wait, which stays page code because only
+the page knows when it's worth saying. No helper directive was built for
+`aria-busy`: one directive to set one attribute would be API without
+substance. A unit test renders the README's own table pattern
+(`<tbody aria-busy>` with skeleton rows) and checks it with axe in both
+modes.
+
+**Text rhythm without margins, after the linter said no.** The first
+draft centred a 1em bar in one line-height with
+`margin-block: calc((1lh - 1em) / 2)`. `lint:css` rejected the `lh`/`em`
+units on a margin property, correctly by the rule as written. Rather than
+work around the linter, the text shape became `display: inline-block`
+(1em tall). An inline box sits in its own line box, one line-height tall,
+so stacked text placeholders get the rhythm of real text from normal
+layout, with no spacing to tune. A test pins it (lines 24px apart at
+`line-height: 24px`), and was confirmed to fail ("Expected 16 to be close
+to 24") with `display: block` swapped back in.
+
+**Colour: a 12% tint of the text colour, after a fixed grey failed in the
+real browser.** A skeleton carries no information, so it has no WCAG
+contrast floor, but it does have to be visible. Step 4b picked `border` by
+measuring it on the page (`bg`) and `surface`, in both modes (1.18:1 to
+1.50:1). Step 4c's dark-mode screenshot of a skeleton inside `HmhaCard`
+showed it invisible: a card sits on `surface-raised`, not `surface`, and
+in dark mode `surface-raised` and `border` are the same neutral.800, so
+1.00:1. The 4b measurement had simply never included the ground a card
+uses. Re-measured on all three grounds in both modes: `border-strong` never
+vanishes, but at 3 to 4.7:1 reads as heavy as real UI chrome, while
+`color-mix(in oklch, var(--hmha-color-text) 12%, transparent)` stays at
+1.27:1 to 1.44:1 everywhere and tracks the text colour, so it holds on any
+surface added later. The user chose the tint (a visual change, so asked
+first). A unit test now composites the fill over all three grounds in
+both modes and requires better than 1.2:1, and was confirmed to fail on
+the old `border` fill ("dark on surface-raised: Expected 1 to be greater
+than 1.2"). It measures through a 1x1 canvas rather than a colour
+library, since `culori` (used by the contrast script) ships no types and
+wasn't worth a new dev dependency for one test.
+
+**Shapes and sizing.** `text` is full width and 1em tall. `circle` is a
+control's height and always square (`aspect-ratio: 1`). `rect` is full
+width at 16:9, a video thumbnail's proportions. `width`/`height` inputs take
+the consumer's own CSS lengths, the same shape as `HmhaDivider`'s
+`length` (fork 28), and an explicit height wins over the 16:9 default.
+
+**Motion: a gentle opacity pulse**, the user's choice over a shimmer
+sweep, and already the library's busy language (Progress Bar's and
+Spinner's reduced-motion fallback). Being a fade rather than movement,
+it keeps running under `prefers-reduced-motion`, at half the speed.
+
+**Not built, stated:** row or card presets, a `lines` input (repeat
+`text` blocks), and fading real content in on arrival.
+
+---
+
+## 39 — Avatar: a span that falls back from photo to initials to icon
+
+**Decided:** `HmhaAvatar` is `span[hmhaAvatar]`, a component on a native
+`<span>` whose template shows the first of three that works: the photo
+(`src`), initials from `name`, or the `user` icon. A `<span>` can hold an
+`<img>` and text alike, so it keeps `CLAUDE.md`'s native-element rule.
+
+**Rejected: `img[hmhaAvatar]`.** That's the most native option, but an
+`<img>` can't contain anything, so there would be nowhere to show
+initials when the photo is missing or broken. For Stackfi's user uploads,
+that's the common case, not the edge case.
+
+**Fallback mechanics.** A failed photo (404, expired signed URL) is
+caught by the image's own `error` event, with no timers, into an
+`imageFailed` `linkedSignal` keyed on `src`, so a new URL gets a fresh
+attempt automatically: the first `linkedSignal` in the library, and a
+textbook fit for "derived state the user can also write". Initials take
+the first letter or digit of the first and last words, read as whole
+code points (`Array.from` plus `\p{L}\p{N}`), so accented, CJK and
+punctuation-led names work and emoji are skipped. The logic is exported
+as `hmhaInitials()` and pinned by 10 cases.
+
+**Accessibility: the same two modes as Spinner (fork 37).** By default
+it's `role="img"`, named by `name` ("User" when there isn't one): an
+unnamed picture of a person is worse than a repeated name. `decorative`
+removes it from the accessibility tree, for an avatar beside the visible
+name. The inner `<img>` always has `alt=""`, so photo, initials and icon
+read identically.
+
+**Colour: one calm neutral, the user's choice over a per-person palette,**
+which would need about 6 new categorical, text-safe colour roles in both
+modes. That's real token work, addable later without an API change.
+Measured before writing CSS, with fork 38's lesson in hand: every fixed
+neutral fill vanishes on some ground (in light mode none clears 1.10:1
+against any surface). So the background is fork 38's tint,
+`color-mix(in oklch, var(--hmha-color-text) 12%, transparent)`, with
+`text-muted` initials. That has a useful side effect: a circle skeleton
+and a real initials avatar look alike, so loading to loaded doesn't
+jump. Initials are text, so a unit test composites the tint over page,
+surface and card in both modes and requires the circle above 1.2:1 and
+the initials at 4.5:1. It was confirmed to fail with a fixed `bg-subtle`
+fill (four grounds, down to 1.00:1 on a dark surface).
+`check-contrast.mjs` can't resolve `color-mix()`, so this pair lives in
+the unit test rather than CI's token script. The canvas-based colour
+helpers it uses moved from the Skeleton spec into
+`core/testing/paint.ts`, test-only and confirmed absent from `dist`.
+
+**Size.** `sm`/`md`/`lg` are the control heights (32, 40 and 48px), so an
+avatar lines up with a button beside it and shrinks with compact
+density like table rows do. `--hmha-avatar-size` takes any length.
+Initials scale at 40% of the size. Always a circle.
+
+**Not built, stated:** a status dot (Badge's territory, decided there),
+overlapping avatar groups, and photo cropping or upload.
+
+**Addendum (step 6c): a `label` input, found through Badge's status-dot
+pattern.** The README's first avatar-with-status pattern put the status
+in the name (`name="Chris Wilson (online)"`) so the hidden dot's meaning
+would be spoken. Its screenshot drew "CO": initials take the last word,
+and the last word was "(online)". `label` (optional) now overrides the
+accessible name while initials still come from `name`:
+`name="Chris Wilson" label="Chris Wilson, online"`. That's additive, and
+Avatar hadn't shipped. A unit test and the Badge story both pin "CW".
+
+---
+
+## 40 — Badge: never-interactive status and counts, split cleanly from Chip
+
+**Decided:** `HmhaBadge` is `span[hmhaBadge]`, a never-interactive
+component on a native `<span>` for what the app tells someone: a status
+("New", "Processing", "Failed") or a count. It has three forms: projected
+text, `count` (capped at `max`, default 99, as "99+"; a zero count hides
+the badge unless `showZero`), and `dot` (a small circle, no text).
+
+**The split from `HmhaChip`, approved as the rule of thumb for the
+README:** if someone can click it or chose it, it's a Chip; if the app is
+telling them something, it's a Badge. The display Chip already covered
+"a tag", so Badge doesn't duplicate it. Chip stays neutral, control-sized
+and optionally a real `<button>`, and Badge is toned, small and never
+interactive. A genre tag on a title is a Chip; "Processing" on an upload
+is a Badge.
+
+**Look: `tone` (the existing `HmhaTone`) times `appearance`
+(`subtle` | `solid`), `subtle` by default.** The user first answered
+"solid sounds best", which was built as "solid only" for a moment before
+they stopped it. They'd meant both appearances. No code had been written,
+so nothing needed undoing. All ten pairings are 4.5:1 text pairs in
+`check-contrast.mjs`, in both modes. Seven already existed (the four
+`text-on-*` solids, the three `*-text` on `*-subtle`), and three were
+added: neutral subtle (`text-muted` on `bg-subtle`, 7.42:1 / 10.95:1),
+primary subtle (`action` on `action-subtle`, 4.54:1 / 4.77:1) and neutral
+solid (`surface` on `text-muted`, 8.14:1 / 10.95:1). **Warning is in,
+unlike Progress Bar (fork 36):** that gap was amber as a thin fill against
+a track, while here amber is behind dark text (`text-on-warning`), a pair
+that already passes. A unit test measures the *painted* text against the
+painted fill for all ten pairings in both modes, so it checks the CSS
+wiring, not just the tokens. It was confirmed to fail (2.28:1, and axe
+agreed) with white text on the solid amber. Each tone's four colours are
+internal `--_hmha-badge-*` properties; `--hmha-badge-bg`/`-fg` are the
+override API.
+
+**A dot is always the tone's strong colour, whatever the appearance.** A
+subtle tint at 8px would barely show. A dot is `aria-hidden`, because
+colour alone can't carry meaning (WCAG 1.4.1), so whatever it says must be
+text elsewhere. The README's avatar status pattern puts it in the avatar's
+own name ("Chris Wilson (online)"). That settles the status dot fork 39
+left to Badge: plain consumer CSS pins a dot to an avatar's corner, with
+no positioning API.
+
+**Accessibility otherwise.** Text badges are plain text, deliberately not
+live regions (a list of badges each announcing itself would be noise);
+counts read as text inside their surrounding name ("Notifications 12").
+
+**Sizing with no new tokens.** The proposal flagged that a new spacing
+token might be needed. It wasn't: the badge is an inline icon's height
+(`--hmha-icon-md`, so it lines up with an icon in the same row) and at
+least as wide, so a single-digit count is round. Side padding is 0.75 of
+the density-aware control gap, and a dot is half the small icon. Text uses
+`label-sm`, its first consumer since fork 31 added it.
+
+**Addendum (step 6c): lining figures.** The counts screenshot showed
+Raleway's default old-style digits, sitting at different heights ("42"
+descends, "3" drops), which is wrong for a count. The badge now sets
+`font-variant-numeric: lining-nums tabular-nums`, pinned by a unit test.
+Avatar's initials are letters, so they're unaffected.
+
+---
+
+## 41 — File Upload: upload UI only, the consumer owns every byte of transport
+
+**Decided (proposal approved before any code):** the File Upload
+component is upload *UI* and never makes a network request. It owns the
+drop target and the file picker (a native `<input type="file" multiple>`
+underneath, so keyboard, screen readers, mobile pickers and the camera
+work), optional pre-flight checks (accepted types, maximum size, maximum
+count, reported as rejections with reasons), rendering one row per
+file from the wave's own pieces (`HmhaProgressBar`, `HmhaBadge`,
+`HmhaIconButton`), a per-row slot for the consumer's own metadata fields,
+and screen-reader announcements of adds, completions and failures. It
+emits *intents*: files added, cancel, retry, remove, pause and resume.
+
+The consumer (Stackfi, or an engine it chooses) owns everything else:
+the list of uploads and their state, passed in as a read-only array of
+`{ id, name, size, progress, status, error?, metadata? }`; chunking;
+multipart and presigned URLs; retries; concurrency; resume; progress
+throttling; and metadata's schema and storage. That's fork 21's pattern
+again (the component renders and emits intents, the consumer owns the
+state and data), applied to transport.
+
+**Why: it keeps the library transport-agnostic.** The list of uploads is
+the whole integration point, so Uppy, tus, raw S3 multipart or hand-written
+`fetch`/XHR all plug in by keeping that array current. `@uppy/core` is
+headless and its S3 plugin does presigned multipart, which matches
+Stackfi's MinIO plan, so the README will carry an Uppy wiring recipe. That
+means no dependency: `hmha-ui` never imports Uppy. FilePond was assessed
+honestly and doesn't fit the same way: it's chiefly a UI library that
+renders its own drop area and list, so it's an alternative to this
+component, not an engine underneath it.
+
+**Rejected: the component doing transport** (built-in XHR progress, a
+chunker). That would couple the library to one upload strategy and fight
+any consumer using a real engine. The user confirmed the split.
+
+**In scope from the start, by the user's choice given no deadline:**
+- **Folder drops:** a dropped folder adds every file inside it, through
+  the browser's directory-entry API. Stackfi's planning doc lists folder
+  import as a stretch goal.
+- **Thumbnails:** image previews in rows for image files, with their
+  object URLs revoked so memory doesn't leak. Video and audio stay icons.
+- **Paste to upload:** pasted files or screenshots are added, as a
+  keyboard-friendly shortcut.
+
+**Known challenges, named up front:**
+- Drag and drop quirks: enter/leave flicker across child elements, a drop
+  just outside the zone navigating the page (or the whole Electron window),
+  folders needing the directory API, and no drag at all on mobile.
+- Accessibility: drag-only fails WCAG's dragging-alternative rule, so the
+  picker is the primary path. Progress must not flood screen readers, so
+  only start, finish and failure are announced.
+- `fetch` can't report upload progress: that's the transport's problem
+  (XHR, per-chunk progress, or Uppy), documented in the README.
+- Memory: the component holds `File` references only and never reads
+  contents.
+- Testing: Karma can construct a `DataTransfer` and dispatch a drop, but
+  a real drag from the desktop needs Playwright, per `CLAUDE.md`'s
+  which-layer rule.
+
+**Amendment (after 7b-i, from Stackfi's planning review):**
+- **Folders are rejected, not traversed:** a new rejection reason,
+  `'directory'`, detected through `DataTransferItem.webkitGetAsEntry()`.
+  This replaces the "folder drops" extra approved above; traversal is a
+  possible later feature. Without it, browsers hand a dropped folder over
+  as an unreadable zero-byte "file".
+- **`maxFiles` is per selection** (one pick, drop or paste), never a total.
+  The dropzone can't see what an engine like Uppy already has queued, so
+  the overall cap is the consumer's (`restrictions.maxNumberOfFiles`).
+- **Unset checks mean no checks:** with `accept`, `maxSize` and
+  `maxFiles` unset, every file passes untouched. Consumers whose upload
+  library validates should leave them unset, so there's one source of
+  truth.
+- **The window guard, pinned by tests:** it acts only on drags carrying
+  files, never stops propagation (a later window listener still sees the
+  drop), and lives exactly as long as at least one dropzone is mounted.
+  Each instance's listener is removed with it, and several cooperate
+  through `defaultPrevented` rather than a reference count, which gives
+  the same lifetime with no shared state.
+- **Repeat announcements:** CDK's `LiveAnnouncer` clears its live region
+  before every message (confirmed in its source), so an identical message
+  is spoken again. A test pins that the dropzone itself never
+  de-duplicates.
+- **`hmhaFormatBytes` stays decimal** (1 kB = 1000 B), documented with the
+  Windows Explorer difference (it divides by 1024 but still writes "GB").
+- **Rows will show the whole journey, not just the upload** (built in
+  7b-ii): after the bytes arrive, Stackfi transcodes, so a row's status
+  must reach `processing` (an indeterminate progress bar), then `ready` or
+  `failed`. Rows take inputs only and emit actions; each action button's
+  accessible name includes the file name ("Cancel upload of movie.mkv").
+
+**Rows, as built (7b-ii).** `HmhaUploadItem` (`li[hmhaUploadItem]`)
+inside `HmhaUploadList` (`ul[hmhaUploadList]`, with `role="list"` stated
+because Safari drops list semantics once bullets are styled away). A row
+takes inputs only (`name`, `size`, `progress` 0–100 or `null`, `status`,
+`statusLabel`, `error`, `pausable`) and emits payload-free outputs
+(`cancel`, `retry`, `pause`, `resume`, `remove`). The consumer's `@for`
+already knows which upload a row is. `HmhaUploadStatus` is `queued |
+uploading | paused | processing | ready | failed`, the user's "whole
+journey". `processing` always draws an indeterminate bar whatever
+`progress` says, confirmed by a deliberate break. Actions per status are
+the approved table, pinned by a table-driven test across every status,
+with and without `pausable`. Built from the wave's own pieces:
+`HmhaProgressBar`, `HmhaBadge`, `HmhaIconButton` (every action named with
+its file: "Cancel upload of movie.mkv"). A failed row's error is tied to
+Retry with `aria-describedby`, and its red text on the surface is a new
+CI pair (7.48:1 / 8.32:1). Announcements fire on a status change only,
+for `processing`, `ready` and `failed`, never per percent and never on
+first render. Two small bugs were caught in review, both pinned by
+tests: the failure announcement doubled a full stop when the consumer's
+error already ended with one (now "movie.mkv failed. Unsupported
+codec."), and the README's interpolated `statusLabel` would have blanked
+the badge, since `{{ null }}` becomes `''` (the fallback is now `||`, not
+`??`). The README carries an Uppy wiring sketch against Uppy's core API,
+flagged to check against the installed version. `hmha-ui` imports
+nothing from Uppy.
+
+**Thumbnails and paste, as built (7b-iii).** A row's `preview` input
+takes a `Blob`/`File` or a URL string. An image Blob gets an object URL
+created in an `effect` whose cleanup revokes it, on the next change and
+on destroy. A test pins both revocations and fails with the cleanup
+removed. Video and audio keep the file icon: a frame would mean decoding
+in the browser, which is the server's job. A URL string is used as it
+is, which suits a server-generated poster after `processing`. A broken
+preview falls back to the icon through a `linkedSignal`, like
+`HmhaAvatar`. Thumbnail and icon share one control-height box so rows
+align. Paste lives on the dropzone and only while it has focus, since a
+page-wide listener would hijack every paste, text fields included.
+Pasted files take the same checks and announcements, and a text paste is
+untouched.
+
+---
+
+## 42 — Alert: a persistent inline message, announced only when asked
+
+**Decided (proposal approved before code):** `HmhaAlert` is
+`div[hmhaAlert]`, a component on a native `<div>`: a tone icon, the
+consumer's content, an optional `[hmhaAlertActions]` row and an optional
+Dismiss button. It fills the gap Stackfi's planning found. `HmhaToast`
+disappears and `HmhaField`'s error belongs to one input, while an alert
+stays inline for a whole form or page. The Wave 2 sandbox "success banner"
+was hand-styled app markup, never a component.
+
+**Tones:** `HmhaAlertTone` = `info | success | warning | danger`, its own
+small union. `info` reads better than reusing `HmhaTone`'s `primary` ("a
+primary alert"), and uses the same action colours. There's no neutral
+tone: an untoned alert is a Card. Each tone is its `*-subtle` fill with
+its `*-text` foreground (`action` on `action-subtle` for info), four pairs
+already CI-checked at 4.5:1. The icon uses the text colour so it clears
+the same bar. A unit test measures the painted text against the painted
+fill for every tone in both modes.
+
+**Accessibility, the design's centre:**
+- **The tone is spoken.** The icon wrapper is `role="img"` named "Info",
+  "Success", "Warning" or "Error", so colour and shape aren't the only
+  carriers (WCAG 1.4.1).
+- **`announce` is chosen per use, not per tone:** `'none'` (default, for
+  an alert present on load, read in page order), `'polite'` or
+  `'assertive'`. The announcement is "tone: title message" without action
+  labels, once, after first render, through CDK's `LiveAnnouncer` (like
+  the dropzone and upload rows) rather than `role="alert"`/`"status"`,
+  because newly inserted live regions are announced unreliably,
+  especially polite ones. Defaulting to `'none'` designs out the commonest
+  Alert mistake: every error assertive, interrupting on page load.
+- **Dismissing is the consumer's:** `dismissible` adds a button named
+  "Dismiss", and `dismissed` fires. The alert never removes itself (fork
+  21's consumer-owns-state rule). The README covers moving focus after.
+
+**A small structural call:** the title is its own tiny component,
+`HmhaAlertTitle` (`[hmhaAlertTitle]`, any element), purely so it can style
+its own host. The alert's encapsulated styles can't reach projected
+content, and `::ng-deep` is banned (fork 05). The consumer picks
+`<strong>` or a real `<h3>`.
+
+**Two bugs caught before they shipped:**
+- **The icon box had no height.** It was first sized with
+  `var(--hmha-type-body-md-line)`, which is unitless (1.5) and therefore
+  invalid as a length, so the browser silently dropped it. Lint can't see
+  that. Fixed with `1lh` (exactly one line), and pinned by a test that was
+  confirmed to fail ("Expected 20 to be close to 24") with the token
+  swapped back.
+- **The axe check flagged the action button in dark mode.** That was the
+  known `HmhaButton` background-transition timing, not a product bug.
+  Fixed with the same 150ms wait `button.spec.ts`/`pagination.spec.ts`
+  already use.
+
+**Not built, stated:** auto-dismiss (Toast's job), an alert stack, and a
+form-error summary that reads the form itself.
+
+**Found in 8c's real-browser screenshots, not by tests or Storybook's
+axe** (which runs in light mode only):
+- **Links inside a dark-mode alert were unreadable.** They showed the
+  browser's default blue on the dark red. The library has no link style
+  at all (now an open item), and Alert can't reach projected links. The
+  README and the form-error-summary story now use `color: inherit`, so
+  links take the alert's CI-checked text colour.
+- **An `<h3>` title took the global heading face** (fork 30's `h1`–`h6`
+  rule), so it didn't match a `<strong>` title. `HmhaAlertTitle` now sets
+  the body family itself, pinned by a test.
+
+**A stale-bundle false failure:** the upload-failed story first failed on
+focus because my demo used a template reference on a component host,
+which resolves to the component, not the element, so `.nativeElement`
+was undefined. After the `{ read: ElementRef }` fix, `test-run` reported
+the same failure again, with the same live-region id. A direct Playwright
+reproduction showed focus correctly returned, and a re-run passed:
+`addon-vitest` had served the previous bundle once. Worth knowing next to
+`CLAUDE.md`'s other dev-server quirks.
+
+---
+
+## 43 — Empty State: a heading where the content would be
+
+**Decided (proposal approved before code):** `HmhaEmptyState` is
+`div[hmhaEmptyState]`: an optional decorative `icon` (any icon name,
+`aria-hidden`, since the heading says what it means), a heading slot
+(`HmhaEmptyStateTitle`, `[hmhaEmptyStateTitle]` on any element), the
+consumer's explanation, and a centred actions slot
+(`[hmhaEmptyStateActions]`). It's the same slot shape as Alert (fork 42),
+and works on a page, in a card, or in a single spanning table cell in
+place of rows.
+
+- **The heading is the point.** An empty state stands in for a whole
+  section and screen-reader users navigate by headings, so the README
+  steers consumers to a real `<h2>`/`<h3>`. `HmhaEmptyStateTitle` styles
+  its own host (heading face, size set by the empty state through
+  `--hmha-empty-state-title-*` custom properties it inherits), so it looks
+  the same on any element. That's the same encapsulation reason as
+  `HmhaAlertTitle`.
+- **`size`: `md | sm`** (an `Extract<HmhaSize>`). `sm`, for tables and
+  small cards, shrinks the icon (`icon-lg` rather than twice it), the
+  heading (`label-md` rather than `heading-sm`), the text (`body-sm`) and
+  the spacing. A test confirmed the heading size really follows: it stays
+  at 18px with the `sm` override removed.
+- **No tones.** An empty state isn't an error; "couldn't load" is an
+  Alert, and the README draws that line. Colours are existing CI-checked
+  roles: the heading in `text`, the explanation in `text-muted`, the icon
+  in `text-subtle` (decorative, so 3:1 suffices).
+- **`announce: 'none' | 'polite'`,** matching Alert's input but without
+  `'assertive'` (an empty result is never urgent). Polite announces the
+  heading and text once, after first render, through `LiveAnnouncer`,
+  without action labels: for "No search results" appearing after
+  someone types.
+
+**Not built, stated:** illustrations (the system has icons, not
+illustration art) and built-in "clear search"/"retry" actions.
+
+**Amendment (9c): announce on settle, and again on change.** The search
+story showed "announce once, on first render" doesn't fit the case
+`'polite'` exists for: the empty state appears at the first letter that
+empties the results ("No results for "z"") and stays on screen while the
+query grows, so a screen-reader user was left on the stale "z". It now
+watches its own heading and text (a `MutationObserver`), announces once
+they've been unchanged for 500ms, and again whenever they change and
+settle, skipping repeats: "zzz" typed fast is one announcement of the
+final text. The timer only schedules an announcement, never a view update
+(invariant 4), and is cleared on destroy. Tests pin the burst, a later
+change, and cancellation. Alert keeps announce-once: its messages don't
+change under someone's fingers, and its README already says to render a
+new alert to re-announce.
+
+---
+
+## 44 — `hmhaLiveAnnouncer()`: CDK's LiveAnnouncer never hides its own live region
+
+**Found in Empty State's 9c screenshot:** the announcement text was
+visible on the page, under the table. CDK's `LiveAnnouncer` puts messages
+in an element with the `cdk-visually-hidden` class but, unlike
+`AriaDescriber` (Tooltip) and `FocusTrapFactory`, never loads the CSS
+behind that class. That was checked in CDK 20's and 22's source. On any
+page where nothing else had loaded it, every announcement from the
+Dropzone, upload rows, Alert and Empty State would have shown as stray
+text. Unit tests and axe can't see it: the text is present and
+accessible, just not hidden.
+
+**Decided:** an internal helper, `hmhaLiveAnnouncer()`
+(`core/live-announcer.ts`, not exported), loads CDK's own styles the way
+CDK's own classes do (`inject(_CdkPrivateStyleLoader).load(
+_VisuallyHiddenLoader)`) and returns the normal singleton. The four
+announcing components use it instead of `inject(LiveAnnouncer)`. No
+consumer setup is needed: the user chose a library-side fix over
+requiring `@angular/cdk/a11y-prebuilt.css`.
+
+**Rejected on the way, raised with the user rather than done quietly:**
+the option first described to the user (copying CDK's
+`.cdk-visually-hidden` rule into an unencapsulated stylesheet) would have
+broken invariant 5 (literal `1px`/`-1px`) and invariant 6 (global, not
+emulated, CSS). Hiding it in a TypeScript `styles` string would only have
+dodged the linter. Calling CDK's loader gives the same zero-setup outcome
+with neither violation.
+
+**The risk, guarded like `_IdGenerator` (fork 33):** both names are
+underscore exports of `@angular/cdk/private`, an exported entry point in
+CDK 20 and 22. The install matrix's smoke app now renders an announcing
+`HmhaAlert` with no Tooltip on the page, and `render-check.mjs` fails if
+CDK's live region isn't hidden (position absolute, at most 1px wide).
+That passed on Angular 20 and 22. A unit test also checks the helper
+leaves `.cdk-visually-hidden` hidden.
+
+---
+
+## 45 — Toggle button: `pressed` on `HmhaButton`, driven by the consumer's state
+
+**Decided (proposal approved before code):** no new component. A
+`pressed: boolean | null` input on `HmhaButton`, default `null`. `null`
+is an ordinary button, with no `aria-pressed` and unchanged looks, so
+every existing button and call site is untouched (additive, minor-version
+safe). `true`/`false` makes it a WAI-ARIA toggle button (`aria-pressed`)
+with a visible pressed style. `HmhaIconButton` inherits it by stacking on
+`HmhaButton`, the case Stackfi's player needs (mute, shuffle, repeat,
+favourite, captions).
+
+- **The button never flips itself.** There's no self-toggling
+  `[(pressed)]`: a click is an ordinary `(click)`, the consumer changes
+  their state, and `[pressed]` reflects it. For media the player's real
+  state is the truth, so a blocked or failed action can't leave the
+  button claiming otherwise. It's fork 21's consumer-owns-state rule. A
+  test pins it: clicking an unpressed toggle leaves `aria-pressed="false"`.
+- **The usage rule, the part most often wrong,** goes in the README:
+  keep the label constant and let `pressed` carry the state ("Mute,
+  pressed"). A label that also flips ("Unmute", pressed) reads as a
+  contradiction. **Play/Pause is not a toggle button:** it swaps label
+  and icon with no `pressed`, because it's an action that changes, not
+  a setting that's on.
+- **The look isn't told by hue alone (WCAG 1.4.1):** a neutral pressed
+  button takes `action` text on `action-subtle` with an `action` border
+  (a CI-checked 4.5:1 pair), so both the background lightness and the
+  border change. Primary darkens to `action-active`. Danger, warning and
+  success, which have no active roles, gain a ring in their own text
+  colour. A test measures that the background and border both change,
+  with readable text, in both modes, and was confirmed to fail with the
+  neutral pressed rule removed.
+
+**A testing finding, recorded rather than fixed (pre-existing):**
+`TestBed.createComponent(HmhaButton)`, which `button.spec.ts` has always
+used, renders the host as a `<div id="root…">`, not a `<button>`. axe
+rightly rejected `aria-pressed` there. It also means that spec's existing
+`disabled` check passes on a div, where Angular merely sets a property.
+The new pressed tests use a host template with a real `<button
+hmhaButton>`; the older tests were left as they were, since the change
+didn't touch them (now in `CLAUDE.md`).
+
+**Player icons, added at the user's request (10c):** 13 Lucide icons
+appended to `scripts/icons/allowlist.json`: `repeat`, `repeat-1`,
+`shuffle`, `captions`, `captions-off`, `volume-1`, `volume`, `rewind`,
+`fast-forward`, `picture-in-picture` (Lucide's `picture-in-picture-2`),
+`cast`, `list-music` and `gauge` (playback speed). That makes 131 icons. The
+first edit rewrote the whole JSON through a serializer, escaping the em
+dash and expanding the one-line `{ name, source }` objects. It was redone
+as a plain-text append so the reviewed file's diff is additions only.
+
+**Amendment (10c): the status-tone ring.** The pressed screenshots showed
+the danger and success rings invisible in light mode, and warning's in
+dark. The ring used the button's own text colour, which is white (or
+dark for warning) and so matches the page in one mode. It now uses the
+page's text colour (`--hmha-color-text`), which contrasts with the page
+in both modes by definition. The first "looks different" test had only
+checked the neutral tone. A new test covers every tone and requires each
+status ring at 3:1 against the page, and was confirmed to fail (around
+1:1) on exactly those three cases with the old colour.
+
+---
+
+## 46 — Textarea: `HmhaInput` on `<textarea>`, auto-grow by CSS
+
+**Decided (proposal approved before code):** no new component.
+`HmhaInput`'s selector widens to `input[hmhaInput], textarea[hmhaInput]`,
+so a multi-line field gets the same `ControlValueAccessor`, `HmhaField`
+wiring (a `<textarea>` is labelable), `disabled`/`invalid`, focus ring and
+tokens. Every existing `<input hmhaInput>` is untouched.
+
+- **Native first:** `rows` sets the starting height, and the textarea
+  resizes vertically only (sideways breaks surrounding layout). `size`
+  doesn't apply; it only sets a single-line input's minimum height.
+- **`autoGrow` (opt-in, the user's choice of Option A):** CSS
+  `field-sizing: content`, with no script measuring text per keystroke,
+  capped by `--hmha-input-max-block-size` (default `none`), after which it
+  scrolls. Two consequences, handled: `field-sizing` ignores `rows`, so the
+  starting height is a component token, `--hmha-input-auto-grow-rows`
+  (default 3), turned into a length from the type tokens
+  (`rows × body-md-line × body-md-size + padding + border`), so no
+  literal length meets stylelint's `min-` unit rule. And the drag handle
+  is removed (`resize: none`), because dragging would fix an explicit
+  height and stop the growing. Both live inside `@supports (field-sizing:
+  content)`, so a browser without it keeps `rows` and the drag handle: a
+  pure progressive enhancement. (The proposal said Firefox lacked
+  `field-sizing`; 11c's check found Playwright's Firefox 155 supports it,
+  so auto-grow was verified in both Chromium and Firefox, and the README
+  no longer names a browser.)
+- **Tested on real heights** (Karma's Chromium supports `field-sizing`):
+  about three lines to start, growing with content, stopping at the cap
+  and scrolling, never shrinking below the start. Confirmed to fail
+  ("Expected 114 to be greater than 186") with `field-sizing` removed.
+
+**A character counter, asked for during the build,** gets its own
+proposal (step 11d) rather than being bolted on here.
+
+---
+
+## 47 — Character counter: a soft limit, counted by the input, shown by the field
+
+**Decided (proposal approved, soft limit by the user's choice "so as not
+to be invasive and hurt the UX"):** `HmhaInput` gains `maxCharacters`
+(works on `<input>` and `<textarea>`), and `HmhaField` shows the message.
+
+- **Who does what:** the input already knows its value whether typed or
+  written by Forms, so it computes the count (`characterCount`, a public
+  signal) and hands `{ length, max }` to the field through a new
+  `registerCounter()` on the `HMHA_FIELD` contract. That's an additive
+  extension like fork 11's `labelId`. Controls only ever read the
+  context, and no spec or app provides a fake one. The field renders
+  "You have N characters remaining" or "… too many" under the control and
+  appends its id to the control's `aria-describedby` after the hint or
+  error (multiple ids). `hmhaCountMessage()` is exported for the same
+  wording elsewhere.
+- **Soft limit:** no native `maxlength`, which silently cuts off pasted
+  text. Over the limit the message turns to the error colour (with "too
+  many" saying it in words, not only colour), and the input goes invalid
+  (`aria-invalid`, red border). The README tells consumers to add
+  `Validators.maxLength(n)` to stop saving: the component informs, the
+  form decides.
+- **Announcements:** polite, from the field (it owns the message), only
+  when 20% or less remains or it's over, only after typing pauses for
+  500ms (the Empty State settle approach, fork 43), never on first
+  render, and never repeating the same message. A test was confirmed to
+  fail with the near-limit gate removed.
+- **Counting by code points** (`Array.from(value).length`), so an emoji is
+  one character, as people see it, not two UTF-16 units. The README asks
+  servers to count the same way so the limits agree.
+
+---
+
+## 48 — Segmented Control: native radios inside labels, one `model()`
+
+**Decided (proposal approved before code, look A):** two pieces.
+`HmhaSegmentedControl` (`fieldset[hmhaSegmentedControl]`) is the group:
+it owns the value, sets `role="radiogroup"`, generates the shared `name`
+and gets native `disabled` cascading, as `HmhaRadioGroup` does (fork 11).
+`HmhaSegment` (`label[hmhaSegment]`, `value` required) renders a real
+`<input type="radio">` inside itself, followed by the consumer's content,
+so a segment is one element to write and clicking anywhere on it selects.
+It injects the group (required, as fork 11's radios do).
+
+- **The browser does the keyboard.** One Tab stop for the group, arrow
+  keys move and select with wrap and RTL, and screen readers announce
+  "Grid, radio button, 1 of 2, selected". Nothing hand-written (forks 10,
+  11, 35).
+- **The radio covers its segment, invisibly** (`appearance: none`,
+  `opacity: 0`, sized to the label), rather than the 1px clip technique,
+  so a touch screen reader's exploration finds it where the segment is
+  drawn. The focus ring goes on the segment through
+  `:host(:has(input:focus-visible))`.
+- **The value is one `model()` Forms also uses** (fork 35's pattern,
+  `hmhaValueAccessor(this.value)`): `[(value)]` for a view switcher,
+  `[formControl]` for a settings page. Once a segment is picked, native
+  radios can't be unselected; the consumer gives the starting value
+  (README).
+- **The selected look matches a pressed button (fork 45):** `action` text
+  on `action-subtle` with an `action` border, in a `surface-sunken`
+  track. One "selected" language across the library, and a pair CI
+  already checks. Chosen over a solid `action` fill (reads as a second
+  primary button beside a real one) and the raised iOS pill
+  (`surface-raised` on the sunken track is about 1.1:1 in light mode, so
+  it needs an added outline to pass WCAG 1.4.11).
+- **Content:** text, icon plus text, or icon only. An icon-only segment
+  takes a `label` input that becomes the radio's `aria-label`, and throws
+  without one, the same rule as `HmhaIconButton` (fork 23).
+- **Sizes** `sm`/`md`/`lg` on the control-height tokens, so density
+  applies for free. **Disabled** on the whole control (fieldset cascade)
+  or one segment. Sizes to its content by default; given a width, the
+  segments share it equally. Named by `aria-label`/`aria-labelledby`, or
+  by an `hmha-field` (`aria-labelledby` to its label, as Radio Group).
+  No new tokens expected; component tokens are the override API.
+
+**Amendment (12c), two changes the screenshots found:**
+- **The track has an edge** (`--hmha-segmented-control-border`, the
+  `border` role), chosen by the user over a `bg-subtle` fill or leaving
+  it. In dark mode `surface-sunken` and `bg` are both neutral-950, so on
+  the page the track vanished and unselected segments read as loose text.
+  A `bg-subtle` fill would have shown on the page but vanished on a dark
+  card instead (`surface` is also neutral-900). The edge is decorative;
+  the selected segment's border still carries the meaning. The segment's
+  height and radius subtract the edge, so the whole control is still
+  exactly a control height.
+- **The control never shrinks below its content** (`min-inline-size:
+  max-content`). The build had `0`, and in a flex row beside a
+  full-width input the control was squeezed until the Button beside it
+  covered the last segment. Below max-content the 1fr columns also stop
+  being equal. Too many segments for the space is a Select, not a squeeze.
+
+**Rejected:** buttons with `role="radio"` (hand-written roving tabindex
+and arrows the browser already provides), and a `segmented` appearance
+on `HmhaRadioGroup` (Forms-only value, laid out as a vertical list; a
+view switcher needs `[(value)]` with no Forms).
+
+**Not in scope:** multi-select toggle groups (exclusivity is the whole
+meaning; use a selectable `HmhaChipSet` or `pressed` buttons), switching
+panels (that's `HmhaTabs`), and more than about five options or overflow
+scrolling (use `HmhaSelect`).
+
+---
+
+## 49 — Nav List: native list and links, current page from `aria-current`, groups by disclosure
+
+**Decided (proposal approved before code, look B, rail out, groups in).**
+A vertical list of navigation links for a side nav. The app shell around
+it stays in Stackfi (fork 34).
+
+- **`ul[hmhaNavList]`** removes bullets and spacing and stacks the items.
+  A list nested inside an item indents one level, which it learns through
+  DI (an optional parent `HmhaNavList`), not by selectors reaching into
+  other components.
+- **`a[hmhaNavItem]`** is a real link: middle-click, open in new tab, the
+  browser's link announcement, normal Tab order. Template slots: the icon
+  first, the text filling the row, and anything marked `hmhaNavItemEnd`
+  (a badge, a count) at the end. Full width, control height (so density
+  applies); long text wraps rather than truncating.
+- **The consumer supplies the `<nav>` and its `aria-label`.** The landmark
+  belongs to the shell, and a page can have several ("Main", "Account").
+- **No `@angular/router` dependency.** The current-page look keys off
+  `aria-current`: `"page"` (which `routerLinkActive` sets with
+  `ariaCurrentWhenActive="page"`, or the consumer sets), and also `"true"`
+  for a section whose child page is open. Any value but `"false"`.
+- **Keyboard:** one Tab stop per link. No arrow keys, no `role="menu"`: a
+  nav is a list of links, not a menu (WAI-ARIA).
+- **No disabled items.** A link can't truly be disabled, and a dead nav
+  entry is a pattern to avoid; hide it instead.
+
+**The current-page look (B): fill plus a bar.** `action` text on
+`action-subtle` (the CI-checked pair shared with pressed buttons and
+segments) and a short `action` bar on the leading edge, flipping in RTL.
+The fill's lightness and the bar both change, so it isn't told by hue
+alone. Chosen over the full bordered box of segments and pressed buttons
+(heavy in a long list) and a bar with bold text and no fill (less to see
+at a glance).
+
+**Expandable groups (added at the user's request, for artist → album →
+song).** `li[hmhaNavGroup]` makes an item a group. It renders a real
+`<button>` beside the link with `aria-expanded` and `aria-controls` to the
+nested list, and a chevron that rotates.
+- **The link and the toggle are separate:** the link navigates, the
+  chevron only opens and closes. WAI-ARIA's disclosure navigation pattern.
+  Rejected: `<details>`/`<summary>`, since a link inside `<summary>` is
+  interactive content inside interactive content (a click both navigates
+  and toggles, and screen readers announce it inconsistently).
+- **`expanded` is a `model()` the consumer owns** (fork 21): `[(expanded)]`
+  or a one-way `[expanded]`, for example opening the group that holds the
+  current page, which the consumer knows from its router.
+- **The toggle is named by its link** (`aria-labelledby`), so it reads as
+  "Radiohead, button, collapsed" with nothing extra to write, and it gets
+  the focus ring.
+- **A collapsed group's list is `hidden`:** out of the Tab order and the
+  accessibility tree, still in the DOM, so `aria-current` inside it still
+  works. Any depth, each level indented one step.
+- **A design note, not enforced:** artist → album suits a nav. Songs
+  usually aren't pages someone navigates to but things they play or
+  select, and a long album makes the nav very long; they usually belong in
+  the page content (a table or list), with the nav stopping at the album.
+
+**Amendment (13c): the indent.** Screenshots showed a child's text
+starting left of an iconned parent's text ("Sintel Orchestra" at 48px,
+"Artists" at 60px): the indent was `control-padding-x`. It's now one icon
+plus its gap (`icon-md + control-gap`), chosen by the user, so a child's
+text lines up exactly under an iconned parent's text in any density
+(both terms are the ones the parent's row uses); under a text-only parent
+it's simply a deeper step. A test measures the alignment and fails with
+the old indent.
+
+**Out of scope:** a collapsed icon-only rail (Stackfi builds it from
+icon-only links with `aria-label` and `HmhaTooltip`; the README shows the
+pattern, so the Nav List keeps one shape and one way to write an item), a
+horizontal top-bar nav, section headings inside the list (use separate
+labelled `<nav>`s or the consumer's own headings), and the app shell.
+
+---
+
+## 50 — Wave 6 gate findings: test what renders, not the attribute that should cause it
+
+**Found by the Wave 6 gate**, when a new screen sat below the Wave 5 one
+for the first time and real-browser screenshots showed another screen's
+controls bleeding into it. Three library bugs, all shipped in 1.0 and
+1.1, and two sandbox bugs, all of one kind: **the attribute was right and
+the rendering wasn't**, and every test checked the attribute.
+
+**Library (fixed for 1.2.0):**
+- **`HmhaTabPanel` and `HmhaStepPanel` showed every panel at once.**
+  Both bind `hidden`, and both give `:host` a `display: block`. An
+  author-origin `display` beats the browser's own `[hidden] { display:
+  none }` whatever its specificity, so a hidden panel rendered anyway.
+  Their specs and stories asserted `panel.hidden` and
+  `toHaveAttribute('hidden')`, which were true. Each now has `:host([hidden])
+  { display: none }`, as `HmhaBadge` and `HmhaNavList` already did, with a
+  test of the computed `display` that fails without it, and the Tabs and
+  Stepper stories check `display` beside the attribute.
+- **`HmhaDrawer` with `placement="end"` opened at the start edge.** The
+  browser's dialog styles set both inline insets to 0; the drawer set the
+  end one but never released the start one, and with a fixed width the
+  start side wins. `data-placement="end"` was correct, which is all the
+  tests checked. Each placement now sets the opposite inset to `auto`.
+- **`HmhaDrawer` wasn't full height,** for two reasons that hid each
+  other: the browser caps a modal dialog's `max-height` short of the
+  viewport (the drawer cleared `max-width` but not `max-height`), and
+  under that cap, content-box sizing made `height: 100%` plus padding and
+  border overflow anyway. The drawer now sets `max-height: 100%` and
+  `box-sizing: border-box`. Four new tests measure the drawer against the
+  viewport for each placement in LTR and RTL; removing any one of the
+  three fixes fails them.
+
+**Sandbox (the Wave 5 gate's own CSS):** `.project-drawer { display: flex }`
+beat `dialog:not([open])`, so the closed drawer sat on the page with its
+controls in the Tab order, and `.project-step-panel { display: flex }`
+beat `[hidden]` (the same trap as the panels above). Both now apply only
+when open or not hidden, with computed-`display` checks in `app.spec.ts`.
+
+**The rule going forward** (now in `CLAUDE.md`): any component that binds
+`hidden` or relies on `dialog:not([open])` and sets a `display` must also
+restore `display: none` for that state, and its tests must check what
+renders (computed style, measured geometry), not only the attribute.
+
+---
+
+## Wave 6 progress — the step tracker
+
+**This section is the single source of truth for Wave 6 status**, the
+same way the Wave 2–5 progress sections were for their waves. Update the
+checklist and the CURRENT STEP marker at the end of every step. The
+process rule itself (one step at a time, stop-and-wait between steps,
+the done criteria) lives in `CLAUDE.md`'s "Working through a wave"
+section. This section only tracks where we are.
+
+Component order follows fork 34.
+
+**CURRENT STEP: 15**: Release prepared; waiting on the user to merge and tag `v1.2.0`.
+
+1. [x] **1a.** Propose Slider's foundation. Approved: native
+   `<input type="range">` (Option A), one `model()` shared with Forms, and
+   tokens-only sharing with Progress Bar (`track.thickness`). Asked whether
+   it holds up inside an Electron wrapper: it does, unchanged. Recorded as
+   fork 35.
+2. [x] **1b.** Build Slider + tests: `libs/ui/src/lib/slider/` (`slider.ts`,
+   `slider.css`, `slider.spec.ts`, `README.md`). Built as fork 35 describes.
+   Also: `hmhaValueAccessor()` accepts an external `WritableSignal` (+1
+   test in `value-accessor.spec.ts`); new semantic token `track.thickness`
+   (`npm run tokens`/`tokens:contrast` clean, `reference/tokens.css`
+   re-synced); Slider added to `libs/ui/README.md`'s catalog and Forms
+   list (Select was missing from that list too, now fixed). 24 new slider
+   tests plus 1 accessor test (372/372 in `hmha-ui`, 24/24 in `sandbox`),
+   `build:lib`/`lint:css`/`lint:standalone` clean.
+
+   The spec states which layer verifies what: native keyboard and drag are
+   browser default actions Karma can't perform, so the spec sets `.value`
+   and dispatches `input`/`change` the way the browser would. Real keys
+   and drag, and the engine pseudo-element styling (vertical thumb
+   centring especially), still need a real browser. That's step 1c's
+   job.
+3. [x] **1c.** Story: Slider: `slider.stories.ts` (Playground, Sizes,
+   MediaTimeline, VerticalVolume, Disabled, Invalid, WithFormControl,
+   ChangeAndCommitInteraction, ScrubbingInteraction). Hit the documented
+   `test-run` timeout on the first call: the dev server and its
+   `addon-vitest` process had been running since Oct 20, with no viewer
+   connected. Restarted per `CLAUDE.md` (stop all three, clear
+   `node_modules/.cache/storybook`, start one), which cleared it.
+
+   **One test-authoring bug, caught by `test-run`:** `ScrubbingInteraction`
+   first pressed and released the pointer with two separate
+   `userEvent.pointer()` calls. Each direct call starts from fresh pointer
+   state, so the release had no press to end and fired no `pointerup`.
+   Fixed with one `userEvent.setup()` instance shared by both calls.
+
+   **The real-browser layer, done for real rather than claimed:** a
+   throwaway Playwright script (not committed, per the usual discipline)
+   drove the running stories with real CDP keyboard and mouse input in
+   Chromium. Arrow, Page Up, Home and End all move the value. A real drag
+   sets `data-scrubbing` mid-drag and clears it when released outside the
+   slider. A track click jumps there, and vertical runs bottom-to-top.
+   Screenshots confirmed centred thumbs at all three sizes, the fill,
+   buffered band and track in the timeline, vertical centring, RTL fill
+   from the right, and dark mode. The same stories in Playwright's
+   Firefox matched, which covers the Gecko half of `slider.css`. Two
+   first-run "failures" were the script reading the DOM in the same tick
+   as the input; with a short wait both settled correctly, as zoneless
+   change detection does.
+
+   **Worth knowing:** the event trace showed Chromium's range input
+   implicitly captures the pointer, so `pointerup` targets the slider
+   even when released elsewhere. The document-level listener is still
+   right for engines without implicit capture, and costs nothing here.
+
+   All 9 Slider stories plus the full existing suite (160 stories) pass
+   `test-run` (incl. a11y).
+4. [x] **2A.** Build Progress Bar + tests: `libs/ui/src/lib/progress-bar/`
+   (`progress-bar.ts`, `progress-bar.css`, `progress-bar.spec.ts`,
+   `README.md`). Recorded as fork 36. Measuring each fill against the
+   track before writing any tone CSS showed green, red and amber failing
+   3:1 somewhere. Asked the user (a visual change): chose tones plus a
+   lighter `bg-subtle` track shared with Slider, `warning` left out. Three
+   fill-on-track pairs added to `check-contrast.mjs`. Slider's track token
+   and README updated to match, and its 9 stories re-run green. 11 new
+   unit tests (383/383 in `hmha-ui`, 24/24 in `sandbox`),
+   `build:lib`/`lint:css`/`lint:standalone`/`tokens:contrast` clean.
+5. [x] **2B.** Story: Progress Bar: `progress-bar.stories.ts` (Playground,
+   Tones, Indeterminate, UploadWithValueText, EmptyNotIndeterminate,
+   RetryReturnsToQueueInteraction). The retry story uses a small local
+   `TranscodeJobDemo` host (a signal-backed job card, the same approach as
+   `ToastDemo`/`DataGridDemo`), so the determinate-to-indeterminate round
+   trip fork 36 designed for is driven by a real click, not set by hand.
+   Hit the documented brand-new-component styleUrl error on the first
+   `test-run`. The user had Storybook open in Chrome, so the restart
+   waited for their go-ahead (`CLAUDE.md`'s rule), then cleared it as usual.
+
+   Real-browser check (a throwaway Playwright script, Chromium and
+   Firefox): tones render identically in both engines and modes; the
+   indeterminate segment really travels (background-position moved
+   roughly 55% to 145% in half a second); RTL reverses it; and with reduced
+   motion emulated, both engines switch to the full-width pulse. The
+   keyframe name came out scoped (`_ngcontent-…_hmha-progress-bar-pulse`),
+   confirming emulated encapsulation scopes `@keyframes` too. One cosmetic
+   difference, left as is: the sweeping segment has square ends while a
+   determinate fill is rounded. Rounding a background-painted segment would
+   need gradient tricks for little gain, and Material's bar does the same.
+
+   All 6 Progress Bar stories plus the full existing suite (166 stories)
+   pass `test-run` (incl. a11y).
+6. [x] **3a.** Propose Spinner's foundation. Approved: Option A
+   (`hmha-spinner` rotating the existing `spinner` icon), standalone and
+   decorative modes, composition with `HmhaButton` rather than a Button
+   change, no show-after-delay option. Recorded as fork 37.
+7. [x] **3b.** Build Spinner + tests: `libs/ui/src/lib/spinner/`
+   (`spinner.ts`, `spinner.css`, `spinner.spec.ts`, `README.md`), plus
+   `HmhaButton`'s README now points at it and the library README lists it
+   (catalog and custom-element list). 9 new unit tests, including a
+   decorative spinner inside a loading `HmhaButton` checked with axe
+   (392/392 in `hmha-ui`, 24/24 in `sandbox`), `build:lib`/`lint:css`/
+   `lint:standalone`/`tokens:contrast` clean. No new tokens.
+8. [x] **3c.** Story: Spinner: `spinner.stories.ts` (Playground, Sizes,
+   SpecificLabel, Decorative, PageLoader, InLoadingButtonInteraction). The
+   interaction uses a local `SavingButtonDemo` (signal-backed), so clicking
+   Save really puts `HmhaButton` into `loading` with a decorative spinner
+   inside, and the play function confirms the button's accessible name
+   stays "Save". Hit the brand-new-component styleUrl error again on the
+   first `test-run`. This time only the Storybook MCP client was connected
+   (no user browser), so the restart went ahead without asking, per
+   `CLAUDE.md`.
+
+   Real-browser check (a throwaway Playwright script, Chromium and
+   Firefox): the glyph really rotates (about 90° in 200ms in both), reduced
+   motion switches both engines to the pulse, and screenshots show the
+   three sizes, a white spinner inside a primary loading button, and a
+   large page loader in dark mode. Two script-side mistakes were fixed
+   along the way, neither a component issue: a bare `button` selector
+   matched Storybook's own hidden preview buttons, and the story's play
+   function had already clicked Save by the time the script tried to.
+
+   All 6 Spinner stories plus the full existing suite (172 stories) pass
+   `test-run` (incl. a11y).
+9. [x] **4a.** Propose Skeleton's foundation. Approved: Option A
+   (`[hmhaSkeleton]` on a native span/div, layout stays the consumer's),
+   always `aria-hidden` with `aria-busy` on the container, and the gentle
+   opacity pulse (the user's pick over a shimmer). Recorded as fork 38.
+9b. [x] **4b.** Build Skeleton + tests: `libs/ui/src/lib/skeleton/`
+   (`skeleton.ts`, `skeleton.css`, `skeleton.spec.ts`, `README.md`), plus
+   the library README's catalog. `lint:css` rejected the first draft's
+   `lh`/`em` margin; reworked to `inline-block` rather than worked around
+   (fork 38). 8 new unit tests, including the README's own loading-table
+   pattern checked with axe (400/400 in `hmha-ui`, 24/24 in `sandbox`),
+   `build:lib`/`lint:css`/`lint:standalone`/`tokens:contrast` clean. No
+   new tokens.
+9c. [x] **4c.** Story: Skeleton: `skeleton.stories.ts` (Playground, Shapes,
+   Paragraph, MediaCard, PosterRow, LoadingTableRowsInteraction). The
+   interaction uses a local `LibraryTableDemo`: a real `HmhaTable` whose
+   `aria-busy` body holds skeleton rows until "Finish loading" swaps in
+   real rows and clears the busy state, the README pattern end to end.
+   Brand-new-component restart again; the user had Storybook open, so it
+   waited for their go-ahead.
+
+   **A real bug the real-browser check caught, not the unit tests or
+   axe:** in a dark-mode screenshot, skeletons inside `HmhaCard` were
+   invisible. A card sits on `surface-raised`, which in dark mode is the
+   same neutral.800 as the `border` fill picked in 4b (1.00:1), a ground
+   4b's measurement never included. Re-measured every candidate on page,
+   surface and card in both modes. The user chose a 12% tint of the text
+   colour (1.27:1 to 1.44:1 everywhere). A new unit test now guards it
+   across all three grounds, confirmed to fail on the old fill. Full
+   write-up in fork 38. The rest of the Playwright check (Chromium and
+   Firefox): the pulse really breathes (opacity sampled from about 0.84
+   down to 0.50 and back), reduced motion doubles its duration (1.6s to
+   3.2s), and poster rows hold 2:3.
+
+   9 Skeleton unit tests (401/401 in `hmha-ui`, 24/24 in `sandbox`); all
+   6 Skeleton stories plus the full existing suite (178 stories) pass
+   `test-run` (incl. a11y).
+10. [x] **5a.** Propose Avatar's foundation. Approved: Option A
+    (`span[hmhaAvatar]`, photo to initials to icon), named by default with
+    a `decorative` mode, one neutral colour (no per-person palette yet).
+    Recorded as fork 39.
+10b. [x] **5b.** Build Avatar + tests: `libs/ui/src/lib/avatar/`
+    (`avatar.ts`, `avatar.css`, `avatar.spec.ts`, `README.md`), plus the
+    library README's catalog. Colour measured before writing CSS; every
+    fixed fill failed somewhere, so it reuses Skeleton's tint (fork 39).
+    The canvas colour helpers moved to `core/testing/paint.ts`, shared
+    with the Skeleton spec. 20 new unit tests (10 `hmhaInitials` cases, 10
+    component; 421/421 in `hmha-ui`, 24/24 in `sandbox`),
+    `build:lib`/`lint:css`/`lint:standalone`/`tokens:contrast` clean. No
+    new tokens.
+10c. [x] **5c.** Story: Avatar: `avatar.stories.ts` (Playground,
+    FallbackOrder, Sizes, BrokenPhotoFallsBack, DecorativeBesideName,
+    InAButton, MatchesSkeleton). Photos are an inlined SVG data URI, so no
+    story touches the network. `BrokenPhotoFallsBack` points `src` at a
+    data URI that isn't an image, so the browser fires a genuine load
+    `error`, real-browser proof of the fallback the Karma spec can only
+    simulate by dispatching the event. Nobody was connected to Storybook
+    this time, so the new-component restart went ahead before the first
+    `test-run`, saving a round trip.
+
+    Real-browser check (a throwaway Playwright script, Chromium and
+    Firefox): both engines fire the real image error and fall back to
+    initials; screenshots show the fallback order, the control-height
+    sizes plus a 96px profile header with scaled initials, and, in dark
+    mode, a circle skeleton and the initials avatar that replaces it at
+    the same tint and size, as fork 39 claimed. No bugs found.
+
+    All 7 Avatar stories plus the full existing suite (185 stories) pass
+    `test-run` (incl. a11y).
+11. [x] **6a.** Propose Badge's foundation. Approved: the Chip/Badge split
+    as recommended, `span[hmhaBadge]` with text, count and dot forms, and
+    both `subtle` and `solid` appearances (subtle default), after a brief
+    "solid only" misreading the user caught before any code was written.
+    Recorded as fork 40.
+11b. [x] **6b.** Build Badge + tests: `libs/ui/src/lib/badge/` (`badge.ts`,
+    `badge.css`, `badge.spec.ts`, `README.md`), plus the library README's
+    catalog and a pointer from the Avatar README to the status-dot
+    pattern. Three new contrast pairs in `check-contrast.mjs`. 10 new unit
+    tests (431/431 in `hmha-ui`, 24/24 in `sandbox`),
+    `build:lib`/`lint:css`/`lint:standalone`/`tokens:contrast` clean. No
+    new tokens.
+11c. [x] **6c.** Story: Badge: `badge.stories.ts` (Playground,
+    TonesAndAppearances, Counts, Dots, AvatarStatusDot,
+    MarkAllReadInteraction). The interaction's local `NotificationsDemo`
+    proves a count reads inside its button's name ("Notifications 12")
+    and that zeroing it hides the badge and drops the number from the
+    name. The user had Storybook open, so the new-component restart
+    waited for their go-ahead.
+
+    **Two real findings from the screenshots, neither visible to unit
+    tests or axe:** the README's avatar status-dot pattern drew "CO" (the
+    status was in the avatar's `name`), fixed with a new optional
+    `HmhaAvatar` `label` input (fork 39 addendum); and counts rendered in
+    Raleway's old-style figures, fixed with `lining-nums` (fork 40
+    addendum). Both re-screenshotted in Chromium and Firefox after the
+    fix; Avatar's 7 stories re-run green too.
+
+    432/432 in `hmha-ui`, 24/24 in `sandbox`; all 6 Badge stories plus the
+    full existing suite (191 stories) pass `test-run` (incl. a11y).
+12. [x] **7a.** Propose File Upload's foundation. Approved: upload UI only,
+    the consumer owns all transport and state, with folder drops,
+    thumbnails and paste in scope. Recorded as fork 41.
+12b. [x] **7b.** Build File Upload + tests, in three sub-steps:
+    - [x] **7b-i.** `HmhaFileDropzone` (`label[hmhaFileDropzone]` around a
+      native file input) plus the pure helpers `hmhaFileMatchesAccept`,
+      `hmhaCheckFiles` and `hmhaFormatBytes` (`file-checks.ts`,
+      `format-bytes.ts`). The input stays in the accessibility tree,
+      covering the zone, invisible and click-through, so its focus and
+      bounds are the zone's with no visually-hidden pixel tricks. Drag
+      handling counts enter/leave depth (no flicker), ignores non-file
+      drags, and while mounted stops a file dropped outside the zone from
+      navigating the page. Checks also apply to drops, which bypass native
+      `accept`. Adds and rejections are announced politely through CDK's
+      `LiveAnnouncer`, in English for now. 26 new unit tests: 13 for the
+      helpers, 13 for the dropzone, driving real `DataTransfer`s with real
+      `File`s through its handlers. Two were confirmed to fail on purpose:
+      the flicker test with naive leave handling, and three tests when
+      drops skip the checks. 458/458 in `hmha-ui`, 24/24 in `sandbox`,
+      `build:lib`/`lint:css`/`lint:standalone`/`tokens:contrast` clean.
+      **Follow-up round (Stackfi review):** `'directory'` rejection, the
+      window guard's lifetime and manners, the unset pass-through, disabled
+      drags, repeat announcements and same-file re-picks, each now pinned by
+      a test (fork 41 amendment). Two confirmed to fail on purpose: the
+      reset test without `input.value = ''`, and the folder test with
+      folders passed through. One test-only mistake fixed (reusing a single
+      `FileList` across two picks, which no browser does). 467/467 in
+      `hmha-ui`, 24/24 in `sandbox`, all checks clean.
+    - [x] **7b-ii.** `HmhaUploadList` + `HmhaUploadItem` (`upload-list.ts`,
+      `upload-item.ts`/`.css`/`.spec.ts`), the README's rows section and
+      Uppy recipe, one new CI contrast pair (`danger-text` on `surface`).
+      16 new unit tests (483/483 in `hmha-ui`, 24/24 in `sandbox`), all
+      checks clean. Details in fork 41's "Rows, as built".
+    - [x] **7b-iii.** Thumbnails (`preview` on `HmhaUploadItem`) and paste
+      (on `HmhaFileDropzone`). Folder traversal moved out: folders are
+      rejected with `'directory'` instead (fork 41 amendment). 8 new unit
+      tests (491/491 in `hmha-ui`, 24/24 in `sandbox`), all checks clean.
+      Details in fork 41's "Thumbnails and paste, as built".
+12c. [x] **7c.** Story: File Upload: `file-dropzone.stories.ts` (Playground,
+    PickInteraction, ChecksAndRejectionsInteraction, PasteInteraction,
+    Disabled, CustomContentAndBrowseButton) and `upload-item.stories.ts`
+    (Playground, WholeJourney, LongName, FakeEngineJourneyInteraction). The
+    last drives a story-local fake upload engine purely through the
+    components' public inputs and outputs: two dropped files upload, one
+    fails at 60%, the other transcodes to ready, retry finishes the first,
+    and remove clears it. The user had Storybook open, so the restart
+    waited for their go-ahead.
+
+    **A test-authoring trap, caught by `test-run`:** Testing Library's
+    `fireEvent.drop(el, { dataTransfer })` builds a fresh, empty
+    DataTransfer (copying only the passed object's own enumerable
+    properties, and a real one has none), so no files arrived. That also
+    meant the Disabled story's "nothing added" was passing for the wrong
+    reason. Fixed with a story-local `dropFiles()` dispatching a real
+    `DragEvent`, as the Karma specs already did.
+
+    **Real-browser check (Playwright, Chromium and Firefox), stated
+    precisely:** Tab reaches the hidden input with the focus ring on the
+    zone; Space and a real click each open the browser's own file picker
+    (`multiple`); files chosen through that picker run the full journey to
+    `ready`; and in Chromium, a real Ctrl+V of a PNG written to the real
+    clipboard reaches the dropzone and its checks. A drag that starts on
+    the desktop can't be automated by any tool (it begins outside the
+    browser), so that remains a manual check. The story comment was
+    corrected to say exactly that, after first overclaiming.
+
+    **An open issue the dark-mode screenshots found (not caused by File
+    Upload, surfaced by it):** on a dark *surface*, the shared track
+    (`bg-subtle`, fork 36) and the neutral subtle badge fill are both the
+    surface's own colour (1.00:1), so progress tracks and neutral badge
+    pills vanish inside upload rows. The text and fills stay readable.
+    Measured candidates on all three grounds in both modes: a text-colour
+    tint shows everywhere but drops dark fills to about 2:1 against the
+    track; a darker shade can't go below the near-black dark page.
+    `surface-sunken` (light neutral.100, dark neutral.950) shows on
+    surfaces and cards in both modes and keeps every fill at 3.98:1 or
+    better, vanishing only on the bare dark page background. **The user
+    chose `surface-sunken`** (fork 36 amendment): Slider's and Progress
+    Bar's track and the neutral subtle badge moved to it, along with CI's
+    pairs, the Progress Bar spec and both READMEs. Re-screenshotted in
+    Chromium and Firefox: tracks and neutral pills are back in dark upload
+    rows. 491/491 in `hmha-ui`, 24/24 in `sandbox`; the affected Slider,
+    Progress Bar, Badge and File Upload stories re-run green.
+
+    All 10 File Upload stories plus the full existing suite (201 stories)
+    pass `test-run` (incl. a11y).
+13. [x] **8a–c.** Alert:
+    - [x] **8a.** Proposal. Approved: `div[hmhaAlert]`, tones `info |
+      success | warning | danger`, `announce` defaulting to `'none'`,
+      consumer-owned dismissal. Recorded as fork 42.
+    - [x] **8b.** Build + tests: `libs/ui/src/lib/alert/` (`alert.ts` with
+      `HmhaAlert` + `HmhaAlertTitle`, `alert.css`, `alert.spec.ts`,
+      `README.md`), plus the library README's catalog. 11 new unit tests
+      (502/502 in `hmha-ui`, 24/24 in `sandbox`), all checks clean. Two
+      catches recorded in fork 42.
+    - [x] **8c.** Stories: `alert.stories.ts` (Playground, Tones,
+      MessageOnly, FormErrorSummary, DismissibleInteraction,
+      UploadFailedInteraction). The last proves the announcement for real:
+      CDK's live region holds "Error: Upload failed movie.mkv is larger
+      than your remaining storage." with `aria-live="assertive"`, then
+      Dismiss removes the alert through the demo's own `@if` and focus
+      returns to the Upload button. Screenshots (Chromium, Firefox, both
+      modes) found two visual issues, fixed above. 502/502 in `hmha-ui`,
+      24/24 in `sandbox`; all 207 stories pass `test-run` (incl. a11y).
+14. [x] **9a–c.** Empty State:
+    - [x] **9a.** Proposal. Approved as proposed. Recorded as fork 43.
+    - [x] **9b.** Build + tests: `libs/ui/src/lib/empty-state/`
+      (`empty-state.ts` with `HmhaEmptyState` + `HmhaEmptyStateTitle`,
+      `empty-state.css`, `empty-state.spec.ts`, `README.md`), plus the
+      library README's catalog. 8 new unit tests, including the
+      in-a-table-cell composition (510/510 in `hmha-ui`, 24/24 in
+      `sandbox`), all checks clean. No new tokens.
+    - [x] **9c.** Stories: `empty-state.stories.ts` (Playground,
+      TwoActions, SmallInACard, TextOnly, SearchNoResultsInteraction).
+      **Two real bugs, both found by the search story:** the stale "z"
+      announcement (fixed: announce on settle and on change, fork 43
+      amendment), and visible announcement text (CDK's LiveAnnouncer never
+      loads its hiding CSS; fixed for all four announcing components with
+      `hmhaLiveAnnouncer()`, fork 44, and guarded in the install matrix,
+      which passed on Angular 20 and 22). The new `@angular/cdk/private`
+      import made Vite re-optimise dependencies under a running
+      `addon-vitest`, failing most stories with "Failed to fetch
+      dynamically imported module …axe-core.js". A restart with a cleared
+      cache fixed it (now in `CLAUDE.md`). 515/515 in `hmha-ui`, 24/24 in
+      `sandbox`; all 212 stories pass `test-run` (incl. a11y).
+15. [x] **10a–c.** Toggle button (`pressed` on `HmhaButton`):
+    - [x] **10a.** Proposal. Approved: `pressed: boolean | null`, never
+      self-flipping, constant labels, Play/Pause excluded. Recorded as
+      fork 45.
+    - [x] **10b.** Build + tests: `button.ts`/`button.css`, 5 new tests in
+      `button.spec.ts` (on a real `<button>` host) and 1 in
+      `icon-button.spec.ts`, Button README section. 521/521 in `hmha-ui`,
+      24/24 in `sandbox`, all checks clean. No new tokens.
+    - [x] **10c.** Stories: `Pressed` (every tone, off then on) and a
+      `pressed` control on the Playground in `button.stories.ts`;
+      `PlayerControlsInteraction` in `icon-button.stories.ts`, a player
+      toolbar showing both rules (Mute/Shuffle/Repeat/Captions as toggles
+      with fixed labels; Play/Pause swapping its label with no `pressed`),
+      using the new player icons. Screenshots found the invisible status
+      rings, fixed above. 522/522 in `hmha-ui`, 24/24 in `sandbox`; all
+      214 stories pass `test-run` (incl. a11y).
+16. [x] **11a–f.** Textarea (`HmhaInput` on `<textarea>`), then a character
+    counter:
+    - [x] **11a.** Proposal. Approved, with `autoGrow` (Option A).
+      Recorded as fork 46.
+    - [x] **11b.** Build + tests: `input.ts`/`input.css`, 5 new tests on a
+      real `<textarea>` host (527/527 in `hmha-ui`, 24/24 in `sandbox`),
+      Input README section, all checks clean. No new tokens.
+    - [x] **11d.** Propose the character counter. Approved, soft limit.
+      Recorded as fork 47.
+    - [x] **11e.** Build + tests: `maxCharacters`/`characterCount` on
+      `HmhaInput`, `registerCounter()` and the counter row on `HmhaField`
+      (`field.ts`/`field.css`), 9 new tests in `input.spec.ts`, Input and
+      Field README sections. 536/536 in `hmha-ui`, 24/24 in `sandbox`, all
+      checks clean. No new tokens.
+    - [x] **11c/f.** Stories: textarea, auto-grow and the character counter,
+      together. Three new stories in `input.stories.ts`: `Textarea`
+      (a real `<textarea>`, vertical resize), `TextareaAutoGrowInteraction`
+      (six typed lines grow it; capped by `--hmha-input-max-block-size`)
+      and `CharacterCounterInteraction` (20-character limit in a field:
+      the counter joins the hint in the accessible description, "1
+      character remaining" is announced politely, 12 over turns it red
+      and `aria-invalid`, and the typed text is kept, not cut). Playwright
+      screenshots in Chromium and Firefox, both modes: the over-limit
+      counter in the error colour, auto-grow working in both engines (so
+      the README no longer says Firefox lacks `field-sizing`). All 217
+      stories pass `test-run` (incl. a11y).
+17. [x] **12a–c.** Segmented Control:
+    - [x] **12a.** Proposal. Approved, with look A (the pressed-button
+      look). Recorded as fork 48.
+    - [x] **12b.** Build + tests: `segmented-control.ts`/`segment.ts` and
+      their CSS, exported from `public-api.ts`, 17 tests in
+      `segmented-control.spec.ts`: real radios with one shared name, the
+      value both ways through `[(value)]` and Forms (no echo of Forms
+      writes, touched on blur), the radio covering its segment exactly,
+      equal widths (content-sized and a set width), exactly a control
+      height at each size, the selected look in both modes (4.5:1 text,
+      3:1 border against the track), the focus ring, disabled per
+      segment and through the fieldset, field naming, the icon-only throw
+      (and no false throw for bound text), axe in both modes. Mutation
+      checks: removing the selected rule, the focus rule or the grid
+      layout each failed exactly its own test. 553/553 in `hmha-ui`,
+      24/24 in `sandbox`, all checks clean. No new tokens. README, and an
+      entry in the library index.
+      - **Two fixes the tests found:** the radio was `inset: 0`, which
+        stops inside the border, so it fell 1px short of the segment on
+        each side; it now extends over the border. And the icon-only
+        throw ran in `afterNextRender`, where an error goes to
+        `ErrorHandler` instead of failing change detection; it's now an
+        `effect`, as in `HmhaIconButton`, which also runs after the
+        parent has set bound text.
+      - **Left for 12c:** the arrow keys are the browser's own behaviour,
+        which Karma's dispatched events can't trigger, so they get a real
+        keyboard check in Playwright with the stories.
+    - [x] **12c.** Stories: `segmented-control.stories.ts` (Playground
+      with a `valueChange` spy, Sizes beside a Button and Input of each
+      size, IconsAndViewSwitcherInteraction driving a view through
+      `[(value)]`, FullWidth, Disabled, WithFormControlInteraction in a
+      field, KeyboardInteraction) and `segment.stories.ts` (Playground,
+      IconOnly, Disabled). The first run hit the brand-new-component
+      "not resolved" quirk; Storybook was restarted with the user's OK.
+      Playwright with real input, Chromium and Firefox: Tab lands on the
+      selected segment, arrows move and select and wrap, RTL reverses
+      them, Shift+Tab returns to it, a click in a segment's corner
+      selects, a disabled segment can't be picked, no page errors. (Home
+      and End do nothing on native radios; the README doesn't claim
+      them.) Screenshots found the two problems in the fork 48
+      amendment, both fixed, each with a new test confirmed to fail
+      without its fix. 554/554 in `hmha-ui`, 24/24 in `sandbox`; all 227
+      stories pass `test-run` (incl. a11y).
+18. [x] **13a–c.** Nav List, with expandable groups:
+    - [x] **13a.** Proposal. Approved with look B (fill plus a leading
+      bar), the collapsed rail left out, and expandable groups added at
+      the user's request. Recorded as fork 49.
+    - [x] **13b.** Build + tests: `nav-list.ts`, `nav-item.ts`,
+      `nav-group.ts` and their CSS, plus an internal `HMHA_NAV_LIST`
+      token (`nav-list-token.ts`): the list and the group each need the
+      other, and a class import both ways would be circular. A nested
+      list knows it's a group's own list when the group's enclosing list
+      is also its parent list, so a list under a plain item further down
+      isn't mistaken for it. The group can't size the projected link from
+      its own stylesheet (encapsulation scopes that selector away), so
+      the item sets its own `flex: 1`, which does nothing in a plain
+      `<li>`. 15 tests in `nav-list.spec.ts`: real list and links, the
+      indent per level, the slot order, the current-page fill and bar in
+      both modes (4.5:1 text), `"true"` counting and `"false"` not, the
+      bar flipping in RTL, the focus ring, the real router's
+      `routerLinkActive` setting it, and for groups: the button's ARIA
+      (keeping a consumer's link `id`), hiding and showing with
+      `[(expanded)]` written back, one-way opening, the link not
+      toggling, each group controlling only its own list, the chevron,
+      axe in both modes collapsed and expanded. Mutation checks: the
+      current-page rule, the `[hidden]` rule, the own-list check and the
+      logical bar position each failed their own tests. 569/569 in
+      `hmha-ui`, 24/24 in `sandbox`, all checks clean. No new tokens.
+      README (with the collapsed-rail pattern), and an entry in the
+      library index.
+    - [x] **13c.** Stories: `nav-list.stories.ts` (a story-local media
+      sidebar standing in for a router: Playground, NavigateInteraction,
+      GroupsInteraction for artist → album, KeyboardInteraction,
+      CurrentPageInAGroup, RightToLeft, CollapsedRailPattern),
+      `nav-item.stories.ts` (Playground with current/icon/end-slot
+      controls, Variants) and `nav-group.stories.ts` (Playground with an
+      `expandedChange` spy and the link not toggling, Expanded). The first
+      run hit the brand-new-component quirk again; Storybook was
+      restarted with the user's OK. Playwright with real input, Chromium
+      and Firefox: Tab order is link, group button, link; Space and Enter
+      on a group button open and close it; Tab skips a collapsed group's
+      links; the ring shows; the bar sits on the right in RTL; no page
+      errors. (A first Chromium pass disagreed with Firefox on three
+      lines; it was the script reading attributes before zoneless change
+      detection had run, and a 150ms settle made both engines agree.)
+      Screenshots found the indent in the amendment above, fixed with a
+      new test. 570/570 in `hmha-ui`, 24/24 in `sandbox`; all 238 stories
+      pass `test-run` (incl. a11y).
+19. [x] **14.** Wave 6 gate: a real screen in `apps/sandbox` composing every
+    component in the wave. A "Media library" screen, its own component
+    (`apps/sandbox/src/app/media-library/`) rather than more of the
+    400-line `app.ts`: a Nav List with an expandable Library group and an
+    Uploads count Badge; a Grid/List Segmented Control; Refresh with a
+    busy Button, a Spinner and Skeleton rows; titles with status Badges;
+    an Avatar; an Empty State for Music whose action goes to Uploads; a
+    File Dropzone whose rejections raise a warning Alert; Upload Items
+    with Progress Bars on a fake engine (queued, uploading, transcoding,
+    ready), where a "corrupt" file fails once, raising a danger Alert
+    whose "Retry failed" recovers it; a player with a Play/Pause action,
+    Shuffle and Mute pressed toggles and Seek/Volume Sliders; and an edit
+    form with a required Input, a counted auto-grow Textarea and a
+    quality Segmented Control on Forms, saving to a Toast. All state lives
+    in the app. 13 tests in `media-library.spec.ts` drive it end to end,
+    axe-clean in both modes. Driven for real in Chromium and Firefox with
+    the real timer engine; no console errors in either.
+    - **The gate found five bugs, three in the library** (fork 50): Tab
+      Panel and Step Panel showing every panel, Drawer's end placement
+      opening at the start, and Drawer stopping short of full height; plus
+      the Wave 5 sandbox drawer and step panels rendering while closed or
+      hidden. All fixed, each with a test of what renders that fails
+      without its fix.
+    - 576/576 in `hmha-ui`, 37/37 in `sandbox`; all 238 stories pass
+      `test-run`; build and lint clean.
+20. [ ] **15.** Release: bump `hmha-ui` to 1.2.0 and `hmha-tokens` to
+    1.1.0 (the wave added `track.thickness`), merge, tag.
+    - [x] **Prepared:** `hmha-ui` 1.2.0, `hmha-tokens` 1.1.0, and
+      `hmha-ui`'s peer range on tokens raised to `^1.1.0`. `track.thickness`
+      is the only token change since v1.1.0, and Slider and Progress Bar
+      depend on it, so 1.2.0 with tokens 1.0.x would draw broken tracks.
+      The hmha-ui README (peer range, `textarea[hmhaInput]`), the root
+      README's status and `CLAUDE.md`'s current state updated. The install
+      matrix passes on Angular 20, 21 and 22 with the 1.2.0/1.1.0
+      tarballs, and `npm run ci` (the publish job's own gate) passes:
+      576/576 and 37/37.
+    - [ ] **The user:** commit, PR `chore/new-components` into `main`,
+      merge, then `git tag v1.2.0 && git push origin v1.2.0`. The publish
+      workflow publishes tokens 1.1.0 first, then hmha-ui 1.2.0.
+
+---
+
 ## Open items
 
 - **The blue is a placeholder.** Swap the hue in `tokens/primitive/color.json`
@@ -2642,6 +4261,21 @@ matching majors, every check green, no console errors).
   dense-data rather than dense-chrome, consider 32px controls with 8px padding.
 - **Amber-500 is the one base fill needing dark foreground text.** A small
   asymmetry you could design away by darkening it.
+- **`kitchen-sink.ts` imports `'@halfmanhalfape/hmha-ui'` by name,**
+  which resolves to `dist/`, while every other file in `libs/ui` imports
+  source. `kitchen-sink.spec.ts` therefore loads a second copy of the
+  library next to the source one, and the hmha-ui suite logs 8 `NG0912`
+  duplicate-component-ID warnings (Select trigger/listbox/option, Icon).
+  Test-only and pre-existing (since Kitchen Sink v1); the Kitchen Sink
+  isn't in the published package. It also means that spec tests whatever
+  was last built into `dist/`. Fix: import from the source paths. Found
+  while preparing 1.2.0.
+- **There's no link style.** No link colour role and no link component, so
+  links fall back to the browser's default blue. Found through Alert (Wave
+  6 step 8c): default blue on a dark-mode tone is close to unreadable.
+  Alert's README tells consumers to use `color: inherit`; a real fix is a
+  `link` colour role (with a CI pair against every surface it can sit on)
+  or a small link directive.
 - **High-contrast mode** is a third value on the mode axis, not new machinery.
   The architecture supports it; do the ramp work once real components exist to
   test against.

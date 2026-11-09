@@ -44,5 +44,12 @@
     "drawer-width": {
       "$value": "{space.80}"
     }
+  },
+  "track": {
+    "$type": "dimension",
+    "$description": "The bar a value is drawn along: Slider's track, Progress Bar's track. One role so the two always match (fork 35).",
+    "thickness": {
+      "$value": "{space.1}"
+    }
   }
 }
