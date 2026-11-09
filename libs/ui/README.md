@@ -126,9 +126,11 @@ the full reference.
 | Icon | `hmha-icon` | [`src/lib/icon/README.md`](./src/lib/icon/README.md) |
 | Input | `input[hmhaInput]` | [`src/lib/input/README.md`](./src/lib/input/README.md) |
 | Menu | `div[hmhaMenu]`, `button[hmhaMenuTrigger]`, `button[hmhaMenuItem]` | [`src/lib/menu/README.md`](./src/lib/menu/README.md) |
+| Nav List | `ul[hmhaNavList]`, `a[hmhaNavItem]`, `li[hmhaNavGroup]` | [`src/lib/nav-list/README.md`](./src/lib/nav-list/README.md) |
 | Pagination | `nav[hmhaPagination]` | [`src/lib/pagination/README.md`](./src/lib/pagination/README.md) |
 | Progress Bar | `progress[hmhaProgressBar]` | [`src/lib/progress-bar/README.md`](./src/lib/progress-bar/README.md) |
 | Radio / RadioGroup | `input[hmhaRadio]`, `fieldset[hmhaRadioGroup]` | [`src/lib/radio/README.md`](./src/lib/radio/README.md) |
+| Segmented Control | `fieldset[hmhaSegmentedControl]`, `label[hmhaSegment]` | [`src/lib/segmented-control/README.md`](./src/lib/segmented-control/README.md) |
 | Select | `button[hmhaSelectTrigger]`, `div[hmhaSelectListbox]`, `div[hmhaSelectOption]` | [`src/lib/select/README.md`](./src/lib/select/README.md) |
 | Skeleton | `span[hmhaSkeleton]`, `div[hmhaSkeleton]` | [`src/lib/skeleton/README.md`](./src/lib/skeleton/README.md) |
 | Slider | `input[hmhaSlider]` | [`src/lib/slider/README.md`](./src/lib/slider/README.md) |
@@ -150,7 +152,7 @@ which is a real `<dialog>`; `hmha-card`, `hmha-field`, `hmha-icon` and
 ## Forms
 
 Every form control (`Checkbox`, `Input`, `Radio`/`RadioGroup`,
-`Switch`, `Combobox`, `Select`, `Slider`) implements Angular's
+`SegmentedControl`, `Switch`, `Combobox`, `Select`, `Slider`) implements Angular's
 `ControlValueAccessor` — use
 them with `formControlName`, `[formControl]`, or `[(ngModel)]` exactly
 like a native form element:

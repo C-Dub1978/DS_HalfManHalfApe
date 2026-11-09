@@ -3535,6 +3535,150 @@ to be invasive and hurt the UX"):** `HmhaInput` gains `maxCharacters`
 
 ---
 
+## 48 — Segmented Control: native radios inside labels, one `model()`
+
+**Decided (proposal approved before code, look A):** two pieces.
+`HmhaSegmentedControl` (`fieldset[hmhaSegmentedControl]`) is the group:
+it owns the value, sets `role="radiogroup"`, generates the shared `name`
+and gets native `disabled` cascading, as `HmhaRadioGroup` does (fork 11).
+`HmhaSegment` (`label[hmhaSegment]`, `value` required) renders a real
+`<input type="radio">` inside itself, followed by the consumer's content,
+so a segment is one element to write and clicking anywhere on it selects.
+It injects the group (required, as fork 11's radios do).
+
+- **The browser does the keyboard.** One Tab stop for the group, arrow
+  keys move and select with wrap and RTL, and screen readers announce
+  "Grid, radio button, 1 of 2, selected". Nothing hand-written (forks 10,
+  11, 35).
+- **The radio covers its segment, invisibly** (`appearance: none`,
+  `opacity: 0`, sized to the label), rather than the 1px clip technique,
+  so a touch screen reader's exploration finds it where the segment is
+  drawn. The focus ring goes on the segment through
+  `:host(:has(input:focus-visible))`.
+- **The value is one `model()` Forms also uses** (fork 35's pattern,
+  `hmhaValueAccessor(this.value)`): `[(value)]` for a view switcher,
+  `[formControl]` for a settings page. Once a segment is picked, native
+  radios can't be unselected; the consumer gives the starting value
+  (README).
+- **The selected look matches a pressed button (fork 45):** `action` text
+  on `action-subtle` with an `action` border, in a `surface-sunken`
+  track. One "selected" language across the library, and a pair CI
+  already checks. Chosen over a solid `action` fill (reads as a second
+  primary button beside a real one) and the raised iOS pill
+  (`surface-raised` on the sunken track is about 1.1:1 in light mode, so
+  it needs an added outline to pass WCAG 1.4.11).
+- **Content:** text, icon plus text, or icon only. An icon-only segment
+  takes a `label` input that becomes the radio's `aria-label`, and throws
+  without one, the same rule as `HmhaIconButton` (fork 23).
+- **Sizes** `sm`/`md`/`lg` on the control-height tokens, so density
+  applies for free. **Disabled** on the whole control (fieldset cascade)
+  or one segment. Sizes to its content by default; given a width, the
+  segments share it equally. Named by `aria-label`/`aria-labelledby`, or
+  by an `hmha-field` (`aria-labelledby` to its label, as Radio Group).
+  No new tokens expected; component tokens are the override API.
+
+**Amendment (12c), two changes the screenshots found:**
+- **The track has an edge** (`--hmha-segmented-control-border`, the
+  `border` role), chosen by the user over a `bg-subtle` fill or leaving
+  it. In dark mode `surface-sunken` and `bg` are both neutral-950, so on
+  the page the track vanished and unselected segments read as loose text.
+  A `bg-subtle` fill would have shown on the page but vanished on a dark
+  card instead (`surface` is also neutral-900). The edge is decorative;
+  the selected segment's border still carries the meaning. The segment's
+  height and radius subtract the edge, so the whole control is still
+  exactly a control height.
+- **The control never shrinks below its content** (`min-inline-size:
+  max-content`). The build had `0`, and in a flex row beside a
+  full-width input the control was squeezed until the Button beside it
+  covered the last segment. Below max-content the 1fr columns also stop
+  being equal. Too many segments for the space is a Select, not a squeeze.
+
+**Rejected:** buttons with `role="radio"` (hand-written roving tabindex
+and arrows the browser already provides), and a `segmented` appearance
+on `HmhaRadioGroup` (Forms-only value, laid out as a vertical list; a
+view switcher needs `[(value)]` with no Forms).
+
+**Not in scope:** multi-select toggle groups (exclusivity is the whole
+meaning; use a selectable `HmhaChipSet` or `pressed` buttons), switching
+panels (that's `HmhaTabs`), and more than about five options or overflow
+scrolling (use `HmhaSelect`).
+
+---
+
+## 49 — Nav List: native list and links, current page from `aria-current`, groups by disclosure
+
+**Decided (proposal approved before code, look B, rail out, groups in).**
+A vertical list of navigation links for a side nav. The app shell around
+it stays in Stackfi (fork 34).
+
+- **`ul[hmhaNavList]`** removes bullets and spacing and stacks the items.
+  A list nested inside an item indents one level, which it learns through
+  DI (an optional parent `HmhaNavList`), not by selectors reaching into
+  other components.
+- **`a[hmhaNavItem]`** is a real link: middle-click, open in new tab, the
+  browser's link announcement, normal Tab order. Template slots: the icon
+  first, the text filling the row, and anything marked `hmhaNavItemEnd`
+  (a badge, a count) at the end. Full width, control height (so density
+  applies); long text wraps rather than truncating.
+- **The consumer supplies the `<nav>` and its `aria-label`.** The landmark
+  belongs to the shell, and a page can have several ("Main", "Account").
+- **No `@angular/router` dependency.** The current-page look keys off
+  `aria-current`: `"page"` (which `routerLinkActive` sets with
+  `ariaCurrentWhenActive="page"`, or the consumer sets), and also `"true"`
+  for a section whose child page is open. Any value but `"false"`.
+- **Keyboard:** one Tab stop per link. No arrow keys, no `role="menu"`: a
+  nav is a list of links, not a menu (WAI-ARIA).
+- **No disabled items.** A link can't truly be disabled, and a dead nav
+  entry is a pattern to avoid; hide it instead.
+
+**The current-page look (B): fill plus a bar.** `action` text on
+`action-subtle` (the CI-checked pair shared with pressed buttons and
+segments) and a short `action` bar on the leading edge, flipping in RTL.
+The fill's lightness and the bar both change, so it isn't told by hue
+alone. Chosen over the full bordered box of segments and pressed buttons
+(heavy in a long list) and a bar with bold text and no fill (less to see
+at a glance).
+
+**Expandable groups (added at the user's request, for artist → album →
+song).** `li[hmhaNavGroup]` makes an item a group. It renders a real
+`<button>` beside the link with `aria-expanded` and `aria-controls` to the
+nested list, and a chevron that rotates.
+- **The link and the toggle are separate:** the link navigates, the
+  chevron only opens and closes. WAI-ARIA's disclosure navigation pattern.
+  Rejected: `<details>`/`<summary>`, since a link inside `<summary>` is
+  interactive content inside interactive content (a click both navigates
+  and toggles, and screen readers announce it inconsistently).
+- **`expanded` is a `model()` the consumer owns** (fork 21): `[(expanded)]`
+  or a one-way `[expanded]`, for example opening the group that holds the
+  current page, which the consumer knows from its router.
+- **The toggle is named by its link** (`aria-labelledby`), so it reads as
+  "Radiohead, button, collapsed" with nothing extra to write, and it gets
+  the focus ring.
+- **A collapsed group's list is `hidden`:** out of the Tab order and the
+  accessibility tree, still in the DOM, so `aria-current` inside it still
+  works. Any depth, each level indented one step.
+- **A design note, not enforced:** artist → album suits a nav. Songs
+  usually aren't pages someone navigates to but things they play or
+  select, and a long album makes the nav very long; they usually belong in
+  the page content (a table or list), with the nav stopping at the album.
+
+**Amendment (13c): the indent.** Screenshots showed a child's text
+starting left of an iconned parent's text ("Sintel Orchestra" at 48px,
+"Artists" at 60px): the indent was `control-padding-x`. It's now one icon
+plus its gap (`icon-md + control-gap`), chosen by the user, so a child's
+text lines up exactly under an iconned parent's text in any density
+(both terms are the ones the parent's row uses); under a text-only parent
+it's simply a deeper step. A test measures the alignment and fails with
+the old indent.
+
+**Out of scope:** a collapsed icon-only rail (Stackfi builds it from
+icon-only links with `aria-label` and `HmhaTooltip`; the README shows the
+pattern, so the Nav List keeps one shape and one way to write an item), a
+horizontal top-bar nav, section headings inside the list (use separate
+labelled `<nav>`s or the consumer's own headings), and the app shell.
+
+---
+
 ## Wave 6 progress — the step tracker
 
 **This section is the single source of truth for Wave 6 status**, the
@@ -3546,7 +3690,7 @@ section. This section only tracks where we are.
 
 Component order follows fork 34.
 
-**CURRENT STEP: 12a**: Segmented Control proposal, waiting for the go-ahead.
+**CURRENT STEP: 14**: Wave 6 gate, a real sandbox screen composing the wave, waiting for the go-ahead.
 
 1. [x] **1a.** Propose Slider's foundation. Approved: native
    `<input type="range">` (Option A), one `model()` shared with Forms, and
@@ -3934,8 +4078,94 @@ Component order follows fork 34.
       counter in the error colour, auto-grow working in both engines (so
       the README no longer says Firefox lacks `field-sizing`). All 217
       stories pass `test-run` (incl. a11y).
-17. [ ] **12a–c.** Segmented Control: proposal, build + tests, stories.
-18. [ ] **13a–c.** Nav List: proposal, build + tests, stories.
+17. [x] **12a–c.** Segmented Control:
+    - [x] **12a.** Proposal. Approved, with look A (the pressed-button
+      look). Recorded as fork 48.
+    - [x] **12b.** Build + tests: `segmented-control.ts`/`segment.ts` and
+      their CSS, exported from `public-api.ts`, 17 tests in
+      `segmented-control.spec.ts`: real radios with one shared name, the
+      value both ways through `[(value)]` and Forms (no echo of Forms
+      writes, touched on blur), the radio covering its segment exactly,
+      equal widths (content-sized and a set width), exactly a control
+      height at each size, the selected look in both modes (4.5:1 text,
+      3:1 border against the track), the focus ring, disabled per
+      segment and through the fieldset, field naming, the icon-only throw
+      (and no false throw for bound text), axe in both modes. Mutation
+      checks: removing the selected rule, the focus rule or the grid
+      layout each failed exactly its own test. 553/553 in `hmha-ui`,
+      24/24 in `sandbox`, all checks clean. No new tokens. README, and an
+      entry in the library index.
+      - **Two fixes the tests found:** the radio was `inset: 0`, which
+        stops inside the border, so it fell 1px short of the segment on
+        each side; it now extends over the border. And the icon-only
+        throw ran in `afterNextRender`, where an error goes to
+        `ErrorHandler` instead of failing change detection; it's now an
+        `effect`, as in `HmhaIconButton`, which also runs after the
+        parent has set bound text.
+      - **Left for 12c:** the arrow keys are the browser's own behaviour,
+        which Karma's dispatched events can't trigger, so they get a real
+        keyboard check in Playwright with the stories.
+    - [x] **12c.** Stories: `segmented-control.stories.ts` (Playground
+      with a `valueChange` spy, Sizes beside a Button and Input of each
+      size, IconsAndViewSwitcherInteraction driving a view through
+      `[(value)]`, FullWidth, Disabled, WithFormControlInteraction in a
+      field, KeyboardInteraction) and `segment.stories.ts` (Playground,
+      IconOnly, Disabled). The first run hit the brand-new-component
+      "not resolved" quirk; Storybook was restarted with the user's OK.
+      Playwright with real input, Chromium and Firefox: Tab lands on the
+      selected segment, arrows move and select and wrap, RTL reverses
+      them, Shift+Tab returns to it, a click in a segment's corner
+      selects, a disabled segment can't be picked, no page errors. (Home
+      and End do nothing on native radios; the README doesn't claim
+      them.) Screenshots found the two problems in the fork 48
+      amendment, both fixed, each with a new test confirmed to fail
+      without its fix. 554/554 in `hmha-ui`, 24/24 in `sandbox`; all 227
+      stories pass `test-run` (incl. a11y).
+18. [x] **13a–c.** Nav List, with expandable groups:
+    - [x] **13a.** Proposal. Approved with look B (fill plus a leading
+      bar), the collapsed rail left out, and expandable groups added at
+      the user's request. Recorded as fork 49.
+    - [x] **13b.** Build + tests: `nav-list.ts`, `nav-item.ts`,
+      `nav-group.ts` and their CSS, plus an internal `HMHA_NAV_LIST`
+      token (`nav-list-token.ts`): the list and the group each need the
+      other, and a class import both ways would be circular. A nested
+      list knows it's a group's own list when the group's enclosing list
+      is also its parent list, so a list under a plain item further down
+      isn't mistaken for it. The group can't size the projected link from
+      its own stylesheet (encapsulation scopes that selector away), so
+      the item sets its own `flex: 1`, which does nothing in a plain
+      `<li>`. 15 tests in `nav-list.spec.ts`: real list and links, the
+      indent per level, the slot order, the current-page fill and bar in
+      both modes (4.5:1 text), `"true"` counting and `"false"` not, the
+      bar flipping in RTL, the focus ring, the real router's
+      `routerLinkActive` setting it, and for groups: the button's ARIA
+      (keeping a consumer's link `id`), hiding and showing with
+      `[(expanded)]` written back, one-way opening, the link not
+      toggling, each group controlling only its own list, the chevron,
+      axe in both modes collapsed and expanded. Mutation checks: the
+      current-page rule, the `[hidden]` rule, the own-list check and the
+      logical bar position each failed their own tests. 569/569 in
+      `hmha-ui`, 24/24 in `sandbox`, all checks clean. No new tokens.
+      README (with the collapsed-rail pattern), and an entry in the
+      library index.
+    - [x] **13c.** Stories: `nav-list.stories.ts` (a story-local media
+      sidebar standing in for a router: Playground, NavigateInteraction,
+      GroupsInteraction for artist → album, KeyboardInteraction,
+      CurrentPageInAGroup, RightToLeft, CollapsedRailPattern),
+      `nav-item.stories.ts` (Playground with current/icon/end-slot
+      controls, Variants) and `nav-group.stories.ts` (Playground with an
+      `expandedChange` spy and the link not toggling, Expanded). The first
+      run hit the brand-new-component quirk again; Storybook was
+      restarted with the user's OK. Playwright with real input, Chromium
+      and Firefox: Tab order is link, group button, link; Space and Enter
+      on a group button open and close it; Tab skips a collapsed group's
+      links; the ring shows; the bar sits on the right in RTL; no page
+      errors. (A first Chromium pass disagreed with Firefox on three
+      lines; it was the script reading attributes before zoneless change
+      detection had run, and a 150ms settle made both engines agree.)
+      Screenshots found the indent in the amendment above, fixed with a
+      new test. 570/570 in `hmha-ui`, 24/24 in `sandbox`; all 238 stories
+      pass `test-run` (incl. a11y).
 19. [ ] **14.** Wave 6 gate: a real screen in `apps/sandbox` composing every
     component in the wave.
 20. [ ] **15.** Release: bump `hmha-ui` to 1.2.0 and `hmha-tokens` to

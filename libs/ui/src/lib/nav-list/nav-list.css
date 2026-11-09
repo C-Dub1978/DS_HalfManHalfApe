@@ -1,0 +1,27 @@
+/* nav-list.css — declare the override API, then consume it.
+   Not one literal value in the file. */
+:host {
+  --hmha-nav-list-gap: calc(var(--hmha-control-padding-y) / 2);
+  /* Each nested level steps in by one icon and its gap, so a child's
+     text lines up under the text of a parent that has an icon. */
+  --hmha-nav-list-indent: calc(var(--hmha-icon-md) + var(--hmha-control-gap));
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--hmha-nav-list-gap);
+  margin: 0;
+  padding: 0;
+  /* Inherited by the consumer's <li>s, which these styles can't reach. */
+  list-style: none;
+}
+
+:host([data-nested]) {
+  margin-block-start: var(--hmha-nav-list-gap);
+  padding-inline-start: var(--hmha-nav-list-indent);
+}
+
+/* A collapsed group's list. :host's display would otherwise beat the
+   browser's own [hidden] rule. */
+:host([hidden]) {
+  display: none;
+}
