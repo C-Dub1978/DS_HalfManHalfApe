@@ -10,10 +10,10 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { HmhaIcon } from '../icon/icon';
 import { type HmhaFileRejection, hmhaCheckFiles } from './file-checks';
 import { hmhaFormatBytes } from './format-bytes';
+import { hmhaLiveAnnouncer } from '../core/live-announcer';
 
 /** `null`/`undefined` stay `null` (no limit); anything else is a number. */
 function optionalNumber(value: unknown): number | null {
@@ -95,7 +95,7 @@ function carriesFiles(event: DragEvent): boolean {
   },
 })
 export class HmhaFileDropzone {
-  private readonly announcer = inject(LiveAnnouncer);
+  private readonly announcer = hmhaLiveAnnouncer();
   private readonly inputRef = viewChild.required<ElementRef<HTMLInputElement>>('input');
 
   /** The same syntax as `<input accept>`. Also enforced on drops, which bypass the native filter. */

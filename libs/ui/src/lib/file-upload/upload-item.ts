@@ -10,7 +10,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { LiveAnnouncer, _IdGenerator } from '@angular/cdk/a11y';
+import { _IdGenerator } from '@angular/cdk/a11y';
 import { HmhaBadge } from '../badge/badge';
 import { HmhaButton } from '../button/button';
 import { HmhaIconButton } from '../button/icon-button';
@@ -18,6 +18,7 @@ import type { HmhaTone } from '../core/types';
 import { HmhaIcon } from '../icon/icon';
 import { HmhaProgressBar } from '../progress-bar/progress-bar';
 import { hmhaFormatBytes } from './format-bytes';
+import { hmhaLiveAnnouncer } from '../core/live-announcer';
 
 /**
  * The whole journey of one file, not only its upload: after the bytes
@@ -116,7 +117,7 @@ const STATUS: Record<HmhaUploadStatus, { label: string; tone: HmhaTone }> = {
   },
 })
 export class HmhaUploadItem {
-  private readonly announcer = inject(LiveAnnouncer);
+  private readonly announcer = hmhaLiveAnnouncer();
   protected readonly errorId = inject(_IdGenerator).getId('hmha-upload-item-error-');
 
   readonly name = input.required<string>();

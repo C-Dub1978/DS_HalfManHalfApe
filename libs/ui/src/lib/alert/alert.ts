@@ -10,11 +10,11 @@ import {
   booleanAttribute,
   viewChild,
 } from '@angular/core';
-import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { HmhaButton } from '../button/button';
 import { HmhaIconButton } from '../button/icon-button';
 import { HmhaIcon } from '../icon/icon';
 import type { HmhaIconName } from '../icon/icon-registry';
+import { hmhaLiveAnnouncer } from '../core/live-announcer';
 
 export type HmhaAlertTone = 'info' | 'success' | 'warning' | 'danger';
 export type HmhaAlertAnnounce = 'none' | 'polite' | 'assertive';
@@ -79,7 +79,7 @@ export class HmhaAlertTitle {}
   },
 })
 export class HmhaAlert {
-  private readonly announcer = inject(LiveAnnouncer);
+  private readonly announcer = hmhaLiveAnnouncer();
   private readonly body = viewChild.required<ElementRef<HTMLElement>>('body');
 
   readonly tone = input<HmhaAlertTone>('info');

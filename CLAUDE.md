@@ -154,6 +154,20 @@ preference works until an app pins a mode and then gets out of the way.
   the body rows. No error or warning hints at this — the only way to
   catch it is to actually measure rendered widths, which is exactly what
   the first attempt here skipped before this fix.
+- **`TestBed.createComponent(X)` for an attribute-selector component
+  (`button[hmhaButton]`) renders its host as a `<div id="root…">`, not
+  the native element.** Anything that depends on the real element (ARIA
+  attributes allowed only on it, native `disabled`, form behaviour) is
+  then tested on a div: axe flags valid ARIA, and some checks pass
+  vacuously. Use a host component whose template has the real element
+  (fork 45).
+- **CDK's `LiveAnnouncer` never loads the CSS that hides its own live
+  region** (unlike `AriaDescriber`/`FocusTrapFactory`), so on a page
+  where nothing else loaded `.cdk-visually-hidden`, announcements show as
+  visible text. Unit tests and axe can't see it; a screenshot did (fork
+  44). Never `inject(LiveAnnouncer)` directly in `libs/ui`: use the
+  internal `hmhaLiveAnnouncer()` from `core/live-announcer.ts`, which loads
+  CDK's styles first.
 - **A `<colgroup>` with explicit column widths silently wins over
   `HmhaDataGridResizeHandle`'s own `th.style.width` mutation under
   `table-layout: fixed`** — confirmed in the Wave 4 gate
@@ -296,6 +310,12 @@ The component library lives in `libs/ui`, and its Storybook config is in `libs/u
   rather than the main dev server being down. Same fix still works
   (restart everything, clearing the cache); `lsof -i :6006` alone won't
   show this one, since the main server is still bound and answering.
+- **A new third-party import in `libs/ui` (a new `@angular/cdk/*` entry
+  point, say) can make Vite re-optimise its dependencies under a running
+  `addon-vitest`**, after which most stories fail with "Failed to fetch
+  dynamically imported module …/sb-vitest/deps/axe-core.js". That's not a
+  test result: restart the dev server with
+  `node_modules/.cache/storybook` cleared, then re-run.
 - **A `*.stories.ts` file Storybook's glob matches but that has no real CSF
   export (no `export default meta`) breaks the entire index** — every
   Storybook MCP call fails with `Unable to index <path>`, not just that

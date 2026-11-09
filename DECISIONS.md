@@ -3314,6 +3314,227 @@ reproduction showed focus correctly returned, and a re-run passed:
 
 ---
 
+## 43 — Empty State: a heading where the content would be
+
+**Decided (proposal approved before code):** `HmhaEmptyState` is
+`div[hmhaEmptyState]`: an optional decorative `icon` (any icon name,
+`aria-hidden`, since the heading says what it means), a heading slot
+(`HmhaEmptyStateTitle`, `[hmhaEmptyStateTitle]` on any element), the
+consumer's explanation, and a centred actions slot
+(`[hmhaEmptyStateActions]`). It's the same slot shape as Alert (fork 42),
+and works on a page, in a card, or in a single spanning table cell in
+place of rows.
+
+- **The heading is the point.** An empty state stands in for a whole
+  section and screen-reader users navigate by headings, so the README
+  steers consumers to a real `<h2>`/`<h3>`. `HmhaEmptyStateTitle` styles
+  its own host (heading face, size set by the empty state through
+  `--hmha-empty-state-title-*` custom properties it inherits), so it looks
+  the same on any element. That's the same encapsulation reason as
+  `HmhaAlertTitle`.
+- **`size`: `md | sm`** (an `Extract<HmhaSize>`). `sm`, for tables and
+  small cards, shrinks the icon (`icon-lg` rather than twice it), the
+  heading (`label-md` rather than `heading-sm`), the text (`body-sm`) and
+  the spacing. A test confirmed the heading size really follows: it stays
+  at 18px with the `sm` override removed.
+- **No tones.** An empty state isn't an error; "couldn't load" is an
+  Alert, and the README draws that line. Colours are existing CI-checked
+  roles: the heading in `text`, the explanation in `text-muted`, the icon
+  in `text-subtle` (decorative, so 3:1 suffices).
+- **`announce: 'none' | 'polite'`,** matching Alert's input but without
+  `'assertive'` (an empty result is never urgent). Polite announces the
+  heading and text once, after first render, through `LiveAnnouncer`,
+  without action labels: for "No search results" appearing after
+  someone types.
+
+**Not built, stated:** illustrations (the system has icons, not
+illustration art) and built-in "clear search"/"retry" actions.
+
+**Amendment (9c): announce on settle, and again on change.** The search
+story showed "announce once, on first render" doesn't fit the case
+`'polite'` exists for: the empty state appears at the first letter that
+empties the results ("No results for "z"") and stays on screen while the
+query grows, so a screen-reader user was left on the stale "z". It now
+watches its own heading and text (a `MutationObserver`), announces once
+they've been unchanged for 500ms, and again whenever they change and
+settle, skipping repeats: "zzz" typed fast is one announcement of the
+final text. The timer only schedules an announcement, never a view update
+(invariant 4), and is cleared on destroy. Tests pin the burst, a later
+change, and cancellation. Alert keeps announce-once: its messages don't
+change under someone's fingers, and its README already says to render a
+new alert to re-announce.
+
+---
+
+## 44 — `hmhaLiveAnnouncer()`: CDK's LiveAnnouncer never hides its own live region
+
+**Found in Empty State's 9c screenshot:** the announcement text was
+visible on the page, under the table. CDK's `LiveAnnouncer` puts messages
+in an element with the `cdk-visually-hidden` class but, unlike
+`AriaDescriber` (Tooltip) and `FocusTrapFactory`, never loads the CSS
+behind that class. That was checked in CDK 20's and 22's source. On any
+page where nothing else had loaded it, every announcement from the
+Dropzone, upload rows, Alert and Empty State would have shown as stray
+text. Unit tests and axe can't see it: the text is present and
+accessible, just not hidden.
+
+**Decided:** an internal helper, `hmhaLiveAnnouncer()`
+(`core/live-announcer.ts`, not exported), loads CDK's own styles the way
+CDK's own classes do (`inject(_CdkPrivateStyleLoader).load(
+_VisuallyHiddenLoader)`) and returns the normal singleton. The four
+announcing components use it instead of `inject(LiveAnnouncer)`. No
+consumer setup is needed: the user chose a library-side fix over
+requiring `@angular/cdk/a11y-prebuilt.css`.
+
+**Rejected on the way, raised with the user rather than done quietly:**
+the option first described to the user (copying CDK's
+`.cdk-visually-hidden` rule into an unencapsulated stylesheet) would have
+broken invariant 5 (literal `1px`/`-1px`) and invariant 6 (global, not
+emulated, CSS). Hiding it in a TypeScript `styles` string would only have
+dodged the linter. Calling CDK's loader gives the same zero-setup outcome
+with neither violation.
+
+**The risk, guarded like `_IdGenerator` (fork 33):** both names are
+underscore exports of `@angular/cdk/private`, an exported entry point in
+CDK 20 and 22. The install matrix's smoke app now renders an announcing
+`HmhaAlert` with no Tooltip on the page, and `render-check.mjs` fails if
+CDK's live region isn't hidden (position absolute, at most 1px wide).
+That passed on Angular 20 and 22. A unit test also checks the helper
+leaves `.cdk-visually-hidden` hidden.
+
+---
+
+## 45 — Toggle button: `pressed` on `HmhaButton`, driven by the consumer's state
+
+**Decided (proposal approved before code):** no new component. A
+`pressed: boolean | null` input on `HmhaButton`, default `null`. `null`
+is an ordinary button, with no `aria-pressed` and unchanged looks, so
+every existing button and call site is untouched (additive, minor-version
+safe). `true`/`false` makes it a WAI-ARIA toggle button (`aria-pressed`)
+with a visible pressed style. `HmhaIconButton` inherits it by stacking on
+`HmhaButton`, the case Stackfi's player needs (mute, shuffle, repeat,
+favourite, captions).
+
+- **The button never flips itself.** There's no self-toggling
+  `[(pressed)]`: a click is an ordinary `(click)`, the consumer changes
+  their state, and `[pressed]` reflects it. For media the player's real
+  state is the truth, so a blocked or failed action can't leave the
+  button claiming otherwise. It's fork 21's consumer-owns-state rule. A
+  test pins it: clicking an unpressed toggle leaves `aria-pressed="false"`.
+- **The usage rule, the part most often wrong,** goes in the README:
+  keep the label constant and let `pressed` carry the state ("Mute,
+  pressed"). A label that also flips ("Unmute", pressed) reads as a
+  contradiction. **Play/Pause is not a toggle button:** it swaps label
+  and icon with no `pressed`, because it's an action that changes, not
+  a setting that's on.
+- **The look isn't told by hue alone (WCAG 1.4.1):** a neutral pressed
+  button takes `action` text on `action-subtle` with an `action` border
+  (a CI-checked 4.5:1 pair), so both the background lightness and the
+  border change. Primary darkens to `action-active`. Danger, warning and
+  success, which have no active roles, gain a ring in their own text
+  colour. A test measures that the background and border both change,
+  with readable text, in both modes, and was confirmed to fail with the
+  neutral pressed rule removed.
+
+**A testing finding, recorded rather than fixed (pre-existing):**
+`TestBed.createComponent(HmhaButton)`, which `button.spec.ts` has always
+used, renders the host as a `<div id="root…">`, not a `<button>`. axe
+rightly rejected `aria-pressed` there. It also means that spec's existing
+`disabled` check passes on a div, where Angular merely sets a property.
+The new pressed tests use a host template with a real `<button
+hmhaButton>`; the older tests were left as they were, since the change
+didn't touch them (now in `CLAUDE.md`).
+
+**Player icons, added at the user's request (10c):** 13 Lucide icons
+appended to `scripts/icons/allowlist.json`: `repeat`, `repeat-1`,
+`shuffle`, `captions`, `captions-off`, `volume-1`, `volume`, `rewind`,
+`fast-forward`, `picture-in-picture` (Lucide's `picture-in-picture-2`),
+`cast`, `list-music` and `gauge` (playback speed). That makes 131 icons. The
+first edit rewrote the whole JSON through a serializer, escaping the em
+dash and expanding the one-line `{ name, source }` objects. It was redone
+as a plain-text append so the reviewed file's diff is additions only.
+
+**Amendment (10c): the status-tone ring.** The pressed screenshots showed
+the danger and success rings invisible in light mode, and warning's in
+dark. The ring used the button's own text colour, which is white (or
+dark for warning) and so matches the page in one mode. It now uses the
+page's text colour (`--hmha-color-text`), which contrasts with the page
+in both modes by definition. The first "looks different" test had only
+checked the neutral tone. A new test covers every tone and requires each
+status ring at 3:1 against the page, and was confirmed to fail (around
+1:1) on exactly those three cases with the old colour.
+
+---
+
+## 46 — Textarea: `HmhaInput` on `<textarea>`, auto-grow by CSS
+
+**Decided (proposal approved before code):** no new component.
+`HmhaInput`'s selector widens to `input[hmhaInput], textarea[hmhaInput]`,
+so a multi-line field gets the same `ControlValueAccessor`, `HmhaField`
+wiring (a `<textarea>` is labelable), `disabled`/`invalid`, focus ring and
+tokens. Every existing `<input hmhaInput>` is untouched.
+
+- **Native first:** `rows` sets the starting height, and the textarea
+  resizes vertically only (sideways breaks surrounding layout). `size`
+  doesn't apply; it only sets a single-line input's minimum height.
+- **`autoGrow` (opt-in, the user's choice of Option A):** CSS
+  `field-sizing: content`, with no script measuring text per keystroke,
+  capped by `--hmha-input-max-block-size` (default `none`), after which it
+  scrolls. Two consequences, handled: `field-sizing` ignores `rows`, so the
+  starting height is a component token, `--hmha-input-auto-grow-rows`
+  (default 3), turned into a length from the type tokens
+  (`rows × body-md-line × body-md-size + padding + border`), so no
+  literal length meets stylelint's `min-` unit rule. And the drag handle
+  is removed (`resize: none`), because dragging would fix an explicit
+  height and stop the growing. Both live inside `@supports (field-sizing:
+  content)`, so a browser without it keeps `rows` and the drag handle: a
+  pure progressive enhancement. (The proposal said Firefox lacked
+  `field-sizing`; 11c's check found Playwright's Firefox 155 supports it,
+  so auto-grow was verified in both Chromium and Firefox, and the README
+  no longer names a browser.)
+- **Tested on real heights** (Karma's Chromium supports `field-sizing`):
+  about three lines to start, growing with content, stopping at the cap
+  and scrolling, never shrinking below the start. Confirmed to fail
+  ("Expected 114 to be greater than 186") with `field-sizing` removed.
+
+**A character counter, asked for during the build,** gets its own
+proposal (step 11d) rather than being bolted on here.
+
+---
+
+## 47 — Character counter: a soft limit, counted by the input, shown by the field
+
+**Decided (proposal approved, soft limit by the user's choice "so as not
+to be invasive and hurt the UX"):** `HmhaInput` gains `maxCharacters`
+(works on `<input>` and `<textarea>`), and `HmhaField` shows the message.
+
+- **Who does what:** the input already knows its value whether typed or
+  written by Forms, so it computes the count (`characterCount`, a public
+  signal) and hands `{ length, max }` to the field through a new
+  `registerCounter()` on the `HMHA_FIELD` contract. That's an additive
+  extension like fork 11's `labelId`. Controls only ever read the
+  context, and no spec or app provides a fake one. The field renders
+  "You have N characters remaining" or "… too many" under the control and
+  appends its id to the control's `aria-describedby` after the hint or
+  error (multiple ids). `hmhaCountMessage()` is exported for the same
+  wording elsewhere.
+- **Soft limit:** no native `maxlength`, which silently cuts off pasted
+  text. Over the limit the message turns to the error colour (with "too
+  many" saying it in words, not only colour), and the input goes invalid
+  (`aria-invalid`, red border). The README tells consumers to add
+  `Validators.maxLength(n)` to stop saving: the component informs, the
+  form decides.
+- **Announcements:** polite, from the field (it owns the message), only
+  when 20% or less remains or it's over, only after typing pauses for
+  500ms (the Empty State settle approach, fork 43), never on first
+  render, and never repeating the same message. A test was confirmed to
+  fail with the near-limit gate removed.
+- **Counting by code points** (`Array.from(value).length`), so an emoji is
+  one character, as people see it, not two UTF-16 units. The README asks
+  servers to count the same way so the limits agree.
+
+---
+
 ## Wave 6 progress — the step tracker
 
 **This section is the single source of truth for Wave 6 status**, the
@@ -3325,7 +3546,7 @@ section. This section only tracks where we are.
 
 Component order follows fork 34.
 
-**CURRENT STEP: 9a**: Empty State foundation proposal, waiting for the go-ahead.
+**CURRENT STEP: 12a**: Segmented Control proposal, waiting for the go-ahead.
 
 1. [x] **1a.** Propose Slider's foundation. Approved: native
    `<input type="range">` (Option A), one `model()` shared with Forms, and
@@ -3650,11 +3871,69 @@ Component order follows fork 34.
       returns to the Upload button. Screenshots (Chromium, Firefox, both
       modes) found two visual issues, fixed above. 502/502 in `hmha-ui`,
       24/24 in `sandbox`; all 207 stories pass `test-run` (incl. a11y).
-14. [ ] **9a–c.** Empty State: proposal, build + tests, stories.
-15. [ ] **10a–c.** Toggle button (`pressed` on `HmhaButton`): proposal,
-    build + tests, stories.
-16. [ ] **11a–c.** Textarea (`HmhaInput` on `<textarea>`): proposal, build +
-    tests, stories.
+14. [x] **9a–c.** Empty State:
+    - [x] **9a.** Proposal. Approved as proposed. Recorded as fork 43.
+    - [x] **9b.** Build + tests: `libs/ui/src/lib/empty-state/`
+      (`empty-state.ts` with `HmhaEmptyState` + `HmhaEmptyStateTitle`,
+      `empty-state.css`, `empty-state.spec.ts`, `README.md`), plus the
+      library README's catalog. 8 new unit tests, including the
+      in-a-table-cell composition (510/510 in `hmha-ui`, 24/24 in
+      `sandbox`), all checks clean. No new tokens.
+    - [x] **9c.** Stories: `empty-state.stories.ts` (Playground,
+      TwoActions, SmallInACard, TextOnly, SearchNoResultsInteraction).
+      **Two real bugs, both found by the search story:** the stale "z"
+      announcement (fixed: announce on settle and on change, fork 43
+      amendment), and visible announcement text (CDK's LiveAnnouncer never
+      loads its hiding CSS; fixed for all four announcing components with
+      `hmhaLiveAnnouncer()`, fork 44, and guarded in the install matrix,
+      which passed on Angular 20 and 22). The new `@angular/cdk/private`
+      import made Vite re-optimise dependencies under a running
+      `addon-vitest`, failing most stories with "Failed to fetch
+      dynamically imported module …axe-core.js". A restart with a cleared
+      cache fixed it (now in `CLAUDE.md`). 515/515 in `hmha-ui`, 24/24 in
+      `sandbox`; all 212 stories pass `test-run` (incl. a11y).
+15. [x] **10a–c.** Toggle button (`pressed` on `HmhaButton`):
+    - [x] **10a.** Proposal. Approved: `pressed: boolean | null`, never
+      self-flipping, constant labels, Play/Pause excluded. Recorded as
+      fork 45.
+    - [x] **10b.** Build + tests: `button.ts`/`button.css`, 5 new tests in
+      `button.spec.ts` (on a real `<button>` host) and 1 in
+      `icon-button.spec.ts`, Button README section. 521/521 in `hmha-ui`,
+      24/24 in `sandbox`, all checks clean. No new tokens.
+    - [x] **10c.** Stories: `Pressed` (every tone, off then on) and a
+      `pressed` control on the Playground in `button.stories.ts`;
+      `PlayerControlsInteraction` in `icon-button.stories.ts`, a player
+      toolbar showing both rules (Mute/Shuffle/Repeat/Captions as toggles
+      with fixed labels; Play/Pause swapping its label with no `pressed`),
+      using the new player icons. Screenshots found the invisible status
+      rings, fixed above. 522/522 in `hmha-ui`, 24/24 in `sandbox`; all
+      214 stories pass `test-run` (incl. a11y).
+16. [x] **11a–f.** Textarea (`HmhaInput` on `<textarea>`), then a character
+    counter:
+    - [x] **11a.** Proposal. Approved, with `autoGrow` (Option A).
+      Recorded as fork 46.
+    - [x] **11b.** Build + tests: `input.ts`/`input.css`, 5 new tests on a
+      real `<textarea>` host (527/527 in `hmha-ui`, 24/24 in `sandbox`),
+      Input README section, all checks clean. No new tokens.
+    - [x] **11d.** Propose the character counter. Approved, soft limit.
+      Recorded as fork 47.
+    - [x] **11e.** Build + tests: `maxCharacters`/`characterCount` on
+      `HmhaInput`, `registerCounter()` and the counter row on `HmhaField`
+      (`field.ts`/`field.css`), 9 new tests in `input.spec.ts`, Input and
+      Field README sections. 536/536 in `hmha-ui`, 24/24 in `sandbox`, all
+      checks clean. No new tokens.
+    - [x] **11c/f.** Stories: textarea, auto-grow and the character counter,
+      together. Three new stories in `input.stories.ts`: `Textarea`
+      (a real `<textarea>`, vertical resize), `TextareaAutoGrowInteraction`
+      (six typed lines grow it; capped by `--hmha-input-max-block-size`)
+      and `CharacterCounterInteraction` (20-character limit in a field:
+      the counter joins the hint in the accessible description, "1
+      character remaining" is announced politely, 12 over turns it red
+      and `aria-invalid`, and the typed text is kept, not cut). Playwright
+      screenshots in Chromium and Firefox, both modes: the over-limit
+      counter in the error colour, auto-grow working in both engines (so
+      the README no longer says Firefox lacks `field-sizing`). All 217
+      stories pass `test-run` (incl. a11y).
 17. [ ] **12a–c.** Segmented Control: proposal, build + tests, stories.
 18. [ ] **13a–c.** Nav List: proposal, build + tests, stories.
 19. [ ] **14.** Wave 6 gate: a real screen in `apps/sandbox` composing every

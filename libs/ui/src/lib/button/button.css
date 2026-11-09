@@ -75,6 +75,33 @@
 :host([data-size="sm"]) { min-height: var(--hmha-control-height-sm); }
 :host([data-size="lg"]) { min-height: var(--hmha-control-height-lg); }
 
+/* Pressed (a toggle button that's on, fork 45). Neutral takes the action
+   tint: action on action-subtle is a CI-checked 4.5:1 pair, and the border
+   and background lightness change with it, so "on" isn't told by hue
+   alone (WCAG 1.4.1). The filled tones darken to their active shade, or
+   for the status tones, which have none, gain a ring in the page's text
+   colour. */
+:host([data-pressed][data-tone="neutral"]) {
+  --hmha-button-bg: var(--hmha-color-action-subtle);
+  --hmha-button-bg-hover: var(--hmha-color-action-subtle);
+  --hmha-button-bg-active: var(--hmha-color-action-subtle);
+  --hmha-button-fg: var(--hmha-color-action);
+  --hmha-button-border: var(--hmha-color-action);
+}
+:host([data-pressed][data-tone="primary"]) {
+  --hmha-button-bg: var(--hmha-color-action-active);
+  --hmha-button-bg-hover: var(--hmha-color-action-active);
+}
+:host([data-pressed][data-tone="danger"]),
+:host([data-pressed][data-tone="warning"]),
+:host([data-pressed][data-tone="success"]) {
+  /* The page's text colour, not the button's own: the button's white or
+     dark text vanished against the page in one mode or the other (a white
+     ring on a light page). Text contrasts with the page in both modes by
+     definition. */
+  --hmha-button-border: var(--hmha-color-text);
+}
+
 /* set by HmhaIconButton — square the control instead of letting content
    width drive it, and drop the horizontal padding meant for a text label. */
 :host([data-icon-only]) {

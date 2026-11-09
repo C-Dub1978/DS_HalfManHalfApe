@@ -118,6 +118,19 @@
     "server",
     "cloud",
     "cloud-upload",
-    "cloud-download"
+    "cloud-download",
+    "repeat",
+    "repeat-1",
+    "shuffle",
+    "captions",
+    "captions-off",
+    "volume-1",
+    "volume",
+    "rewind",
+    "fast-forward",
+    { "name": "picture-in-picture", "source": "picture-in-picture-2" },
+    "cast",
+    "list-music",
+    "gauge"
   ]
 }

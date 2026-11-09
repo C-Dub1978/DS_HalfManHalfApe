@@ -60,11 +60,14 @@ fi
 #   Tooltip     → @angular/cdk/overlay + portal + a11y (AriaDescriber)
 #   Field/Input → @angular/cdk/a11y (_IdGenerator) + @angular/forms (CVA)
 #   Select      → @angular/cdk/listbox + overlay
+#   Alert       → @angular/cdk/a11y LiveAnnouncer, plus @angular/cdk/private's
+#                 style loader (the underscore API that hides its live region)
 cat > src/app/app.ts <<'APP'
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { CdkListbox, CdkOption } from '@angular/cdk/listbox';
 import {
+  HmhaAlert,
   HmhaButton,
   HmhaField,
   HmhaInput,
@@ -80,6 +83,7 @@ import {
     ReactiveFormsModule,
     CdkListbox,
     CdkOption,
+    HmhaAlert,
     HmhaButton,
     HmhaField,
     HmhaInput,
@@ -97,6 +101,7 @@ import {
     <button data-testid="smoke-select" [hmhaSelectTrigger]="listbox" [formControl]="choice">
       Choose
     </button>
+    <div hmhaAlert tone="info" announce="polite">Smoke alert</div>
     <ng-template #listbox>
       <div hmhaSelectListbox cdkListbox>
         <div hmhaSelectOption cdkOption="a">Alpha</div>

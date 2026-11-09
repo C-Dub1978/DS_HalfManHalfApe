@@ -176,3 +176,30 @@ describe('HmhaIconButton — iconPosition="trailing"', () => {
     expect(results.violations).toEqual([]);
   });
 });
+
+@Component({
+  selector: 'icon-button-toggle-host',
+  imports: [HmhaButton, HmhaIconButton],
+  template: `<button hmhaButton hmhaIconButton label="Mute" [pressed]="muted"><span aria-hidden="true">×</span></button>`,
+})
+class IconButtonToggleHost {
+  muted = true;
+}
+
+describe('HmhaIconButton — as a toggle (pressed, from HmhaButton)', () => {
+  it('inherits pressed by stacking on HmhaButton: a named, icon-only toggle', async () => {
+    await TestBed.configureTestingModule({
+      imports: [IconButtonToggleHost],
+      providers: [provideZonelessChangeDetection()],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(IconButtonToggleHost);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const button: HTMLButtonElement = fixture.nativeElement.querySelector('button');
+    expect(button.getAttribute('aria-label')).toBe('Mute');
+    expect(button.getAttribute('aria-pressed')).toBe('true');
+    expect(button.hasAttribute('data-icon-only')).toBe(true);
+    const results = await axe.run(button, { runOnly: ['wcag2a', 'wcag2aa'] });
+    expect(results.violations).toEqual([]);
+  });
+});

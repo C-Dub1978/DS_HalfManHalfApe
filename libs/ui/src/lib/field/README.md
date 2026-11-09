@@ -89,6 +89,17 @@ template, without writing a directive), `HmhaField` also exports itself as
 </hmha-field>
 ```
 
+## Character counts
+
+A control with a character limit (`HmhaInput`'s `maxCharacters`) hands
+its count to the field through `registerCounter()` on the `HMHA_FIELD`
+contract, and the field shows the message under the control, adds it to
+the control's `aria-describedby` after the hint or error, and announces it
+politely near or over the limit. See `input/README.md`. A custom control
+can do the same: call `field?.registerCounter(signalOf({ length, max }))`.
+`hmhaCountMessage({ length, max })` is exported for the same wording
+elsewhere.
+
 ## Component tokens — the override API
 
 | Token | Default | Set by |

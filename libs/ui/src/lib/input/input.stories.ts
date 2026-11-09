@@ -1,5 +1,5 @@
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { expect, userEvent } from 'storybook/test';
+import { expect, userEvent, waitFor } from 'storybook/test';
 import { HmhaField } from '../field/field';
 import { HmhaInput } from './input';
 
@@ -99,3 +99,76 @@ export const TypingInteraction: Story = {
     await expect(input).toHaveValue('jane@example.com');
   },
 };
+
+/** Multi-line text: the same HmhaInput on a native <textarea>. `rows` sets its height; it resizes vertically only (fork 46). */
+export const Textarea: Story = {
+  render: () => ({
+    template: `
+      <hmha-field label="Description" hint="Shown on the title's detail page." style="max-width: 420px;">
+        <textarea hmhaInput rows="4"></textarea>
+      </hmha-field>
+    `,
+  }),
+  play: async ({ canvas }) => {
+    const textarea = canvas.getByRole('textbox', { name: 'Description' });
+    await expect(textarea.tagName).toBe('TEXTAREA');
+    await expect(getComputedStyle(textarea).resize).toBe('vertical');
+  },
+};
+
+/**
+ * `autoGrow`: it grows with the text as you type (CSS `field-sizing`, no
+ * script), from three lines, up to a cap set here with
+ * `--hmha-input-max-block-size`, then scrolls.
+ */
+export const TextareaAutoGrowInteraction: Story = {
+  render: () => ({
+    template: `
+      <hmha-field label="Notes" style="max-width: 420px;">
+        <textarea hmhaInput autoGrow style="--hmha-input-max-block-size: 12rem;"></textarea>
+      </hmha-field>
+    `,
+  }),
+  play: async ({ canvas }) => {
+    const textarea = canvas.getByRole('textbox', { name: 'Notes' }) as HTMLTextAreaElement;
+    const start = textarea.getBoundingClientRect().height;
+    await userEvent.type(textarea, 'One{Enter}Two{Enter}Three{Enter}Four{Enter}Five{Enter}Six');
+    await waitFor(() => expect(textarea.getBoundingClientRect().height).toBeGreaterThan(start));
+  },
+};
+
+/**
+ * A soft character limit (fork 47): the field counts down, says how many
+ * too many once over, in the error colour, and the control goes invalid.
+ * Nothing is cut off. Near and over the limit it's announced politely once
+ * typing pauses.
+ */
+export const CharacterCounterInteraction: Story = {
+  render: () => ({
+    template: `
+      <hmha-field label="Title" hint="The name shown in your library." style="max-width: 420px;">
+        <input hmhaInput [maxCharacters]="20" />
+      </hmha-field>
+    `,
+  }),
+  play: async ({ canvas, canvasElement }) => {
+    const title = canvas.getByRole('textbox', { name: 'Title' });
+    const counter = canvasElement.querySelector('.hmha-field-counter')!;
+    await expect(counter).toHaveTextContent('You have 20 characters remaining');
+    await expect(title).toHaveAccessibleDescription(
+      'The name shown in your library. You have 20 characters remaining',
+    );
+
+    await userEvent.type(title, 'Big Buck Bunny 2008');
+    await waitFor(() => expect(counter).toHaveTextContent('You have 1 character remaining'));
+    await waitFor(() =>
+      expect(document.querySelector('.cdk-live-announcer-element')).toHaveTextContent('You have 1 character remaining'),
+    );
+
+    await userEvent.type(title, ' (remastered)');
+    await waitFor(() => expect(counter).toHaveTextContent('You have 12 characters too many'));
+    await expect(title).toHaveValue('Big Buck Bunny 2008 (remastered)');
+    await expect(title).toHaveAttribute('aria-invalid', 'true');
+  },
+};
+

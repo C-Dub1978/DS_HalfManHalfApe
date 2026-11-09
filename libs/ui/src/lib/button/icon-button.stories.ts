@@ -1,14 +1,61 @@
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { moduleMetadata, type Meta, type StoryObj } from '@storybook/angular-vite';
-import { expect } from 'storybook/test';
+import { expect, userEvent, waitFor } from 'storybook/test';
 import { HmhaIcon } from '../icon/icon';
 import { HmhaButton } from './button';
 import { HmhaIconButton } from './icon-button';
+
+/**
+ * A media player's controls, the two rules from the Button README side by
+ * side. Mute, Shuffle, Repeat and Captions are settings: toggle buttons
+ * with a label that never changes. Play/Pause is an action that changes:
+ * no `pressed`, its label and icon swap instead. Story-local.
+ */
+@Component({
+  selector: 'player-controls-demo',
+  imports: [HmhaButton, HmhaIconButton, HmhaIcon],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div role="toolbar" aria-label="Player" style="display:flex; gap: var(--hmha-control-gap); flex-wrap: wrap;">
+      <button hmhaButton hmhaIconButton label="Rewind 10 seconds"><hmha-icon name="rewind" /></button>
+      <button
+        hmhaButton
+        hmhaIconButton
+        tone="primary"
+        [label]="playing() ? 'Pause' : 'Play'"
+        (click)="playing.set(!playing())"
+      >
+        <hmha-icon [name]="playing() ? 'pause' : 'play'" />
+      </button>
+      <button hmhaButton hmhaIconButton label="Fast forward 10 seconds"><hmha-icon name="fast-forward" /></button>
+      <button hmhaButton hmhaIconButton label="Mute" [pressed]="muted()" (click)="muted.set(!muted())">
+        <hmha-icon [name]="muted() ? 'volume-x' : 'volume-2'" />
+      </button>
+      <button hmhaButton hmhaIconButton label="Shuffle" [pressed]="shuffle()" (click)="shuffle.set(!shuffle())">
+        <hmha-icon name="shuffle" />
+      </button>
+      <button hmhaButton hmhaIconButton label="Repeat" [pressed]="repeat()" (click)="repeat.set(!repeat())">
+        <hmha-icon name="repeat" />
+      </button>
+      <button hmhaButton hmhaIconButton label="Captions" [pressed]="captions()" (click)="captions.set(!captions())">
+        <hmha-icon [name]="captions() ? 'captions' : 'captions-off'" />
+      </button>
+    </div>
+  `,
+})
+class PlayerControlsDemo {
+  protected readonly playing = signal(false);
+  protected readonly muted = signal(false);
+  protected readonly shuffle = signal(false);
+  protected readonly repeat = signal(false);
+  protected readonly captions = signal(true);
+}
 
 const meta: Meta<HmhaIconButton> = {
   title: 'Components/IconButton',
   component: HmhaIconButton,
   tags: ['autodocs'],
-  decorators: [moduleMetadata({ imports: [HmhaButton, HmhaIconButton, HmhaIcon] })],
+  decorators: [moduleMetadata({ imports: [HmhaButton, HmhaIconButton, HmhaIcon, PlayerControlsDemo] })],
   argTypes: {
     label: { control: 'text' },
   },
@@ -136,5 +183,29 @@ export const AccessibleNameInteraction: Story = {
 
     const nextButton = canvas.getByRole('button', { name: 'Proceed to next step' });
     await expect(nextButton).toHaveAttribute('aria-label', 'Proceed to next step');
+  },
+};
+
+/**
+ * A player's controls (fork 45). Mute keeps its label and flips its
+ * pressed state; Play becomes Pause by swapping its label, with no pressed
+ * state at all.
+ */
+export const PlayerControlsInteraction: Story = {
+  render: () => ({ template: `<player-controls-demo />` }),
+  play: async ({ canvas }) => {
+    const mute = canvas.getByRole('button', { name: 'Mute' });
+    await expect(mute).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.click(mute);
+    await waitFor(() => expect(mute).toHaveAttribute('aria-pressed', 'true'));
+    await expect(canvas.getByRole('button', { name: 'Mute' })).toBe(mute);
+
+    const play = canvas.getByRole('button', { name: 'Play' });
+    await expect(play).not.toHaveAttribute('aria-pressed');
+    await userEvent.click(play);
+    await waitFor(() => expect(canvas.getByRole('button', { name: 'Pause' })).toBe(play));
+    await expect(play).not.toHaveAttribute('aria-pressed');
+
+    await expect(canvas.getByRole('button', { name: 'Captions' })).toHaveAttribute('aria-pressed', 'true');
   },
 };

@@ -5,6 +5,10 @@
   --hmha-input-fg: var(--hmha-color-text);
   --hmha-input-border: var(--hmha-color-border);
   --hmha-input-border-focus: var(--hmha-color-focus);
+  /* <textarea autoGrow> only: the starting height in lines (a count, like
+     `rows`), and the cap before it scrolls. */
+  --hmha-input-auto-grow-rows: 3;
+  --hmha-input-max-block-size: none;
 
   display: block;
   width: 100%;
@@ -43,3 +47,28 @@
   cursor: not-allowed;
   opacity: 0.5;
 }
+
+/* ── <textarea> ────────────────────────────────────────────────────────── */
+/* Resizable taller, never wider: sideways dragging breaks the layout
+   around it. `rows` sets its starting height natively. */
+:host(textarea) {
+  resize: vertical;
+}
+
+/* Auto-grow, where the browser can (fork 46). field-sizing ignores `rows`,
+   so the starting height is the token's line count, computed from the
+   type tokens rather than written as a length. The drag handle goes,
+   since dragging would fix an explicit height and stop the growing; only
+   inside @supports, so a browser that can't auto-grow keeps it. */
+@supports (field-sizing: content) {
+  :host(textarea[data-auto-grow]) {
+    field-sizing: content;
+    resize: none;
+    min-block-size: calc(
+      var(--hmha-input-auto-grow-rows) * var(--hmha-type-body-md-line) * var(--hmha-type-body-md-size)
+        + 2 * var(--hmha-control-padding-y) + 2 * var(--hmha-border-width)
+    );
+    max-block-size: var(--hmha-input-max-block-size);
+  }
+}
+

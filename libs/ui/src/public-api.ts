@@ -22,6 +22,7 @@ export * from './lib/data-grid/data-grid-sort-button';
 export * from './lib/dialog/dialog';
 export * from './lib/dialog/drawer';
 export * from './lib/divider/divider';
+export * from './lib/empty-state/empty-state';
 export * from './lib/expansion-panel/accordion';
 export * from './lib/expansion-panel/expansion-panel';
 export * from './lib/expansion-panel/expansion-panel-content';
