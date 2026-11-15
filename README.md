@@ -30,7 +30,7 @@ sandbox/index.html         static, component-free proof of the token/theming
 ## Getting started
 
 ```bash
-npm install
+npm install                # also generates the icon registry (postinstall)
 npm run tokens             # writes libs/tokens/src/lib/_all.css
 npm run tokens:contrast    # asserts every declared fill/foreground pair, both modes
 npm start                  # serves the sandbox app at http://localhost:4200
@@ -40,12 +40,17 @@ Diff a fresh token build against `reference/tokens.css` — it should match modu
 whitespace; if it does not, the layer order or `outputReferences` is wrong, and
 both matter more than they look.
 
+`libs/ui/src/lib/icon/icon-registry.ts` is generated and git-ignored, like the
+token output. `npm install` writes it; if it goes missing (a `git clean`, say)
+and `./icon-registry` stops resolving, run `npm run icons`.
+
 ## Commands
 
 ```bash
 npm run tokens             # build the 5 token layers, concatenate in order
 npm run tokens:contrast    # assert every declared fill/foreground pair, both modes
 npm run tokens:watch       # rebuild tokens on token edits
+npm run icons              # regenerate the icon registry from scripts/icons/allowlist.json
 npm run lint:css           # the no-literals guard (libs/ui only)
 npm run lint:standalone    # fails if any @NgModule shows up in libs/ or apps/
 npm run build:lib          # ng build hmha-ui (ng-packagr, partial-Ivy)
