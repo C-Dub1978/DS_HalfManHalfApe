@@ -13,6 +13,7 @@
     "tokens:watch": "nodemon --watch tokens --ext json --exec \"npm run tokens\"",
     "tokens:contrast": "node scripts/check-contrast.mjs",
     "icons": "node scripts/generate-icons.mjs",
+    "postinstall": "npm run icons",
     "lint:css": "stylelint \"libs/ui/**/*.css\"",
     "lint:standalone": "if grep -rn '@NgModule' libs apps --include='*.ts'; then echo 'NgModule found — invariant 2' && exit 1; fi",
     "ci": "npm run tokens && npm run tokens:contrast && npm run icons && npm run lint:css && npm run lint:standalone && npm run build:lib && npm test",
