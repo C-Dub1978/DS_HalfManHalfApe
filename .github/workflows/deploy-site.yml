@@ -1,16 +1,24 @@
 name: Deploy site
 
 # Builds the sandbox and Storybook and uploads them to https://cswilson.site
-# (infra/site.yml). Manual only: run it from the Actions tab, on main.
+# (infra/site.yml). Runs when a v* release tag is pushed — the same tag that
+# triggers publish.yml, so the public site moves with each release rather
+# than with every merge to main — and can also be run by hand from the
+# Actions tab, on main.
+#
+# The two workflows are independent: this one does not wait for the npm
+# publish, and a failed publish does not stop it.
 #
 # No AWS keys are stored in GitHub. The job exchanges its OIDC token for the
-# stack's DeployRole, which trusts only this repository's main branch — a
-# run from any other branch fails at the credentials step by design. The
-# role's ARN is the stack's DeployRoleArn output, held in the
+# stack's DeployRole, which trusts only this repository's main branch and
+# its v* tags — a run from any other ref fails at the credentials step by
+# design. The role's ARN is the stack's DeployRoleArn output, held in the
 # AWS_DEPLOY_ROLE_ARN repository variable (Settings → Secrets and variables
 # → Actions → Variables).
 
 on:
+  push:
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:

@@ -221,9 +221,10 @@ Resources:
       ClientIdList:
         - sts.amazonaws.com
 
-  # Assumable only by workflows running on this repository's main branch,
-  # and able to do only what scripts/deploy-site.sh does: read this stack's
-  # outputs, write the site bucket, invalidate this distribution.
+  # Assumable only by workflows in this repository running on the main
+  # branch (a manual run) or on a v* tag (a release), and able to do only
+  # what scripts/deploy-site.sh does: read this stack's outputs, write the
+  # site bucket, invalidate this distribution.
   DeployRole:
     Type: AWS::IAM::Role
     Properties:
@@ -238,7 +239,10 @@ Resources:
             Condition:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
-                token.actions.githubusercontent.com:sub: !Sub 'repo:${GitHubRepository}:ref:refs/heads/main'
+              StringLike:
+                token.actions.githubusercontent.com:sub:
+                  - !Sub 'repo:${GitHubRepository}:ref:refs/heads/main'
+                  - !Sub 'repo:${GitHubRepository}:ref:refs/tags/v*'
       Policies:
         - PolicyName: deploy-site
           PolicyDocument:

@@ -76,8 +76,13 @@ aws cloudformation deploy --region us-east-1 --stack-name hmha-site \
   --parameter-overrides HostedZoneId=<the cswilson.site hosted zone ID>
 ```
 
-To publish a new build, run the **Deploy site** workflow from the Actions
-tab on `main`, or run `npm run deploy:site` locally with AWS credentials.
+The site is redeployed by the **Deploy site** workflow whenever a `v*`
+release tag is pushed (the same tag that publishes to npm), not on every
+merge to `main`. To publish outside a release, run that workflow from the
+Actions tab on `main`, or run `npm run deploy:site` locally with AWS
+credentials. The public Storybook build leaves out the onboarding, Vitest
+and visual-tests addons (`libs/ui/.storybook/main.ts`); `npm run storybook`
+still loads them.
 `build:site` rewrites `dist/hmha-ui`, so stop `npm start` first or the dev
 server reports every library import as missing until it is restarted.
 
