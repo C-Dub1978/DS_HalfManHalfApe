@@ -18,7 +18,7 @@
     "lint:standalone": "if grep -rn '@NgModule' libs apps --include='*.ts'; then echo 'NgModule found — invariant 2' && exit 1; fi",
     "ci": "npm run tokens && npm run tokens:contrast && npm run icons && npm run lint:css && npm run lint:standalone && npm run build:lib && npm test",
     "storybook": "ng run hmha-ui:storybook",
-    "build:site": "npm run tokens && npm run icons && npm run build:lib && ng build sandbox && ng run hmha-ui:build-storybook",
+    "build:site": "npm run tokens && npm run icons && npm run build:lib && ng build sandbox && HMHA_PUBLIC_STORYBOOK=true ng run hmha-ui:build-storybook",
     "deploy:site": "npm run build:site && bash scripts/deploy-site.sh"
   },
   "prettier": {
