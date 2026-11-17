@@ -15,8 +15,13 @@ Parameters:
     Description: Route 53 hosted zone that owns DomainName.
   GitHubRepository:
     Type: String
-    Default: C-Dub1978/DS_HalfManHalfApe
-    Description: owner/name of the GitHub repository allowed to deploy the site.
+    Default: C-Dub1978@13097219/DS_HalfManHalfApe@1367953087
+    Description: >
+      The GitHub repository allowed to deploy the site, exactly as it appears
+      in the OIDC token's subject claim: owner@ownerId/name@repoId. GitHub
+      appends the numeric IDs, so a bare owner/name never matches. If a
+      deploy is refused, the failed AssumeRoleWithWebIdentity event in
+      CloudTrail shows the subject GitHub actually sent.
 
 Resources:
   SiteBucket:
