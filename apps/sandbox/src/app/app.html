@@ -3,6 +3,12 @@
   <p class="muted">
     Zoneless, token-driven. Sexy as hell. Components land here as each wave ships.
   </p>
+  <!-- A plain href, not a router link: Storybook is a separate static build
+       deployed beside this app under /storybook/ (infra/site.yml). It only
+       resolves on the deployed site, not under `ng serve`. -->
+  <p>
+    <a class="docs-link" href="/storybook/">Component documentation (Storybook)</a>
+  </p>
 
   <section class="row">
     <button hmhaButton tone="neutral">Neutral</button>

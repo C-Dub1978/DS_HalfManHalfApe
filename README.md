@@ -15,6 +15,8 @@ libs/
   ui/                      Angular components         → @halfmanhalfape/hmha-ui
 apps/
   sandbox/                 the dog-food app; runs zoneless
+infra/
+  site.yml                 CloudFormation for the demo site (see "Demo site")
 scripts/
   concat-layers.mjs        deterministic layer concatenation (order is load-bearing)
   check-contrast.mjs       resolves var() chains, fails CI on a bad pair
@@ -56,7 +58,28 @@ npm run lint:standalone    # fails if any @NgModule shows up in libs/ or apps/
 npm run build:lib          # ng build hmha-ui (ng-packagr, partial-Ivy)
 npm test                   # ng test
 npm run ci                 # everything above, in CI order
+npm run build:site         # tokens, icons, library, sandbox and Storybook builds
+npm run deploy:site        # build:site, then upload to https://cswilson.site
 ```
+
+## Demo site
+
+The sandbox is served at <https://cswilson.site> and Storybook at
+<https://cswilson.site/storybook/>, from a private S3 bucket behind
+CloudFront. `infra/site.yml` is the whole of it (bucket, certificate,
+distribution, DNS records, and the role GitHub Actions deploys with),
+deployed as the `hmha-site` CloudFormation stack in `us-east-1`:
+
+```bash
+aws cloudformation deploy --region us-east-1 --stack-name hmha-site \
+  --template-file infra/site.yml --capabilities CAPABILITY_IAM \
+  --parameter-overrides HostedZoneId=<the cswilson.site hosted zone ID>
+```
+
+To publish a new build, run the **Deploy site** workflow from the Actions
+tab on `main`, or run `npm run deploy:site` locally with AWS credentials.
+`build:site` rewrites `dist/hmha-ui`, so stop `npm start` first or the dev
+server reports every library import as missing until it is restarted.
 
 ## Status
 

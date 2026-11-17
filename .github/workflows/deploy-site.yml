@@ -1,0 +1,42 @@
+name: Deploy site
+
+# Builds the sandbox and Storybook and uploads them to https://cswilson.site
+# (infra/site.yml). Manual only: run it from the Actions tab, on main.
+#
+# No AWS keys are stored in GitHub. The job exchanges its OIDC token for the
+# stack's DeployRole, which trusts only this repository's main branch — a
+# run from any other branch fails at the credentials step by design. The
+# role's ARN is the stack's DeployRoleArn output, held in the
+# AWS_DEPLOY_ROLE_ARN repository variable (Settings → Secrets and variables
+# → Actions → Variables).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # mints the OIDC token AWS exchanges for the deploy role
+
+concurrency:
+  group: deploy-site
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build:site
+
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - run: bash scripts/deploy-site.sh

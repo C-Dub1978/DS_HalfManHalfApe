@@ -19,6 +19,16 @@ h1 {
   margin: 0;
 }
 
+.docs-link {
+  color: var(--hmha-color-text);
+  border-radius: var(--hmha-radius-control);
+}
+
+.docs-link:focus-visible {
+  outline: var(--hmha-focus-width) solid var(--hmha-color-focus);
+  outline-offset: var(--hmha-focus-offset);
+}
+
 .row {
   display: flex;
   flex-wrap: wrap;
